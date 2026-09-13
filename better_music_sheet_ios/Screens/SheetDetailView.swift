@@ -32,8 +32,8 @@ struct SheetDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if model.stage == .ready, let data = model.pdfData, let job = model.job {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    // Just left of the download, as on the web app's result page.
+                // Just left of the download, as on the web app's result page.
+                ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         PracticeView(jobID: job.jobID, title: model.title, pdfData: data)
                     } label: {
@@ -44,8 +44,14 @@ struct SheetDetailView: View {
                     .tint(Brand.ink)
                     .accessibilityLabel("Practice")
                     .accessibilityHint("Opens the sheet with the keyboard and falling notes")
+                }
 
-                    if let url = model.exportURL() {
+                // Without this the system draws adjacent items as one grouped
+                // button; a fixed spacer gives each its own.
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
+                if let url = model.exportURL() {
+                    ToolbarItem(placement: .topBarTrailing) {
                         ShareLink(item: url) {
                             Image(systemName: "square.and.arrow.up")
                         }

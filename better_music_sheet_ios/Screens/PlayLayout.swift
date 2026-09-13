@@ -1,15 +1,14 @@
 import SwiftUI
 
-/// The Play page's sections as the web app has them — sheet, controls, falling
-/// notes, keyboard — with every one adjustable. The sheet and the falling notes
-/// collapse to their headers, the falling-notes header drags to divide the
-/// space between the two differently, and the keyboard's top edge drags to
-/// make the keys taller or shorter.
+/// The Practice page's sections as the web app has them — sheet, controls,
+/// falling notes, keyboard. The sheet and the falling notes collapse to their
+/// headers, and the falling-notes header drags to divide the space between the
+/// two differently. The keyboard stays at its natural height.
 ///
 /// Remembered between sessions: how much of each you want changes with how you
 /// practise, not with which sheet happens to be open.
 struct PlayLayout<Sheet: View, Controls: View, Roll: View, Keyboard: View>: View {
-    /// The keyboard's natural height at a given width, before the user's scaling.
+    /// The keyboard's natural height at a given width.
     let keyboardHeight: (CGFloat) -> CGFloat
     @ViewBuilder let sheet: () -> Sheet
     @ViewBuilder let controls: () -> Controls
@@ -20,14 +19,11 @@ struct PlayLayout<Sheet: View, Controls: View, Roll: View, Keyboard: View>: View
     @AppStorage("play.rollOpen") private var rollOpen = true
     /// The sheet's share of the space the two panels divide when both are open.
     @AppStorage("play.sheetShare") private var storedSheetShare = 0.6
-    @AppStorage("play.keyboardScale") private var storedKeyboardScale = 1.0
 
-    /// Live values while a drag is under way, saved once the finger lifts.
+    /// The live value while a drag is under way, saved once the finger lifts.
     /// Writing preferences on every frame of a drag made resizing stutter.
     @State private var liveShare: Double?
-    @State private var liveScale: Double?
     @State private var shareAtDragStart = 0.6
-    @State private var scaleAtDragStart = 1.0
     /// Measured, because the controls wrap onto two rows on narrow screens.
     @State private var controlsHeight: CGFloat = 110
 
@@ -35,21 +31,20 @@ struct PlayLayout<Sheet: View, Controls: View, Roll: View, Keyboard: View>: View
     // properties.
     private static var headerHeight: CGFloat { 32 }
     private static var shareRange: ClosedRange<Double> { 0.15...0.85 }
-    private static var scaleRange: ClosedRange<Double> { 0.6...2.0 }
-    /// Room the panels keep even at the keyboard's largest.
+    /// Room the panels keep on a short screen, such as a phone in landscape.
     private static var minimumPanelSpace: CGFloat { 120 }
     private static var rollBackground: Color { Color(hex: 0x0F1113) }
 
     private var sheetShare: Double { liveShare ?? storedSheetShare }
-    private var keyboardScale: Double { liveScale ?? storedKeyboardScale }
 
     var body: some View {
         GeometryReader { proxy in
             let naturalKeyboard = keyboardHeight(proxy.size.width)
             let fixed = Self.headerHeight * 2 + controlsHeight
-            let largestKeyboard = max(naturalKeyboard * Self.scaleRange.lowerBound,
-                                      proxy.size.height - fixed - Self.minimumPanelSpace)
-            let keysHeight = min(naturalKeyboard * keyboardScale, largestKeyboard)
+            // Natural height, giving way only where a short screen would
+            // otherwise squeeze the panels above it to nothing.
+            let keysHeight = min(naturalKeyboard,
+                                 max(naturalKeyboard * 0.6, proxy.size.height - fixed - Self.minimumPanelSpace))
             let flexible = max(0, proxy.size.height - fixed - keysHeight)
             let heights = panelHeights(flexible: flexible)
 
@@ -79,9 +74,6 @@ struct PlayLayout<Sheet: View, Controls: View, Roll: View, Keyboard: View>: View
 
                 keyboard()
                     .frame(height: keysHeight)
-                    .overlay(alignment: .top) {
-                        keyboardHandle(naturalHeight: naturalKeyboard)
-                    }
             }
         }
     }
@@ -163,42 +155,6 @@ struct PlayLayout<Sheet: View, Controls: View, Roll: View, Keyboard: View>: View
                 switch direction {
                 case .increment: storedSheetShare = Self.clamp(storedSheetShare - 0.1, to: Self.shareRange)
                 case .decrement: storedSheetShare = Self.clamp(storedSheetShare + 0.1, to: Self.shareRange)
-                @unknown default: break
-                }
-            }
-    }
-
-    /// Straddles the boundary above the keys, so the falling notes still land
-    /// on the keyboard itself rather than on a separating strip.
-    private func keyboardHandle(naturalHeight: CGFloat) -> some View {
-        Capsule()
-            .fill(Color.white.opacity(0.4))
-            .frame(width: 40, height: 5)
-            .frame(maxWidth: .infinity, minHeight: 28)
-            .contentShape(Rectangle())
-            .offset(y: -14)
-            // Screen coordinates, for the same reason as the divider: the
-            // keyboard's top edge moves under the finger as it resizes.
-            .gesture(
-                DragGesture(minimumDistance: 2, coordinateSpace: .global)
-                    .onChanged { value in
-                        guard naturalHeight > 0 else { return }
-                        if liveScale == nil { scaleAtDragStart = storedKeyboardScale }
-                        // Dragging the top edge up makes the keys taller.
-                        liveScale = Self.clamp(scaleAtDragStart - value.translation.height / naturalHeight,
-                                               to: Self.scaleRange)
-                    }
-                    .onEnded { _ in
-                        if let liveScale { storedKeyboardScale = liveScale }
-                        liveScale = nil
-                    }
-            )
-            .accessibilityElement()
-            .accessibilityLabel("Keyboard height")
-            .accessibilityAdjustableAction { direction in
-                switch direction {
-                case .increment: storedKeyboardScale = Self.clamp(storedKeyboardScale + 0.1, to: Self.scaleRange)
-                case .decrement: storedKeyboardScale = Self.clamp(storedKeyboardScale - 0.1, to: Self.scaleRange)
                 @unknown default: break
                 }
             }

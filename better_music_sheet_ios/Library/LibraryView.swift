@@ -119,66 +119,75 @@ struct LibraryView: View {
 /// that need attention speak up, which is the point of a library you own
 /// rather than a job queue you are watching.
 ///
-/// Two targets in one card, as in the web app's history: the sheet itself, and
-/// practising it. They are sibling buttons rather than one nested in another,
-/// which could not be tapped on its own.
+/// Practising sits beside the card rather than inside it, as a small card of its
+/// own at the same height so the two read as a pair.
 private struct SheetRow: View {
     let job: AnnotationJob
     let open: () -> Void
     let practice: () -> Void
 
+    private static let practiceWidth: CGFloat = 64
+
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 8) {
             Button(action: open) {
                 HStack(spacing: 14) {
                     thumbnail
                     details
                     Spacer(minLength: 6)
+                    trailing
                 }
+                .padding(.vertical, 13)
+                .padding(.horizontal, 14)
+                .frame(maxHeight: .infinity)
+                .background(Brand.card, in: .rect(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Brand.paperDeep, lineWidth: 1))
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
-            switch job.status {
-            case .done:
+            if job.status == .done {
                 // Only a finished sheet has a timeline to practise with.
                 Button(action: practice) {
                     KeyboardIcon()
                         .foregroundStyle(Brand.ink)
-                        .frame(width: 28, height: 19)
-                        .frame(width: 44, height: 44)
+                        .frame(width: 30, height: 20)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Brand.card, in: .rect(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Brand.paperDeep, lineWidth: 1))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .frame(width: Self.practiceWidth)
                 .accessibilityLabel("Practice \(job.displayName)")
-
-                Button(action: open) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Brand.hairline)
-                        .frame(width: 22, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityHidden(true)
-
-            case .failed:
-                Text("Retry")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Brand.ink)
-                    .padding(.horizontal, 16)
-                    .frame(height: 44)
-                    .overlay(Capsule().stroke(Brand.hairline, lineWidth: 1))
-
-            default:
-                EmptyView()
+            } else {
+                // Keeps the space, so every card lines up along the right.
+                Color.clear
+                    .frame(width: Self.practiceWidth)
+                    .accessibilityHidden(true)
             }
         }
-        .padding(.vertical, 13)
-        .padding(.leading, 14)
-        .padding(.trailing, 8)
-        .background(Brand.card, in: .rect(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Brand.paperDeep, lineWidth: 1))
+        // Lets both cards stretch to the taller one's height.
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder
+    private var trailing: some View {
+        switch job.status {
+        case .done:
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Brand.hairline)
+        case .failed:
+            Text("Retry")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Brand.ink)
+                .padding(.horizontal, 16)
+                .frame(height: 44)
+                .overlay(Capsule().stroke(Brand.hairline, lineWidth: 1))
+        default:
+            EmptyView()
+        }
     }
 
     private var details: some View {
