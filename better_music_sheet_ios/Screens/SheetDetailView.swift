@@ -3,10 +3,12 @@ import SwiftUI
 /// One sheet, from "still being recognised" through to something you can read.
 struct SheetDetailView: View {
     @State private var model: SheetDetailModel
+    @State private var player: PlayerModel
     @Environment(\.scenePhase) private var scenePhase
 
     init(route: SheetRoute, job: AnnotationJob? = nil) {
         _model = State(initialValue: SheetDetailModel(route: route, job: job))
+        _player = State(initialValue: PlayerModel(jobID: route.jobID))
     }
 
     var body: some View {
@@ -20,7 +22,18 @@ struct SheetDetailView: View {
                 ProgressView().tint(Brand.accent)
             case .ready:
                 if let data = model.pdfData {
-                    PDFKitView(data: data).ignoresSafeArea(edges: .bottom)
+                    ZStack(alignment: .bottom) {
+                        SheetPDFView(data: data,
+                                     highlightedMeasure: player.highlightedMeasure,
+                                     playhead: player.playhead) { point, page in
+                            player.handleTap(at: point, page: page)
+                        }
+                        .ignoresSafeArea(edges: .bottom)
+
+                        TransportBar(player: player)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 12)
+                    }
                 }
             case .failed(let message):
                 FailureView(title: model.title, message: message)
@@ -44,6 +57,16 @@ struct SheetDetailView: View {
             guard scenePhase == .active else { return }
             await model.run()
         }
+        .task(id: model.stage == .ready) {
+            guard model.stage == .ready else { return }
+            await player.load()
+        }
+        // Without background audio the system suspends the engine, so pause
+        // cleanly instead of resuming onto a stale clock.
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { player.pause() }
+        }
+        .onDisappear { player.stop() }
     }
 }
 

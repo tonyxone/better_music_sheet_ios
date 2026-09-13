@@ -118,15 +118,19 @@ keeps its generated labels.
 | Tempo clock and tempo map | Implemented, tested |
 | Corrections engine | Implemented, tested |
 | Sheet geometry and playhead placement | Implemented, tested |
-| Library screen | Implemented |
-| Ingest (scan, files, photos, share) | Designed |
-| Processing feedback, Live Activity | Designed |
-| Read mode (PDFKit) | Designed |
+| Playback schedule and synthesizer | Implemented, tested |
+| Library screen | Implemented, verified on iPhone |
+| Upload from Files and Photos | Implemented, tested, verified on iPhone |
+| Processing progress | Implemented, verified on iPhone |
+| Annotated PDF viewer | Implemented, verified on iPhone |
+| Playback with measure highlight and playhead | Implemented, not yet verified on device |
+| Camera scan, share extension | Designed |
+| Live Activity, notifications | Designed |
 | Practice mode (keyboard, note roll) | Designed |
-| Audio engine | Designed |
+| Sampled piano sound | Designed |
 | Sign-in | Designed |
 
-65 tests across 9 suites currently pass.
+115 tests across 15 suites currently pass.
 
 ---
 
