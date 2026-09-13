@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# The design canvas is seeded from the .dc.html artboards beside it; the
+# published page is a ~2MB generated bundle, not source.
+design/bettermusicsheet-ios.html

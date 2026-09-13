@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600&family=Work+Sans:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Work Sans', system-ui, sans-serif; }
+    a { color: #A83C34; } a:hover { color: #8C4A1F; }
+    .grp { font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #A2917B; padding: 0 6px 6px; }
+    .card { background: #FFFDF8; border: 1px solid #F0E4CE; border-radius: 16px; overflow: hidden; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 11px 15px; min-height: 46px; }
+    .sep { height: 1px; background: #F0E4CE; margin-left: 15px; }
+    .val { font-size: 14px; color: #7A6753; }
+    .ttl { font-size: 15px; flex: 1; min-width: 0; }
+    .sub { font-size: 12px; color: #7A6753; margin-top: 2px; }
+    .sw { width: 51px; height: 31px; border-radius: 999px; position: relative; flex: none; }
+    .knob { position: absolute; top: 2px; width: 27px; height: 27px; border-radius: 999px; background: #fff; box-shadow: 0 1px 3px rgba(46,33,23,0.22); }
+    .tap { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; background: #FAF3E6; color: #2E2117; display: flex; flex-direction: column; overflow: hidden;">
+
+  <div style="height: 54px; flex: none;"></div>
+  <div style="flex: none; display: flex; align-items: center; height: 46px; padding: 0 8px;">
+    <div class="tap">
+      <svg width="11" height="18" viewBox="0 0 8 14" fill="none" stroke="#A83C34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1L1 7l6 6"></path></svg>
+    </div>
+  </div>
+  <div style="flex: none; padding: 0 20px 14px; font-family: 'Spectral', serif; font-size: 28px; font-weight: 600;">Settings</div>
+
+  <div style="flex: 1; min-height: 0; padding: 0 16px; display: flex; flex-direction: column; gap: 14px; overflow: hidden;">
+
+    <div style="flex: none;">
+      <div class="grp">Account</div>
+      <div class="card">
+        <div class="row">
+          <div style="width: 42px; height: 42px; flex: none; border-radius: 999px; background: #F5E7D4; display: flex; align-items: center; justify-content: center; font-family: 'Spectral', serif; font-size: 17px; font-weight: 600; color: #8C4A1F;">A</div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 15.5px; font-weight: 600;">Ada Bauer</div>
+            <div class="sub">ada@example.com</div>
+          </div>
+          <div style="font-size: 14px; font-weight: 600; color: #A83C34;">Sign out</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex: none;">
+      <div class="grp">Labels on new sheets</div>
+      <div class="card">
+        <div class="row"><div class="ttl">Style</div><div class="val">Unicode &#9837; &#9839;</div>
+          <svg width="7" height="12" viewBox="0 0 8 14" fill="none" stroke="#C0B098" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l6 6-6 6"></path></svg></div>
+        <div class="sep"></div>
+        <div class="row"><div class="ttl">Size</div><div class="val">Standard</div>
+          <svg width="7" height="12" viewBox="0 0 8 14" fill="none" stroke="#C0B098" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l6 6-6 6"></path></svg></div>
+        <div class="sep"></div>
+        <div class="row"><div class="ttl">Octave numbers<div class="sub">B&#9837;4 instead of B&#9837;</div></div>
+          <div class="sw" style="background: #E4D6B8;"><div class="knob" style="left: 2px;"></div></div></div>
+        <div class="sep"></div>
+        <div class="row"><div class="ttl">Re-scan faint pages<div class="sub">Slower, but recovers poor scans</div></div>
+          <div class="sw" style="background: #5C7A4E;"><div class="knob" style="right: 2px;"></div></div></div>
+      </div>
+    </div>
+
+    <div style="flex: none;">
+      <div class="grp">Playback</div>
+      <div class="card">
+        <div class="row"><div class="ttl">Instrument</div><div class="val">Grand piano</div>
+          <svg width="7" height="12" viewBox="0 0 8 14" fill="none" stroke="#C0B098" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l6 6-6 6"></path></svg></div>
+        <div class="sep"></div>
+        <div class="row"><div class="ttl">Count-in</div><div class="val">1 bar</div>
+          <svg width="7" height="12" viewBox="0 0 8 14" fill="none" stroke="#C0B098" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l6 6-6 6"></path></svg></div>
+        <div class="sep"></div>
+        <div class="row"><div class="ttl">Show key names</div>
+          <div class="sw" style="background: #E4D6B8;"><div class="knob" style="left: 2px;"></div></div></div>
+        <div class="sep"></div>
+        <div class="row"><div class="ttl">Keep screen awake</div>
+          <div class="sw" style="background: #5C7A4E;"><div class="knob" style="right: 2px;"></div></div></div>
+      </div>
+    </div>
+
+    <div style="flex: none;">
+      <div class="grp">Appearance</div>
+      <div class="card">
+        <div class="row"><div class="ttl">Theme<div class="sub">Dark surround at night — the page stays white</div></div><div class="val">Paper</div>
+          <svg width="7" height="12" viewBox="0 0 8 14" fill="none" stroke="#C0B098" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l6 6-6 6"></path></svg></div>
+      </div>
+    </div>
+
+  </div>
+  <div style="flex: none; height: 24px;"></div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600&family=Work+Sans:wght@400;500;600&family=Noto+Music&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Work Sans', system-ui, sans-serif; }
+    a { color: #A83C34; } a:hover { color: #8C4A1F; }
+    .clef { font-family: 'Noto Music', 'Segoe UI Symbol', serif; fill: #1D1710; }
+    .lbl { font-family: 'Work Sans', sans-serif; font-size: 8px; font-weight: 600; fill: #15110C;
+           paint-order: stroke; stroke: #FFFFFF; stroke-width: 2.2; stroke-linejoin: round; text-anchor: middle; }
+    .stf { stroke: #2A2419; stroke-width: 0.8; }
+    .stem { stroke: #1D1710; stroke-width: 1.3; }
+    .nh { fill: #1D1710; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; background: #FAF3E6; color: #2E2117; position: relative; overflow: hidden;">
+
+  <div style="height: 54px;"></div>
+  <div style="display: flex; align-items: center; gap: 4px; height: 46px; padding: 0 8px;">
+    <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none;"><svg width="11" height="18" viewBox="0 0 8 14" fill="none" stroke="#A83C34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1L1 7l6 6"></path></svg></div>
+    <div style="flex: 1; font-family: 'Spectral', serif; font-size: 17px; font-weight: 600;">Menuet in G</div>
+  </div>
+
+  <!-- sheet, with one note selected -->
+  <div style="padding: 6px 16px 0;">
+    <div style="background: #FFFFFF; border-radius: 8px; box-shadow: 0 10px 30px rgba(46,33,23,0.10); overflow: hidden; line-height: 0;">
+      <svg viewBox="0 0 360 212" width="100%" style="display: block;">
+        <g class="stf">
+          <line x1="24" y1="60" x2="344" y2="60"></line><line x1="24" y1="68" x2="344" y2="68"></line>
+          <line x1="24" y1="76" x2="344" y2="76"></line><line x1="24" y1="84" x2="344" y2="84"></line>
+          <line x1="24" y1="92" x2="344" y2="92"></line>
+          <line x1="24" y1="150" x2="344" y2="150"></line><line x1="24" y1="158" x2="344" y2="158"></line>
+          <line x1="24" y1="166" x2="344" y2="166"></line><line x1="24" y1="174" x2="344" y2="174"></line>
+          <line x1="24" y1="182" x2="344" y2="182"></line>
+        </g>
+        <path d="M18 60 C 10 76, 10 84, 16 121 C 10 158, 10 166, 18 182" fill="none" stroke="#1D1710" stroke-width="1.6"></path>
+        <g style="stroke: #2A2419; stroke-width: 1.1;">
+          <line x1="24" y1="60" x2="24" y2="182"></line>
+          <line x1="168" y1="60" x2="168" y2="92"></line><line x1="168" y1="150" x2="168" y2="182"></line>
+          <line x1="256" y1="60" x2="256" y2="92"></line><line x1="256" y1="150" x2="256" y2="182"></line>
+          <line x1="344" y1="60" x2="344" y2="92"></line><line x1="344" y1="150" x2="344" y2="182"></line>
+        </g>
+        <text class="clef" x="30" y="84" style="font-size: 32px;">&#119070;</text>
+        <text class="clef" x="30" y="158" style="font-size: 32px;">&#119074;</text>
+
+        <rect x="168" y="52" width="88" height="138" rx="4" fill="rgba(168,60,52,0.10)" stroke="#E0D2B8" stroke-width="1"></rect>
+
+        <g class="nh">
+          <ellipse cx="90" cy="68" rx="4.6" ry="3.5" transform="rotate(-18 90 68)"></ellipse>
+          <ellipse cx="124" cy="84" rx="4.6" ry="3.5" transform="rotate(-18 124 84)"></ellipse>
+          <ellipse cx="182" cy="68" rx="4.6" ry="3.5" transform="rotate(-18 182 68)"></ellipse>
+          <ellipse cx="236" cy="84" rx="4.6" ry="3.5" transform="rotate(-18 236 84)"></ellipse>
+          <ellipse cx="280" cy="72" rx="4.6" ry="3.5" transform="rotate(-18 280 72)"></ellipse>
+          <ellipse cx="316" cy="64" rx="4.6" ry="3.5" transform="rotate(-18 316 64)"></ellipse>
+        </g>
+        <g class="stem">
+          <line x1="94.4" y1="67" x2="94.4" y2="44"></line><line x1="128.4" y1="83" x2="128.4" y2="60"></line>
+          <line x1="186.4" y1="67" x2="186.4" y2="44"></line><line x1="240.4" y1="83" x2="240.4" y2="60"></line>
+          <line x1="284.4" y1="71" x2="284.4" y2="48"></line><line x1="320.4" y1="63" x2="320.4" y2="40"></line>
+        </g>
+        <g class="lbl">
+          <text x="90" y="32">D</text><text x="124" y="32">G</text><text x="182" y="32">D</text>
+          <text x="236" y="32">G</text><text x="280" y="32">C</text><text x="316" y="32">E</text>
+        </g>
+        <g class="nh">
+          <ellipse cx="92" cy="174" rx="4.6" ry="3.5" transform="rotate(-18 92 174)"></ellipse>
+          <ellipse cx="150" cy="166" rx="4.6" ry="3.5" transform="rotate(-18 150 166)"></ellipse>
+          <ellipse cx="212" cy="178" rx="4.6" ry="3.5" transform="rotate(-18 212 178)"></ellipse>
+          <ellipse cx="290" cy="170" rx="4.6" ry="3.5" transform="rotate(-18 290 170)"></ellipse>
+        </g>
+        <g class="stem">
+          <line x1="96.4" y1="173" x2="96.4" y2="150"></line><line x1="154.4" y1="165" x2="154.4" y2="142"></line>
+          <line x1="216.4" y1="177" x2="216.4" y2="154"></line><line x1="294.4" y1="169" x2="294.4" y2="146"></line>
+        </g>
+        <g class="lbl">
+          <text x="92" y="204">B</text><text x="150" y="204">D</text><text x="212" y="204">A</text><text x="290" y="204">C</text>
+        </g>
+
+        <!-- the selected note -->
+        <circle cx="182" cy="68" r="11" fill="none" stroke="#A83C34" stroke-width="2"></circle>
+        <circle cx="182" cy="68" r="15.5" fill="none" stroke="#A83C34" stroke-width="1" opacity="0.35"></circle>
+      </svg>
+    </div>
+  </div>
+
+  <!-- inspector -->
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FAF3E6; border-radius: 28px 28px 0 0; box-shadow: 0 -18px 50px rgba(46,33,23,0.22); display: flex; flex-direction: column; padding: 10px 18px 28px; gap: 12px;">
+
+    <div style="align-self: center; width: 36px; height: 5px; border-radius: 999px; background: #C0B098;"></div>
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+      <div>
+        <div style="font-family: 'Spectral', serif; font-size: 22px; font-weight: 600;">D5 in measure 12</div>
+        <div style="font-size: 12.5px; color: #7A6753; margin-top: 3px;">beat 1 · upper staff · recognized from the notehead</div>
+      </div>
+    </div>
+
+    <!-- pitch wheel -->
+    <div>
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #7A6753; margin-bottom: 7px;">Pitch</div>
+      <div style="position: relative; height: 104px; background: #FFFDF8; border: 1px solid #F0E4CE; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="position: absolute; left: 8px; right: 8px; top: 50%; transform: translateY(-50%); height: 36px; border-radius: 9px; background: #F0E4CE;"></div>
+        <div style="position: relative; font-size: 15px; color: #A99A86; height: 28px; line-height: 28px;">C&#9839;5</div>
+        <div style="position: relative; font-size: 19px; font-weight: 600; height: 36px; line-height: 36px;">D5</div>
+        <div style="position: relative; font-size: 15px; color: #A99A86; height: 28px; line-height: 28px;">E&#9837;5</div>
+      </div>
+    </div>
+
+    <!-- hand -->
+    <div>
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #7A6753; margin-bottom: 7px;">Hand</div>
+      <div style="display: flex; gap: 4px; padding: 4px; background: #F0E4CE; border-radius: 12px;">
+        <div style="flex: 1; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 13.5px; font-weight: 500; color: #7A6753;">Staff color</div>
+        <div style="flex: 1; height: 44px; border-radius: 10px; background: #FFFDF8; box-shadow: 0 1px 3px rgba(46,33,23,0.14); display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 13.5px; font-weight: 600;">
+          <span style="width: 9px; height: 9px; border-radius: 2px; background: #2f6fb5;"></span>Right
+        </div>
+        <div style="flex: 1; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 13.5px; font-weight: 500; color: #7A6753;">
+          <span style="width: 9px; height: 9px; border-radius: 2px; background: #3e8e5a;"></span>Left
+        </div>
+      </div>
+    </div>
+
+    <!-- beat + duration -->
+    <div style="display: flex; gap: 10px;">
+      <div style="flex: 1; background: #FFFDF8; border: 1px solid #F0E4CE; border-radius: 14px; padding: 11px 12px;">
+        <div style="font-size: 12px; color: #7A6753; margin-bottom: 8px;">Beat</div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="width: 44px; height: 44px; border-radius: 11px; background: #F0E4CE; display: flex; align-items: center; justify-content: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" stroke="#2E2117" stroke-width="2.2" stroke-linecap="round"><path d="M6 12h12"></path></svg>
+          </div>
+          <div style="font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums;">1.0</div>
+          <div style="width: 44px; height: 44px; border-radius: 11px; background: #F0E4CE; display: flex; align-items: center; justify-content: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" stroke="#2E2117" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"></path></svg>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; background: #FFFDF8; border: 1px solid #F0E4CE; border-radius: 14px; padding: 11px 12px;">
+        <div style="font-size: 12px; color: #7A6753; margin-bottom: 8px;">Length</div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="width: 44px; height: 44px; border-radius: 11px; background: #F0E4CE; display: flex; align-items: center; justify-content: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" stroke="#2E2117" stroke-width="2.2" stroke-linecap="round"><path d="M6 12h12"></path></svg>
+          </div>
+          <div style="font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums;">1.0</div>
+          <div style="width: 44px; height: 44px; border-radius: 11px; background: #F0E4CE; display: flex; align-items: center; justify-content: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" stroke="#2E2117" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"></path></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="font-size: 11.5px; color: #7A6753; line-height: 1.45; flex: 1; text-wrap: pretty;">
+        Applies to every repeat of this note. Saved on this device — the exported PDF keeps its printed labels.
+      </div>
+      <div style="flex: none; height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #C0B098; font-size: 13.5px; font-weight: 600; display: flex; align-items: center;">Reset</div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

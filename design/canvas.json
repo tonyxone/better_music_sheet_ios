@@ -1,0 +1,26 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",          "x": 0,    "y": 0,    "w": 390, "h": 844, "title": "Library" },
+    { "file": "AddSheet.dc.html",      "x": 480,  "y": 0,    "w": 390, "h": 844, "title": "Add sheet" },
+    { "file": "Scan.dc.html",          "x": 960,  "y": 0,    "w": 390, "h": 844, "title": "Scan pages" },
+    { "file": "Processing.dc.html",    "x": 1440, "y": 0,    "w": 390, "h": 844, "title": "While it processes" },
+    { "file": "ReadMode.dc.html",      "x": 0,    "y": 1000, "w": 390, "h": 844, "title": "Read mode" },
+    { "file": "NoteInspector.dc.html", "x": 480,  "y": 1000, "w": 390, "h": 844, "title": "Fix a note" },
+    { "file": "Settings.dc.html",      "x": 960,  "y": 1000, "w": 390, "h": 844, "title": "Settings" },
+    { "file": "SignIn.dc.html",        "x": 1440, "y": 1000, "w": 390, "h": 844, "title": "Sign in" },
+    { "file": "PracticeMode.dc.html",  "x": 0,    "y": 2000, "w": 844, "h": 390, "title": "Practice mode · landscape" }
+  ],
+  "annotations": [
+    { "id": "ia-library", "x": 1920, "y": 0, "w": 300,
+      "text": "Library-first, not upload-first.\n\nThe web opens on an upload form because a visitor arrives cold with a file. An installed app opens on your music. Adding is one accent capsule in thumb reach.\n\nReady sheets carry no status badge - only the states that need attention (processing, failed) say anything." },
+    { "id": "processing-live", "x": 1920, "y": 400, "w": 300,
+      "text": "No status page.\n\nUpload runs on a background URLSession; the job reports through a Live Activity and a notification. Close the app and you still get told.\n\nStage text is verbatim from the pipeline." },
+    { "id": "modes-read", "x": 1920, "y": 1000, "w": 300,
+      "text": "Read vs Practice.\n\nPortrait is for reading the sheet on a music stand: page full-width, one floating transport, keyboard out of the way.\n\nThe dimmed third line is the signed-out limit, visible before you hit it rather than as an error after." },
+    { "id": "inspector-note", "x": 1920, "y": 1400, "w": 300,
+      "text": "Corrections by direct manipulation: tap the wrong note on the sheet. The web's \"pick a measure, then pick from a dropdown\" indirection is gone." },
+    { "id": "practice-landscape", "x": 964, "y": 2000, "w": 320,
+      "text": "Landscape only, deliberately.\n\n88 keys across a 390pt portrait phone are 4pt wide - unreadable. Rotating is the mode switch.\n\nRoll lanes and key positions are generated from keyboard-layout.ts's real geometry, including the uneven black-key offsets, so what you see here is what the app would draw." }
+  ],
+  "launch": { "view": "canvas" }
+}
