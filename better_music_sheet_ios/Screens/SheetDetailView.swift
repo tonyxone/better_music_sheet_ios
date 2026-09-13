@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Reading one sheet, from "still being recognised" through to the annotated
-/// page. Playing it is a separate page, opened from here.
+/// page. Practising it is a separate page, opened from the toolbar.
 struct SheetDetailView: View {
     @State private var model: SheetDetailModel
     @Environment(\.scenePhase) private var scenePhase
@@ -20,13 +20,9 @@ struct SheetDetailView: View {
             case .loadingFile:
                 ProgressView().tint(Brand.accent)
             case .ready:
-                if let data = model.pdfData, let job = model.job {
-                    ZStack(alignment: .bottom) {
-                        SheetPDFView(data: data)
-                            .ignoresSafeArea(edges: .bottom)
-                        playButton(jobID: job.jobID, data: data)
-                            .padding(.bottom, 16)
-                    }
+                if let data = model.pdfData {
+                    SheetPDFView(data: data)
+                        .ignoresSafeArea(edges: .bottom)
                 }
             case .failed(let message):
                 FailureView(title: model.title, message: message)
@@ -35,10 +31,24 @@ struct SheetDetailView: View {
         .navigationTitle(model.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if model.stage == .ready, let url = model.exportURL() {
-                ToolbarItem(placement: .topBarTrailing) {
-                    ShareLink(item: url) {
-                        Image(systemName: "square.and.arrow.up")
+            if model.stage == .ready, let data = model.pdfData, let job = model.job {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    // Just left of the download, as on the web app's result page.
+                    NavigationLink {
+                        PracticeView(jobID: job.jobID, title: model.title, pdfData: data)
+                    } label: {
+                        KeyboardIcon()
+                            .foregroundStyle(Brand.ink)
+                            .frame(width: 26, height: 18)
+                    }
+                    .tint(Brand.ink)
+                    .accessibilityLabel("Practice")
+                    .accessibilityHint("Opens the sheet with the keyboard and falling notes")
+
+                    if let url = model.exportURL() {
+                        ShareLink(item: url) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
                     }
                 }
             }
@@ -50,21 +60,6 @@ struct SheetDetailView: View {
             guard scenePhase == .active else { return }
             await model.run()
         }
-    }
-
-    private func playButton(jobID: String, data: Data) -> some View {
-        NavigationLink {
-            PlayView(jobID: jobID, title: model.title, pdfData: data)
-        } label: {
-            Label("Play", systemImage: "pianokeys")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 28)
-                .frame(height: 52)
-                .background(Brand.accent, in: .capsule)
-                .shadow(color: Brand.accentDeep.opacity(0.32), radius: 12, y: 6)
-        }
-        .accessibilityHint("Opens the sheet with the keyboard and falling notes")
     }
 }
 

@@ -4,9 +4,16 @@ import Foundation
 /// than by a whole job, so a sheet that was just uploaded can be opened
 /// before the library has refreshed.
 nonisolated struct SheetRoute: Hashable, Sendable {
+    /// Which of a sheet's two pages to open.
+    enum Page: Hashable, Sendable {
+        case sheet
+        case practice
+    }
+
     let jobID: String
     /// What to show in the title bar until the real row arrives.
     let provisionalName: String
+    var page: Page = .sheet
 }
 
 /// Follows one sheet from wherever it is now to something you can read:

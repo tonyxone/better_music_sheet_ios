@@ -75,25 +75,22 @@ struct LibraryView: View {
             } else {
                 List {
                     ForEach(model.jobs) { job in
-                        // A plain button rather than a NavigationLink: inside a
-                        // List a link adds its own disclosure chevron outside
-                        // the card, doubling the one the row already draws.
-                        Button {
+                        SheetRow(job: job) {
                             path.append(SheetRoute(jobID: job.jobID, provisionalName: job.displayName))
-                        } label: {
-                            SheetRow(job: job)
+                        } practice: {
+                            path.append(SheetRoute(jobID: job.jobID, provisionalName: job.displayName,
+                                                   page: .practice))
                         }
-                        .buttonStyle(.plain)
-                            .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    Task { await model.delete(job) }
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
+                        .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                Task { await model.delete(job) }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
+                        }
                     }
                 }
                 .listStyle(.plain)
@@ -121,58 +118,95 @@ struct LibraryView: View {
 /// One sheet. A ready sheet says nothing about its status — only the states
 /// that need attention speak up, which is the point of a library you own
 /// rather than a job queue you are watching.
+///
+/// Two targets in one card, as in the web app's history: the sheet itself, and
+/// practising it. They are sibling buttons rather than one nested in another,
+/// which could not be tapped on its own.
 private struct SheetRow: View {
     let job: AnnotationJob
+    let open: () -> Void
+    let practice: () -> Void
 
     var body: some View {
-        HStack(spacing: 14) {
-            thumbnail
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(job.displayName)
-                    .font(Brand.title(17))
-                    .foregroundStyle(Brand.ink)
-                    .lineLimit(1)
-
-                switch job.status {
-                case .done:
-                    Text(meta).font(.system(size: 12.5)).foregroundStyle(Brand.inkSoft)
-                case .failed:
-                    Text(job.error ?? "Couldn't read this sheet")
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(Brand.danger)
-                        .lineLimit(2)
-                default:
-                    Text(job.stage ?? "Queued")
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(Brand.inkSoft)
-                    ProgressView()
-                        .progressViewStyle(.linear)
-                        .tint(Brand.accent)
-                        .frame(height: 3)
-                        .padding(.top, 3)
+        HStack(spacing: 4) {
+            Button(action: open) {
+                HStack(spacing: 14) {
+                    thumbnail
+                    details
+                    Spacer(minLength: 6)
                 }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
-            Spacer(minLength: 6)
+            switch job.status {
+            case .done:
+                // Only a finished sheet has a timeline to practise with.
+                Button(action: practice) {
+                    KeyboardIcon()
+                        .foregroundStyle(Brand.ink)
+                        .frame(width: 28, height: 19)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Practice \(job.displayName)")
 
-            if job.status == .failed {
+                Button(action: open) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Brand.hairline)
+                        .frame(width: 22, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHidden(true)
+
+            case .failed:
                 Text("Retry")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Brand.ink)
                     .padding(.horizontal, 16)
                     .frame(height: 44)
                     .overlay(Capsule().stroke(Brand.hairline, lineWidth: 1))
-            } else if job.status == .done {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Brand.hairline)
+
+            default:
+                EmptyView()
             }
         }
         .padding(.vertical, 13)
-        .padding(.horizontal, 14)
+        .padding(.leading, 14)
+        .padding(.trailing, 8)
         .background(Brand.card, in: .rect(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Brand.paperDeep, lineWidth: 1))
+    }
+
+    private var details: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(job.displayName)
+                .font(Brand.title(17))
+                .foregroundStyle(Brand.ink)
+                .lineLimit(1)
+
+            switch job.status {
+            case .done:
+                Text(meta).font(.system(size: 12.5)).foregroundStyle(Brand.inkSoft)
+            case .failed:
+                Text(job.error ?? "Couldn't read this sheet")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Brand.danger)
+                    .lineLimit(2)
+            default:
+                Text(job.stage ?? "Queued")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Brand.inkSoft)
+                ProgressView()
+                    .progressViewStyle(.linear)
+                    .tint(Brand.accent)
+                    .frame(height: 3)
+                    .padding(.top, 3)
+            }
+        }
     }
 
     @ViewBuilder

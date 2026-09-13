@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// One stack, rooted in the library. Play is a mode of a sheet rather than a
-/// separate destination, so there is no tab bar here.
+/// One stack, rooted in the library. A sheet has two pages — reading it and
+/// practising it — and either can be opened straight from the library.
 struct RootView: View {
     @State private var path: [SheetRoute] = []
 
@@ -9,7 +9,12 @@ struct RootView: View {
         NavigationStack(path: $path) {
             LibraryView(path: $path)
                 .navigationDestination(for: SheetRoute.self) { route in
-                    SheetDetailView(route: route)
+                    switch route.page {
+                    case .sheet:
+                        SheetDetailView(route: route)
+                    case .practice:
+                        PracticeView(jobID: route.jobID, title: route.provisionalName)
+                    }
                 }
         }
         .tint(Brand.accent)
