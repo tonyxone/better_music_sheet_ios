@@ -3,6 +3,7 @@ import SwiftUI
 /// One sheet, from "still being recognised" through to something you can read.
 struct SheetDetailView: View {
     @State private var model: SheetDetailModel
+    @Environment(\.scenePhase) private var scenePhase
 
     init(route: SheetRoute, job: AnnotationJob? = nil) {
         _model = State(initialValue: SheetDetailModel(route: route, job: job))
@@ -36,7 +37,13 @@ struct SheetDetailView: View {
                 }
             }
         }
-        .task { await model.run() }
+        // Restarted each time the app comes back to the foreground, so a
+        // sheet that finished while the phone was locked shows up at once,
+        // and a PDF download that failed then gets another try.
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            await model.run()
+        }
     }
 }
 

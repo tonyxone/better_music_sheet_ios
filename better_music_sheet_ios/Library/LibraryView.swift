@@ -5,7 +5,10 @@ import SwiftUI
 struct LibraryView: View {
     @State private var model = LibraryModel()
     @State private var showingAddSheet = false
+    /// A sheet to open once the add panel has finished closing.
+    @State private var pendingRoute: SheetRoute?
     @Binding var path: [SheetRoute]
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -30,16 +33,31 @@ struct LibraryView: View {
                 .accessibilityLabel("Account")
             }
         }
-        .task { await model.load() }
+        // Reloads on appearing, and again whenever the app returns to the
+        // foreground — a sheet can finish while the phone is locked.
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            await model.load()
+        }
+        .task(id: model.hasWorkInProgress) {
+            await model.pollWhileWorking()
+        }
         .refreshable { await model.load() }
-        .sheet(isPresented: $showingAddSheet) {
+        .sheet(isPresented: $showingAddSheet, onDismiss: openPendingSheet) {
             AddSheetView { jobID in
-                // Open the new sheet straight away; it will poll its own way
-                // from "queued" to something readable.
-                path.append(SheetRoute(jobID: jobID, provisionalName: "New sheet"))
+                pendingRoute = SheetRoute(jobID: jobID, provisionalName: "New sheet")
                 Task { await model.load() }
             }
         }
+    }
+
+    /// Pushed only after the panel has gone. SwiftUI often drops a navigation
+    /// change made while a sheet is mid-dismissal, which left a fresh upload
+    /// sitting unopened on the library instead of on its polling screen.
+    private func openPendingSheet() {
+        guard let route = pendingRoute else { return }
+        pendingRoute = nil
+        path.append(route)
     }
 
     @ViewBuilder

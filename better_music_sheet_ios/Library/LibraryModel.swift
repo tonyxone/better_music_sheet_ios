@@ -20,6 +20,26 @@ final class LibraryModel {
 
     var hasWorkInProgress: Bool { jobs.contains { $0.status.isInProgress } }
 
+    private static let pollInterval: Duration = .seconds(3)
+
+    /// Rows show each job's stage inline, so while anything is still being
+    /// recognised the list has to keep asking. Without this a row froze on
+    /// whatever stage it had when the list was loaded — typically "Waiting
+    /// for a recognition worker" — long after the sheet was done.
+    ///
+    /// A failed refresh keeps the rows on screen and still counts as work in
+    /// progress, so a dropped connection is simply retried on the next tick.
+    func pollWhileWorking() async {
+        while hasWorkInProgress {
+            do {
+                try await Task.sleep(for: Self.pollInterval)
+            } catch {
+                return  // the view went away
+            }
+            await load()
+        }
+    }
+
     func load() async {
         if jobs.isEmpty { state = .loading }
         do {

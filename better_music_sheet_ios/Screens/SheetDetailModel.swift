@@ -41,28 +41,41 @@ final class SheetDetailModel {
 
     var title: String { job?.displayName ?? route.provisionalName }
 
+    /// Follows the job until it reaches a final state, then fetches the PDF.
+    ///
+    /// Safe to call again — the view restarts it whenever the app returns to
+    /// the foreground — because it always begins by asking for the current
+    /// state rather than trusting whatever is on screen.
     func run() async {
-        if job == nil, await refresh() == false { return }
+        guard await refresh() else { return }
 
-        while job?.status.isInProgress == true {
+        while job == nil || job?.status.isInProgress == true {
             do {
                 try await Task.sleep(for: Self.pollInterval)
             } catch {
                 return  // the view went away
             }
-            if await refresh() == false { return }
+            guard await refresh() else { return }
         }
 
         guard job?.status == .done else { return }
         await loadFile()
     }
 
-    @discardableResult
+    /// Returns false only when polling should stop for good.
+    ///
+    /// A transport failure is not a verdict on the job — most often it is the
+    /// phone locking mid-recognition — so it leaves the current stage on
+    /// screen and lets the next tick try again. Previously one dropped request
+    /// ended polling, and a sheet whose very first check failed stayed on
+    /// "Queued" forever, because a nil job never entered the loop.
     private func refresh() async -> Bool {
         do {
             let fetched: AnnotationJob = try await client.get("/api/sheets/\(route.jobID)")
             job = fetched
             apply(fetched)
+            return true
+        } catch APIError.transport(_) {
             return true
         } catch {
             stage = .failed((error as? APIError)?.errorDescription ?? error.localizedDescription)
