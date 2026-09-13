@@ -123,14 +123,16 @@ keeps its generated labels.
 | Upload from Files and Photos | Implemented, tested, verified on iPhone |
 | Processing progress | Implemented, verified on iPhone |
 | Annotated PDF viewer | Implemented, verified on iPhone |
-| Playback with measure highlight and playhead | Implemented, not yet verified on device |
+| Playback with measure highlight and playhead | Implemented, verified on iPhone |
+| Keyboard geometry | Implemented, tested |
+| Keyboard, step, scrub, speed and tempo controls | Implemented, not yet verified on device |
 | Camera scan, share extension | Designed |
 | Live Activity, notifications | Designed |
-| Practice mode (keyboard, note roll) | Designed |
+| Falling-note roll | Designed |
 | Sampled piano sound | Designed |
 | Sign-in | Designed |
 
-115 tests across 15 suites currently pass.
+127 tests across 16 suites currently pass.
 
 ---
 

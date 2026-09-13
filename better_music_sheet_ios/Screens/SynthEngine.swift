@@ -14,6 +14,7 @@ nonisolated final class SynthRenderState: @unchecked Sendable {
     /// Frames rendered since the engine started: the clock that sound, the
     /// highlight and the playhead are all timed against.
     let renderedFrames = Atomic<Int64>(0)
+    let muted = Atomic<Bool>(false)
 
     init(sampleRate: Double) {
         mixer = SynthMixer(sampleRate: sampleRate)
@@ -30,6 +31,11 @@ nonisolated final class SynthRenderState: @unchecked Sendable {
             mixer.render(into: first, frameCount: count, startingAt: start)
             lock.unlock()
         } else {
+            first.update(repeating: 0, count: count)
+        }
+        if muted.load(ordering: .relaxed) {
+            // Rendered anyway, so voices, timing and the keyboard stay exactly
+            // as they would be; only the output is silenced.
             first.update(repeating: 0, count: count)
         }
         for index in 1..<buffers.count {
@@ -90,6 +96,10 @@ nonisolated final class SynthEngine: @unchecked Sendable {
         state.lock.lock()
         state.mixer.silence()
         state.lock.unlock()
+    }
+
+    func setMuted(_ muted: Bool) {
+        state.muted.store(muted, ordering: .relaxed)
     }
 
     /// The system stops the engine on an interruption — a call, another app

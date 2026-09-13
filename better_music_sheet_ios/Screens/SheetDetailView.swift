@@ -5,6 +5,7 @@ struct SheetDetailView: View {
     @State private var model: SheetDetailModel
     @State private var player: PlayerModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     init(route: SheetRoute, job: AnnotationJob? = nil) {
         _model = State(initialValue: SheetDetailModel(route: route, job: job))
@@ -22,17 +23,27 @@ struct SheetDetailView: View {
                 ProgressView().tint(Brand.accent)
             case .ready:
                 if let data = model.pdfData {
-                    ZStack(alignment: .bottom) {
+                    // The web app's Play page: the sheet, the controls, and
+                    // the keyboard showing what is held right now.
+                    VStack(spacing: 0) {
                         SheetPDFView(data: data,
                                      highlightedMeasure: player.highlightedMeasure,
                                      playhead: player.playhead) { point, page in
                             player.handleTap(at: point, page: page)
                         }
-                        .ignoresSafeArea(edges: .bottom)
 
                         TransportBar(player: player)
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 12)
+
+                        if player.availability == .ready {
+                            // A phone in portrait gets just the octaves the
+                            // piece uses, so the keys stay big enough to read;
+                            // wider screens have room for all 88.
+                            KeyboardView(range: horizontalSizeClass == .regular
+                                            ? PlayerModel.fullKeyRange
+                                            : player.pieceKeyRange,
+                                         litKeys: player.litKeys,
+                                         showNames: player.showKeyNames)
+                        }
                     }
                 }
             case .failed(let message):
