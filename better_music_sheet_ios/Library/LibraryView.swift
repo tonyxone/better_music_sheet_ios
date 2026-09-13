@@ -75,8 +75,12 @@ struct LibraryView: View {
             } else {
                 List {
                     ForEach(model.jobs) { job in
-                        NavigationLink(value: SheetRoute(jobID: job.jobID,
-                                                         provisionalName: job.displayName)) {
+                        // A plain button rather than a NavigationLink: inside a
+                        // List a link adds its own disclosure chevron outside
+                        // the card, doubling the one the row already draws.
+                        Button {
+                            path.append(SheetRoute(jobID: job.jobID, provisionalName: job.displayName))
+                        } label: {
                             SheetRow(job: job)
                         }
                         .buttonStyle(.plain)

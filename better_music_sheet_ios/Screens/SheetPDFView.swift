@@ -9,11 +9,11 @@ import SwiftUI
 /// zoom with no tracking code here.
 struct SheetPDFView: UIViewRepresentable {
     let data: Data
-    let highlightedMeasure: TimelineMeasure?
-    let playhead: PlayheadOnset?
+    var highlightedMeasure: TimelineMeasure? = nil
+    var playhead: PlayheadOnset? = nil
     /// A tap on the page, in the page's top-down point space, with its 1-based
-    /// page number.
-    let onTap: @MainActor (CGPoint, Int) -> Void
+    /// page number. Nil on the reading page, where a tap does nothing.
+    var onTap: (@MainActor (CGPoint, Int) -> Void)? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 

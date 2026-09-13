@@ -1,15 +1,13 @@
 import SwiftUI
 
-/// One sheet, from "still being recognised" through to something you can read.
+/// Reading one sheet, from "still being recognised" through to the annotated
+/// page. Playing it is a separate page, opened from here.
 struct SheetDetailView: View {
     @State private var model: SheetDetailModel
-    @State private var player: PlayerModel
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     init(route: SheetRoute, job: AnnotationJob? = nil) {
         _model = State(initialValue: SheetDetailModel(route: route, job: job))
-        _player = State(initialValue: PlayerModel(jobID: route.jobID))
     }
 
     var body: some View {
@@ -22,46 +20,12 @@ struct SheetDetailView: View {
             case .loadingFile:
                 ProgressView().tint(Brand.accent)
             case .ready:
-                if let data = model.pdfData {
-                    // A phone in portrait gets just the octaves the piece uses,
-                    // so keys and lanes stay big enough to read; wider screens
-                    // have room for all 88. The roll and keyboard always share
-                    // one range, or the lanes would drift off their keys.
-                    let keyRange = horizontalSizeClass == .regular
-                        ? PlayerModel.fullKeyRange
-                        : player.pieceKeyRange
-
-                    if player.availability == .ready, let notes = player.timeline?.notes {
-                        // The web app's Play page — sheet, controls, falling
-                        // notes, keyboard — with every section adjustable.
-                        PlayLayout(keyboardHeight: { width in
-                            KeyboardView.naturalHeight(width: width, range: keyRange)
-                        }) {
-                            SheetPDFView(data: data,
-                                         highlightedMeasure: player.highlightedMeasure,
-                                         playhead: player.playhead) { point, page in
-                                player.handleTap(at: point, page: page)
-                            }
-                        } controls: {
-                            TransportBar(player: player)
-                        } roll: {
-                            NoteRollView(player: player, notes: notes, range: keyRange)
-                        } keyboard: {
-                            KeyboardView(range: keyRange,
-                                         litKeys: player.litKeys,
-                                         showNames: player.showKeyNames)
-                        }
-                    } else {
-                        // Still loading playback, or none for this sheet: the
-                        // page, with the controls area saying which.
-                        VStack(spacing: 0) {
-                            SheetPDFView(data: data,
-                                         highlightedMeasure: player.highlightedMeasure,
-                                         playhead: player.playhead) { point, page in
-                                player.handleTap(at: point, page: page)
-                            }
-                            TransportBar(player: player)
-                        }
+                if let data = model.pdfData, let job = model.job {
+                    ZStack(alignment: .bottom) {
+                        SheetPDFView(data: data)
+                            .ignoresSafeArea(edges: .bottom)
+                        playButton(jobID: job.jobID, data: data)
+                            .padding(.bottom, 16)
                     }
                 }
             case .failed(let message):
@@ -86,16 +50,21 @@ struct SheetDetailView: View {
             guard scenePhase == .active else { return }
             await model.run()
         }
-        .task(id: model.stage == .ready) {
-            guard model.stage == .ready else { return }
-            await player.load()
+    }
+
+    private func playButton(jobID: String, data: Data) -> some View {
+        NavigationLink {
+            PlayView(jobID: jobID, title: model.title, pdfData: data)
+        } label: {
+            Label("Play", systemImage: "pianokeys")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 28)
+                .frame(height: 52)
+                .background(Brand.accent, in: .capsule)
+                .shadow(color: Brand.accentDeep.opacity(0.32), radius: 12, y: 6)
         }
-        // Without background audio the system suspends the engine, so pause
-        // cleanly instead of resuming onto a stale clock.
-        .onChange(of: scenePhase) { _, phase in
-            if phase != .active { player.pause() }
-        }
-        .onDisappear { player.stop() }
+        .accessibilityHint("Opens the sheet with the keyboard and falling notes")
     }
 }
 
