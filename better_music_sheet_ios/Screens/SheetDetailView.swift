@@ -23,26 +23,44 @@ struct SheetDetailView: View {
                 ProgressView().tint(Brand.accent)
             case .ready:
                 if let data = model.pdfData {
-                    // The web app's Play page: the sheet, the controls, and
-                    // the keyboard showing what is held right now.
-                    VStack(spacing: 0) {
-                        SheetPDFView(data: data,
-                                     highlightedMeasure: player.highlightedMeasure,
-                                     playhead: player.playhead) { point, page in
-                            player.handleTap(at: point, page: page)
-                        }
+                    // A phone in portrait gets just the octaves the piece uses,
+                    // so keys and lanes stay big enough to read; wider screens
+                    // have room for all 88. The roll and keyboard always share
+                    // one range, or the lanes would drift off their keys.
+                    let keyRange = horizontalSizeClass == .regular
+                        ? PlayerModel.fullKeyRange
+                        : player.pieceKeyRange
 
-                        TransportBar(player: player)
-
-                        if player.availability == .ready {
-                            // A phone in portrait gets just the octaves the
-                            // piece uses, so the keys stay big enough to read;
-                            // wider screens have room for all 88.
-                            KeyboardView(range: horizontalSizeClass == .regular
-                                            ? PlayerModel.fullKeyRange
-                                            : player.pieceKeyRange,
+                    if player.availability == .ready, let notes = player.timeline?.notes {
+                        // The web app's Play page — sheet, controls, falling
+                        // notes, keyboard — with every section adjustable.
+                        PlayLayout(keyboardHeight: { width in
+                            KeyboardView.naturalHeight(width: width, range: keyRange)
+                        }) {
+                            SheetPDFView(data: data,
+                                         highlightedMeasure: player.highlightedMeasure,
+                                         playhead: player.playhead) { point, page in
+                                player.handleTap(at: point, page: page)
+                            }
+                        } controls: {
+                            TransportBar(player: player)
+                        } roll: {
+                            NoteRollView(player: player, notes: notes, range: keyRange)
+                        } keyboard: {
+                            KeyboardView(range: keyRange,
                                          litKeys: player.litKeys,
                                          showNames: player.showKeyNames)
+                        }
+                    } else {
+                        // Still loading playback, or none for this sheet: the
+                        // page, with the controls area saying which.
+                        VStack(spacing: 0) {
+                            SheetPDFView(data: data,
+                                         highlightedMeasure: player.highlightedMeasure,
+                                         playhead: player.playhead) { point, page in
+                                player.handleTap(at: point, page: page)
+                            }
+                            TransportBar(player: player)
                         }
                     }
                 }

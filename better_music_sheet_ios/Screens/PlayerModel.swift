@@ -2,7 +2,8 @@ import CoreGraphics
 import Foundation
 
 /// Plays a sheet, and reports where in the music playback is: for the measure
-/// highlight and playhead over the page, and the keys lit on the keyboard.
+/// highlight and playhead over the page, the falling notes, and the keys lit
+/// on the keyboard.
 @MainActor
 @Observable
 final class PlayerModel {
@@ -28,6 +29,7 @@ final class PlayerModel {
     private(set) var litKeys: [Int: Int] = [:]
     /// The keys this piece uses, rounded out to whole octaves.
     private(set) var pieceKeyRange = KeyboardLayout().fullRange
+    private(set) var timeline: Timeline?
 
     var showKeyNames = false
     private(set) var isMuted = false
@@ -35,8 +37,11 @@ final class PlayerModel {
     private(set) var speed: Double = 1
     /// A tempo override in quarter notes per minute, or nil for the score's own.
     private(set) var baseBPM: Double?
+    /// Whether anything has been played or stepped yet. Before that the
+    /// falling notes stay empty, rather than showing the opening bars already
+    /// sitting motionless at the keys.
+    private(set) var hasStarted = false
 
-    private var timeline: Timeline?
     private var geometry: SheetGeometry?
     private var engine: SynthEngine?
     private var clock: TempoClock?
@@ -106,7 +111,10 @@ final class PlayerModel {
         }
         availability = .loading
         do {
-            let loaded = try await files.timeline(jobID: jobID)
+            var loaded = try await files.timeline(jobID: jobID)
+            // Sorted once here: the falling notes binary-search them on every
+            // frame, and nothing else depends on the order they arrived in.
+            loaded.notes.sort { $0.startBeat < $1.startBeat }
             timeline = loaded
             geometry = SheetGeometry(timeline: loaded)
             onsetBeats = Array(Set(loaded.notes.map(\.startBeat))).sorted()
@@ -157,6 +165,7 @@ final class PlayerModel {
         startSeconds = clock.seconds(atBeat: schedule.windowStart)
         beat = schedule.windowStart
         isPlaying = true
+        hasStarted = true
         startTicker()
     }
 
@@ -180,6 +189,7 @@ final class PlayerModel {
         }
         beat = 0
         hasStepped = false
+        hasStarted = false
         publish(measure: nil, playhead: nil, keys: [:])
     }
 
@@ -220,6 +230,7 @@ final class PlayerModel {
             next = onsetBeats.last { $0 < beat - 1e-6 } ?? first
         }
         hasStepped = true
+        hasStarted = true
         seek(to: next)
         sound(struckAt: next, in: timeline)
     }
@@ -293,6 +304,21 @@ final class PlayerModel {
     }
 
     // MARK: - Clock
+
+    /// The position for the falling notes, read from the audio clock on every
+    /// frame, so they move continuously rather than in the thirty-a-second
+    /// steps the rest of the screen updates in. During the count-in it keeps
+    /// counting up from below zero, which is what lets the first notes fall
+    /// into place instead of appearing already at the keys. Nil before
+    /// anything has played.
+    func rollBeat() -> Double? {
+        if isPlaying, let engine, let clock {
+            let heard = engine.currentFrame - engine.outputLatencyFrames
+            let elapsed = Double(heard - originFrame) / engine.sampleRate
+            return clock.beat(atSeconds: startSeconds + elapsed)
+        }
+        return hasStarted ? beat : nil
+    }
 
     private func startTicker() {
         ticker?.cancel()

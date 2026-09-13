@@ -83,11 +83,17 @@ struct KeyboardView: View {
                 }
             }
         }
-        .aspectRatio(CGSize(width: range.width, height: 5.2), contentMode: .fit)
         // Shows through the hairlines between white keys.
         .background(Color(hex: Self.felt))
         .accessibilityElement()
         .accessibilityLabel(accessibilityDescription)
+    }
+
+    /// A height that keeps the keys in proportion at this width: where the
+    /// keyboard's drag handle scales from.
+    static func naturalHeight(width: CGFloat, range: KeyboardLayout.KeyRange) -> CGFloat {
+        guard range.width > 0 else { return 0 }
+        return min(170, max(56, width / range.width * 5.2))
     }
 
     private var accessibilityDescription: String {

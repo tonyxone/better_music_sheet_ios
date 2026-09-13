@@ -124,15 +124,15 @@ keeps its generated labels.
 | Processing progress | Implemented, verified on iPhone |
 | Annotated PDF viewer | Implemented, verified on iPhone |
 | Playback with measure highlight and playhead | Implemented, verified on iPhone |
-| Keyboard geometry | Implemented, tested |
-| Keyboard, step, scrub, speed and tempo controls | Implemented, not yet verified on device |
+| Keyboard and falling-note geometry | Implemented, tested |
+| Keyboard, falling notes, step, scrub, speed and tempo controls | Implemented, not yet verified on device |
+| Adjustable sections (collapse, resize) | Implemented, not yet verified on device |
 | Camera scan, share extension | Designed |
 | Live Activity, notifications | Designed |
-| Falling-note roll | Designed |
 | Sampled piano sound | Designed |
 | Sign-in | Designed |
 
-127 tests across 16 suites currently pass.
+140 tests across 17 suites currently pass.
 
 ---
 
