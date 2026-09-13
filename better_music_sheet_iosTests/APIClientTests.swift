@@ -3,33 +3,62 @@ import Testing
 @testable import better_music_sheet_ios
 
 /// Intercepts requests so the client can be exercised without a backend.
+///
+/// Each channel is bound to its own URLSession by a marker header, so suites
+/// that stub different exchanges can run in parallel without consuming each
+/// other's responses — which they did when the queue was global.
 final class StubProtocol: URLProtocol, @unchecked Sendable {
     struct Exchange: Sendable {
         var status: Int = 200
         var body: Data = Data("{}".utf8)
     }
 
-    nonisolated(unsafe) private static var queue: [Exchange] = []
-    nonisolated(unsafe) private(set) static var seen: [URLRequest] = []
-    private static let lock = NSLock()
+    final class Channel: @unchecked Sendable {
+        let id = UUID().uuidString
+        private let lock = NSLock()
+        private var queue: [Exchange]
+        private var seen: [URLRequest] = []
 
-    static func reset(_ exchanges: [Exchange]) {
-        lock.withLock {
+        init(_ exchanges: [Exchange]) {
             queue = exchanges
-            seen = []
+            StubProtocol.register(self)
+        }
+
+        fileprivate func next(_ request: URLRequest) -> Exchange {
+            lock.withLock {
+                seen.append(request)
+                return queue.isEmpty ? Exchange() : queue.removeFirst()
+            }
+        }
+
+        var recorded: [URLRequest] { lock.withLock { seen } }
+
+        func session() -> URLSession {
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.protocolClasses = [StubProtocol.self]
+            configuration.httpAdditionalHeaders = [StubProtocol.header: id]
+            return URLSession(configuration: configuration)
         }
     }
 
-    static func recorded() -> [URLRequest] { lock.withLock { seen } }
+    static let header = "X-Stub-Channel"
+    nonisolated(unsafe) private static var channels: [String: Channel] = [:]
+    private static let registry = NSLock()
+
+    fileprivate static func register(_ channel: Channel) {
+        registry.withLock { channels[channel.id] = channel }
+    }
+
+    private static func channel(for request: URLRequest) -> Channel? {
+        guard let id = request.value(forHTTPHeaderField: header) else { return nil }
+        return registry.withLock { channels[id] }
+    }
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
-        let exchange: Exchange = Self.lock.withLock {
-            Self.seen.append(request)
-            return Self.queue.isEmpty ? Exchange() : Self.queue.removeFirst()
-        }
+        let exchange = Self.channel(for: request)?.next(request) ?? Exchange()
         let response = HTTPURLResponse(url: request.url!, statusCode: exchange.status,
                                        httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -38,31 +67,44 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
     }
 
     override func stopLoading() {}
+}
 
-    static func session() -> URLSession {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [StubProtocol.self]
-        return URLSession(configuration: configuration)
+/// URLProtocol hands the body over as a stream, leaving `httpBody` nil — so a
+/// test that wants to inspect what was actually sent has to drain it.
+extension URLRequest {
+    var httpBodyData: Data? {
+        if let httpBody { return httpBody }
+        guard let stream = httpBodyStream else { return nil }
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        let size = 64 * 1024
+        var buffer = [UInt8](repeating: 0, count: size)
+        while stream.hasBytesAvailable {
+            let read = stream.read(&buffer, maxLength: size)
+            if read <= 0 { break }
+            data.append(buffer, count: read)
+        }
+        return data
     }
 }
 
-@Suite(.serialized)
 struct APIClientTests {
     private let base = URL(string: "https://api.example.com")!
 
-    private func client() -> APIClient {
+    private func client(_ channel: StubProtocol.Channel) -> APIClient {
         APIClient(baseURL: base,
-                  urlSession: StubProtocol.session(),
+                  urlSession: channel.session(),
                   sessions: SessionStore(store: InMemorySecretStore()),
                   guestID: GuestID(store: InMemorySecretStore()))
     }
 
     @Test func signedOutCallsCarryTheGuestIDAndNoToken() async throws {
-        StubProtocol.reset([.init(body: Data("[]".utf8))])
-        let jobs: [AnnotationJob] = try await client().get("/api/sheets")
+        let channel = StubProtocol.Channel([.init(body: Data("[]".utf8))])
+        let jobs: [AnnotationJob] = try await client(channel).get("/api/sheets")
 
         #expect(jobs.isEmpty)
-        let request = try #require(StubProtocol.recorded().first)
+        let request = try #require(channel.recorded.first)
         #expect(request.url?.absoluteString == "https://api.example.com/api/sheets")
         // Exactly one identity, never both: the backend prefers the token and
         // would ignore the guest id anyway.
@@ -79,15 +121,15 @@ struct APIClientTests {
             refreshToken: nil,
             user: User(userID: "u1", email: "a@example.com", displayName: "Ada", createdAt: 0)
         ))
-        StubProtocol.reset([.init(body: Data("[]".utf8))])
+        let channel = StubProtocol.Channel([.init(body: Data("[]".utf8))])
 
         let client = APIClient(baseURL: base,
-                               urlSession: StubProtocol.session(),
+                               urlSession: channel.session(),
                                sessions: sessions,
                                guestID: GuestID(store: InMemorySecretStore()))
         let _: [AnnotationJob] = try await client.get("/api/sheets")
 
-        let request = try #require(StubProtocol.recorded().first)
+        let request = try #require(channel.recorded.first)
         #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer backend-jwt")
         #expect(request.value(forHTTPHeaderField: "X-Guest-Id") == nil)
     }
@@ -100,33 +142,33 @@ struct APIClientTests {
             refreshToken: nil,
             user: User(userID: "u1", email: nil, displayName: nil, createdAt: 0)
         ))
-        StubProtocol.reset([.init(body: Data("[]".utf8))])
+        let channel = StubProtocol.Channel([.init(body: Data("[]".utf8))])
 
         let client = APIClient(baseURL: base,
-                               urlSession: StubProtocol.session(),
+                               urlSession: channel.session(),
                                sessions: sessions,
                                guestID: GuestID(store: InMemorySecretStore()))
         let _: [AnnotationJob] = try await client.get("/api/sheets")
 
-        let request = try #require(StubProtocol.recorded().first)
+        let request = try #require(channel.recorded.first)
         #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
         #expect(request.value(forHTTPHeaderField: "X-Guest-Id") != nil)
     }
 
     @Test func surfacesTheBackendsOwnDetailString() async throws {
-        StubProtocol.reset([
+        let channel = StubProtocol.Channel([
             .init(status: 409, body: Data(#"{"detail": "You already have a sheet processing."}"#.utf8))
         ])
 
         await #expect(throws: APIError.self) {
-            let _: [AnnotationJob] = try await client().get("/api/sheets")
+            let _: [AnnotationJob] = try await client(channel).get("/api/sheets")
         }
 
-        StubProtocol.reset([
+        let channel2 = StubProtocol.Channel([
             .init(status: 409, body: Data(#"{"detail": "You already have a sheet processing."}"#.utf8))
         ])
         do {
-            let _: [AnnotationJob] = try await client().get("/api/sheets")
+            let _: [AnnotationJob] = try await client(channel2).get("/api/sheets")
             Issue.record("expected the call to throw")
         } catch let error as APIError {
             #expect(error.errorDescription == "You already have a sheet processing.")
@@ -137,29 +179,29 @@ struct APIClientTests {
     @Test func fallsBackToTheStreamingEndpointWhenAssetsIsMissing() async throws {
         // A backend deployed before /assets existed answers 404; the app must
         // fall through to the older streaming route rather than give up.
-        StubProtocol.reset([
+        let channel = StubProtocol.Channel([
             .init(status: 404, body: Data(#"{"detail": "not found"}"#.utf8)),
             .init(status: 200, body: Data("%PDF-1.7 fake".utf8)),
         ])
 
-        let files = SheetFiles(client: client())
+        let files = SheetFiles(client: client(channel))
         let data = try await files.data(jobID: "job123", artifact: .pdf)
 
         #expect(String(decoding: data, as: UTF8.self) == "%PDF-1.7 fake")
-        let paths = StubProtocol.recorded().compactMap(\.url?.path)
+        let paths = channel.recorded.compactMap(\.url?.path)
         #expect(paths == ["/api/sheets/job123/assets", "/api/sheets/job123/download"])
     }
 
     @Test func presignedFetchesDropOurCredentials() async throws {
-        StubProtocol.reset([
+        let channel = StubProtocol.Channel([
             .init(body: Data(#"{"direct": true, "pdf": "https://s3.example.com/x.pdf", "timeline": null}"#.utf8)),
             .init(body: Data("%PDF-1.7 fake".utf8)),
         ])
 
-        let files = SheetFiles(client: client())
+        let files = SheetFiles(client: client(channel))
         _ = try await files.data(jobID: "job123", artifact: .pdf)
 
-        let s3 = try #require(StubProtocol.recorded().last)
+        let s3 = try #require(channel.recorded.last)
         #expect(s3.url?.host() == "s3.example.com")
         // Neither identity may travel to another origin.
         #expect(s3.value(forHTTPHeaderField: "Authorization") == nil)

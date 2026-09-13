@@ -82,6 +82,20 @@ actor APIClient {
         return (data, http)
     }
 
+    /// A POST to another origin — an S3 presigned upload — which likewise
+    /// must not carry our identity. S3 authorises the request from the signed
+    /// policy fields in the body, not from any header of ours.
+    @discardableResult
+    func postExternal(_ url: URL, body: Data, contentType: String) async throws -> (Data, HTTPURLResponse) {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = body
+        request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        let (data, http) = try await perform(request)
+        try check(http, data)
+        return (data, http)
+    }
+
     /// A fetch that must NOT carry our identity — a presigned S3 URL lives on
     /// another origin, where our credentials would only leak.
     func fetchExternal(_ url: URL) async throws -> Data {

@@ -18,8 +18,8 @@ let package = Package(
         .target(
             name: "better_music_sheet_ios",
             path: "better_music_sheet_ios",
-            exclude: ["App", "Library", "UI", "Assets.xcassets"],
-            sources: ["Models", "Networking", "Auth", "Config", "Playback", "Sheet"]
+            exclude: ["App", "Library", "UI", "Screens", "Assets.xcassets"],
+            sources: ["Models", "Networking", "Auth", "Config", "Playback", "Sheet", "Upload"]
         ),
         .testTarget(
             name: "better_music_sheet_iosTests",

@@ -5,6 +5,7 @@ import SwiftUI
 struct LibraryView: View {
     @State private var model = LibraryModel()
     @State private var showingAddSheet = false
+    @Binding var path: [SheetRoute]
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -32,10 +33,12 @@ struct LibraryView: View {
         .task { await model.load() }
         .refreshable { await model.load() }
         .sheet(isPresented: $showingAddSheet) {
-            Text("Adding a sheet arrives with the ingest phase.")
-                .font(.callout)
-                .foregroundStyle(Brand.inkSoft)
-                .presentationDetents([.medium])
+            AddSheetView { jobID in
+                // Open the new sheet straight away; it will poll its own way
+                // from "queued" to something readable.
+                path.append(SheetRoute(jobID: jobID, provisionalName: "New sheet"))
+                Task { await model.load() }
+            }
         }
     }
 
@@ -54,7 +57,11 @@ struct LibraryView: View {
             } else {
                 List {
                     ForEach(model.jobs) { job in
-                        SheetRow(job: job)
+                        NavigationLink(value: SheetRoute(jobID: job.jobID,
+                                                         provisionalName: job.displayName)) {
+                            SheetRow(job: job)
+                        }
+                        .buttonStyle(.plain)
                             .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
@@ -215,5 +222,6 @@ private struct RetryNotice: View {
 }
 
 #Preview {
-    NavigationStack { LibraryView() }
+    @Previewable @State var path: [SheetRoute] = []
+    return NavigationStack(path: $path) { LibraryView(path: $path) }
 }
