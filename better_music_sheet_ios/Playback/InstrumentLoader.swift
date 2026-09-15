@@ -1,4 +1,5 @@
 import AVFAudio
+import Accelerate
 import Foundation
 
 /// Reads, caches and decodes an instrument's samples.
@@ -26,9 +27,14 @@ nonisolated struct InstrumentLoader: Sendable {
 
     private let fetch: Fetch
     private let cacheDirectory: URL?
+    /// Bundled samples are decoded where they sit, rather than read into
+    /// memory and written back out to a temporary file first. Off with an
+    /// injected fetch, which decides for itself what every URL returns.
+    private let decodesFilesInPlace: Bool
 
     init(session: URLSession = .shared, cacheDirectory: URL? = InstrumentLoader.defaultCacheDirectory) {
         self.cacheDirectory = cacheDirectory
+        self.decodesFilesInPlace = true
         self.fetch = { url in
             // Bundled samples. A format that isn't bundled throws, which moves
             // on to the next one just as a failed download does.
@@ -42,6 +48,7 @@ nonisolated struct InstrumentLoader: Sendable {
     init(fetch: @escaping Fetch, cacheDirectory: URL? = nil) {
         self.fetch = fetch
         self.cacheDirectory = cacheDirectory
+        self.decodesFilesInPlace = false
     }
 
     static var defaultCacheDirectory: URL? {
@@ -103,8 +110,10 @@ nonisolated struct InstrumentLoader: Sendable {
             for fileExtension in preset.fileExtensions {
                 guard let url = preset.url(for: name, fileExtension: fileExtension) else { continue }
                 do {
-                    let decoded = try Self.decodeReportingCompleteness(try await cachedData(at: url),
-                                                                       fileExtension: fileExtension)
+                    let decoded = decodesFilesInPlace && url.isFileURL
+                        ? try Self.decodeReportingCompleteness(fileAt: url)
+                        : try Self.decodeReportingCompleteness(try await cachedData(at: url),
+                                                               fileExtension: fileExtension)
                     if decoded.complete { return (name, decoded.recording) }
                     if decoded.recording.frames.count > (best?.frames.count ?? 0) { best = decoded.recording }
                 } catch is CancellationError {
@@ -182,31 +191,45 @@ nonisolated struct InstrumentLoader: Sendable {
         try decodeReportingCompleteness(data, fileExtension: fileExtension).recording
     }
 
-    /// Reads until the audio actually ends rather than trusting the length the
-    /// file states, which Ogg files often leave unset, and keeps whatever
-    /// decoded before any damaged data. Anything cut short fades out rather
-    /// than stopping with a click.
     static func decodeReportingCompleteness(_ data: Data, fileExtension: String) throws -> Decoded {
         let temporary = FileManager.default.temporaryDirectory
             .appending(path: "\(UUID().uuidString).\(fileExtension)", directoryHint: .notDirectory)
         try data.write(to: temporary)
         defer { try? FileManager.default.removeItem(at: temporary) }
+        return try decodeReportingCompleteness(fileAt: temporary)
+    }
 
-        let file = try AVAudioFile(forReading: temporary)
+    /// Reads until the audio actually ends rather than trusting the length the
+    /// file states, which Ogg files often leave unset, and keeps whatever
+    /// decoded before any damaged data. Anything cut short fades out rather
+    /// than stopping with a click.
+    ///
+    /// The work on every frame — mixing to mono, the fade, the conversion to
+    /// 16-bit — runs in Accelerate. Done frame by frame in Swift, it took tens
+    /// of seconds per instrument in an unoptimized Debug build.
+    static func decodeReportingCompleteness(fileAt url: URL) throws -> Decoded {
+        let file = try AVAudioFile(forReading: url)
         let format = file.processingFormat
         let rate = format.sampleRate
         let channelCount = Int(format.channelCount)
         let limit = Int((maxSampleSeconds * rate).rounded())
         let chunk: AVAudioFrameCount = 8192
-        guard channelCount > 0, rate > 0,
+        guard channelCount > 0, rate > 0, limit > 1,
               let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: chunk)
         else { throw LoadError.unreadable }
 
-        var mono: [Float] = []
-        mono.reserveCapacity(min(limit, max(0, Int(file.length))))
+        // Asked for before reading, as the previous decoder did. Core Audio
+        // decodes some Ogg Opus files further once their length has been
+        // requested: CP80's 063-D#4-PP.ogg gives 2.98s of audio this way,
+        // 1.99s without.
+        _ = file.length
+
+        let mono = UnsafeMutableBufferPointer<Float>.allocate(capacity: limit)
+        defer { mono.deallocate() }
+        var count = 0
         var reachedEnd = false
         var capped = false
-        reading: while true {
+        while true {
             do {
                 try file.read(into: buffer, frameCount: chunk)
             } catch {
@@ -214,39 +237,67 @@ nonisolated struct InstrumentLoader: Sendable {
                 // code 0. Anything else — or an "end" well short of the length
                 // the file states — is damaged data.
                 let stated = Double(file.length)
-                let decoded = Double(mono.count)
+                let decoded = Double(count)
                 reachedEnd = (error as NSError).code == 0
                     ? stated == 0 || decoded >= stated * 0.9
                     : stated > 0 && decoded >= stated * 0.98
                 break
             }
-            let count = Int(buffer.frameLength)
-            guard count > 0, let channels = buffer.floatChannelData else {
+            let frames = Int(buffer.frameLength)
+            guard frames > 0, let channels = buffer.floatChannelData else {
                 reachedEnd = true
                 break
             }
-            for index in 0..<count {
-                var sum: Float = 0
-                for channel in 0..<channelCount { sum += channels[channel][index] }
-                mono.append(sum / Float(channelCount))
-                if mono.count >= limit {
-                    capped = true
-                    break reading
-                }
+            // The channels' average: summed in channel order, then divided.
+            let take = min(frames, limit - count)
+            let destination = mono.baseAddress! + count
+            destination.update(from: channels[0], count: take)
+            for channel in 1..<channelCount {
+                vDSP_vadd(destination, 1, channels[channel], 1, destination, 1, vDSP_Length(take))
+            }
+            if channelCount > 1 {
+                var divisor = Float(channelCount)
+                vDSP_vsdiv(destination, 1, &divisor, destination, 1, vDSP_Length(take))
+            }
+            count += take
+            if count >= limit {
+                capped = true
+                break
             }
         }
-        guard mono.count > 1 else { throw LoadError.unreadable }
+        guard count > 1 else { throw LoadError.unreadable }
 
         let complete = reachedEnd || capped
-        if capped || !complete {
-            let fadeStart = max(0, mono.count - Int(fadeSeconds * rate))
-            let fadeLength = Float(mono.count - fadeStart)
-            for index in fadeStart..<mono.count {
-                mono[index] *= Float(mono.count - index) / fadeLength
+        let fadeStart = max(0, count - Int(fadeSeconds * rate))
+        let fadeCount = count - fadeStart
+        if capped || !complete, fadeCount > 0 {
+            // Each frame scaled by its distance from the end: 1 down to 1/n.
+            // Plain Swift, unlike the rest: it is at most a quarter-second of
+            // frames, and vDSP's arithmetic rounds a few of them a step away
+            // from what this has always produced.
+            let fadeLength = Float(fadeCount)
+            for index in fadeStart..<count {
+                mono[index] *= Float(count - index) / fadeLength
             }
         }
 
-        let frames = mono.map { Int16(max(-32767, min(32767, ($0 * 32767).rounded()))) }
+        var scale: Float = 32767, low: Float = -32767, high: Float = 32767
+        vDSP_vsmul(mono.baseAddress!, 1, &scale, mono.baseAddress!, 1, vDSP_Length(count))
+        vDSP_vclip(mono.baseAddress!, 1, &low, &high, mono.baseAddress!, 1, vDSP_Length(count))
+        // Rounded as Swift's rounded() rounds, halves away from zero, where
+        // vDSP's own rounding sends halves to even. Nudged by just under a half
+        // towards each value's sign, then truncated: that matches exactly,
+        // where a full half would carry the float just below 0.5 up to 1.
+        let nudge = UnsafeMutableBufferPointer<Float>.allocate(capacity: count)
+        defer { nudge.deallocate() }
+        var magnitude = Float(0.5).nextDown, length = Int32(count)
+        vDSP_vfill(&magnitude, nudge.baseAddress!, 1, vDSP_Length(count))
+        vvcopysignf(nudge.baseAddress!, nudge.baseAddress!, mono.baseAddress!, &length)
+        vDSP_vadd(mono.baseAddress!, 1, nudge.baseAddress!, 1, mono.baseAddress!, 1, vDSP_Length(count))
+        let frames = [Int16](unsafeUninitializedCapacity: count) { output, initialized in
+            vDSP_vfix16(mono.baseAddress!, 1, output.baseAddress!, 1, vDSP_Length(count))
+            initialized = count
+        }
         return Decoded(recording: SampleBank.Recording(frames: frames, sampleRate: rate), complete: complete)
     }
 }
