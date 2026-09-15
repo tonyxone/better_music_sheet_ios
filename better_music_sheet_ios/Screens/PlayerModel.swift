@@ -16,6 +16,14 @@ final class PlayerModel {
         case unavailable(String)
     }
 
+    enum SoundState: Equatable {
+        case idle
+        /// Fetching and decoding samples, with the fraction done.
+        case loading(Double)
+        case ready
+        case failed(String)
+    }
+
     static let speedRange: ClosedRange<Double> = 0.1...2
     static let fullKeyRange = KeyboardLayout().fullRange
 
@@ -33,6 +41,10 @@ final class PlayerModel {
 
     var showKeyNames = false
     private(set) var isMuted = false
+    /// The sound playback uses. Remembered across sheets, as the web app
+    /// remembers it.
+    private(set) var instrument: Instrument
+    private(set) var soundState: SoundState = .idle
     /// The speed multiplier the user asked for.
     private(set) var speed: Double = 1
     /// A tempo override in quarter notes per minute, or nil for the score's own.
@@ -44,6 +56,14 @@ final class PlayerModel {
 
     private var geometry: SheetGeometry?
     private var engine: SynthEngine?
+    private let loader = InstrumentLoader()
+    /// The instrument whose samples the engine holds, once there is one.
+    private var loadedInstrument: Instrument?
+    private var loadingInstrument: Instrument?
+    private var loadTask: Task<Void, Never>?
+    /// Where to start once the samples arrive, when Play was pressed while
+    /// they were still loading.
+    private var pendingPlayBeat: Double?
     private var clock: TempoClock?
     /// Every distinct onset, in order: the stops the step buttons walk between.
     private var onsetBeats: [Double] = []
@@ -64,9 +84,29 @@ final class PlayerModel {
     init(jobID: String, files: SheetFiles = SheetFiles()) {
         self.jobID = jobID
         self.files = files
+        self.instrument = UserDefaults.standard.string(forKey: Instrument.storageKey)
+            .flatMap(Instrument.init(rawValue:)) ?? .standard
     }
 
     var totalBeats: Double { timeline?.totalBeats ?? 0 }
+
+    /// Play was pressed and is waiting for the instrument to load.
+    var isWaitingForSound: Bool { pendingPlayBeat != nil }
+
+    var soundFailed: Bool {
+        if case .failed = soundState { return true }
+        return false
+    }
+
+    /// A line about the sound for under the scrubber, when there is
+    /// something to say.
+    var soundStatus: String? {
+        switch soundState {
+        case .loading(let fraction): "Loading \(instrument.name)… \(Int((fraction * 100).rounded()))%"
+        case .failed(let message): message
+        case .idle, .ready: nil
+        }
+    }
 
     var measureLabel: String? {
         highlightedMeasure.map { "Measure \($0.label)" }
@@ -132,6 +172,9 @@ final class PlayerModel {
     func togglePlay() {
         if isPlaying {
             pause()
+        } else if pendingPlayBeat != nil {
+            // A second press while the instrument loads cancels the start.
+            pendingPlayBeat = nil
         } else {
             // The schedule restarts from the top when asked to begin at the end.
             play(from: beat)
@@ -145,9 +188,16 @@ final class PlayerModel {
 
     func play(from startBeat: Double) {
         guard let timeline, let engine = startEngineIfNeeded() else { return }
+        // Samples load before the clock starts, as on the web, so the opening
+        // notes are never lost to a download.
+        guard loadedInstrument == instrument else {
+            prepareSound(thenPlayFrom: startBeat)
+            return
+        }
 
         let clock = TempoClock(timeline: timeline, speed: speed, baseBPM: baseBPM)
-        let schedule = PlaybackSchedule(timeline: timeline, clock: clock, fromBeat: startBeat)
+        let schedule = PlaybackSchedule(timeline: timeline, clock: clock, fromBeat: startBeat,
+                                        usesPianoPedal: instrument.usesPianoPedal)
         let rate = engine.sampleRate
         let origin = engine.currentFrame + Int64((schedule.leadSeconds * rate).rounded())
 
@@ -188,6 +238,7 @@ final class PlayerModel {
             ticker = nil
         }
         beat = 0
+        pendingPlayBeat = nil
         hasStepped = false
         hasStarted = false
         publish(measure: nil, playhead: nil, keys: [:])
@@ -266,6 +317,68 @@ final class PlayerModel {
 
     // MARK: - Sound
 
+    func setInstrument(_ value: Instrument) {
+        guard value != instrument else { return }
+        instrument = value
+        UserDefaults.standard.set(value.rawValue, forKey: Instrument.storageKey)
+        // Carries on from the same place in the new sound.
+        let resumeAt = isPlaying ? beat : pendingPlayBeat
+        if isPlaying { pause() }
+        prepareSound(thenPlayFrom: resumeAt)
+    }
+
+    /// Loads the chosen instrument's samples for this piece, then starts
+    /// playing from `startBeat` if one is given.
+    private func prepareSound(thenPlayFrom startBeat: Double?) {
+        guard let timeline, let engine = startEngineIfNeeded() else { return }
+        pendingPlayBeat = startBeat
+        if loadTask != nil, loadingInstrument == instrument { return }
+
+        loadTask?.cancel()
+        let chosen = instrument
+        loadingInstrument = chosen
+        soundState = .loading(0)
+
+        // Only the keys and dynamics this piece uses, so nothing it never
+        // plays is downloaded or held in memory.
+        let sounding = timeline.notes.map { ($0.midi, $0.velocity) }
+            + (timeline.audioNotes ?? []).map { ($0.midi, $0.velocity) }
+        let notes = Set(sounding.map(\.0))
+        let velocities = sounding.map { Int(max(1, min(127, $0.1 ?? 80)).rounded()) }
+        let range = (velocities.min() ?? 1)...(velocities.max() ?? 127)
+
+        // Reports hop back to the main actor; a late one for an instrument no
+        // longer loading is ignored.
+        let report: @Sendable (Double) -> Void = { fraction in
+            Task { @MainActor in
+                guard self.loadingInstrument == chosen, case .loading = self.soundState else { return }
+                self.soundState = .loading(fraction)
+            }
+        }
+
+        loadTask = Task { [weak self, loader] in
+            do {
+                let bank = try await loader.load(chosen, notes: notes, velocities: range, progress: report)
+                guard let self, !Task.isCancelled, self.loadingInstrument == chosen else { return }
+                engine.setBank(bank)
+                self.loadTask = nil
+                self.loadingInstrument = nil
+                self.loadedInstrument = chosen
+                self.soundState = .ready
+                if let start = self.pendingPlayBeat {
+                    self.pendingPlayBeat = nil
+                    self.play(from: start)
+                }
+            } catch {
+                guard let self, !Task.isCancelled, self.loadingInstrument == chosen else { return }
+                self.loadTask = nil
+                self.loadingInstrument = nil
+                self.pendingPlayBeat = nil
+                self.soundState = .failed(InstrumentLoader.LoadError.unreachable.errorDescription ?? "")
+            }
+        }
+    }
+
     private func startEngineIfNeeded() -> SynthEngine? {
         if let engine { return engine }
         do {
@@ -283,6 +396,8 @@ final class PlayerModel {
     /// earlier one stay lit on the keyboard but are not re-hammered.
     private func sound(struckAt position: Double, in timeline: Timeline) {
         guard let engine = startEngineIfNeeded() else { return }
+        // Sounds in the basic synth until the instrument has loaded.
+        if loadedInstrument != instrument { prepareSound(thenPlayFrom: nil) }
         let clock = TempoClock(timeline: timeline, speed: speed, baseBPM: baseBPM)
         let rate = engine.sampleRate
         let at = engine.currentFrame + Int64((0.02 * rate).rounded())

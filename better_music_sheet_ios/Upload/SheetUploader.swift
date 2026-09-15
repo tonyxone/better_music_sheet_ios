@@ -37,12 +37,14 @@ nonisolated struct SheetUploader: Sendable {
         let fontSize: Double
         let dpi: Int?
         let autoRetry: Bool
+        let labelColor: String
 
         private enum CodingKeys: String, CodingKey {
             case filename, size, style, octave, dpi
             case contentType = "content_type"
             case fontSize = "font_size"
             case autoRetry = "auto_retry"
+            case labelColor = "label_color"
         }
     }
 
@@ -64,7 +66,8 @@ nonisolated struct SheetUploader: Sendable {
             reservation = try await client.post("/api/uploads", body: ReservationRequest(
                 filename: filename, size: data.count, contentType: contentType,
                 style: options.style.rawValue, octave: options.octave,
-                fontSize: options.fontSize, dpi: options.dpi, autoRetry: options.autoRetry))
+                fontSize: options.fontSize, dpi: options.dpi, autoRetry: options.autoRetry,
+                labelColor: options.labelColor))
         } catch let error as APIError where error.isNotFound {
             return try await legacyUpload(filename: filename, data: data,
                                           contentType: contentType, options: options)
@@ -100,6 +103,7 @@ nonisolated struct SheetUploader: Sendable {
         form.addField(name: "octave", value: String(options.octave))
         form.addField(name: "font_size", value: String(options.fontSize))
         form.addField(name: "auto_retry", value: String(options.autoRetry))
+        form.addField(name: "label_color", value: options.labelColor)
         if let dpi = options.dpi { form.addField(name: "dpi", value: String(dpi)) }
 
         let (body, _) = try await client.call("/api/sheets", method: "POST",

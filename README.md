@@ -110,6 +110,25 @@ keeps its generated labels.
 
 ---
 
+## Instrument sounds
+
+Practice plays the same instruments as the web app, from the same recordings:
+grand piano, Wurlitzer electric piano, CP80 electric grand and church organ,
+plus a basic synth that needs no download. Only the samples a piece uses are
+fetched, and they are cached, so an instrument used before plays offline.
+
+The samples are not part of this repository. They are loaded from their hosts
+under their own licences:
+
+| Instrument | Samples | Licence |
+|---|---|---|
+| Grand piano | [Splendid Grand Piano](https://github.com/smpldsnds/sfzinstruments-splendid-grand-piano), Akai Steinway samples | Public domain |
+| Electric piano, electric grand | [Greg Sullivan's e-pianos](https://github.com/smpldsnds/sfzinstruments-greg-sullivan-e-pianos) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| Church organ | [FluidR3 GM](https://github.com/gleitz/midi-js-soundfonts), via MIDI.js soundfonts | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/us/) |
+
+Which sample plays for each key and velocity follows
+[smplr](https://github.com/danigb/smplr) 1.0.0, the library the web app uses.
+
 ## Status
 
 | Area | State |
@@ -129,10 +148,10 @@ keeps its generated labels.
 | Adjustable sections (collapse, resize) | Implemented, not yet verified on device |
 | Camera scan, share extension | Designed |
 | Live Activity, notifications | Designed |
-| Sampled piano sound | Designed |
-| Sign-in | Designed |
+| Instruments: grand piano, electric pianos, organ, basic synth | Implemented, tested |
+| Sign-in with Google and Apple | Implemented, tested, not yet verified on device |
 
-140 tests across 17 suites currently pass.
+172 tests across 23 suites currently pass.
 
 ---
 

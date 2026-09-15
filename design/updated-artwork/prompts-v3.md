@@ -1,0 +1,3 @@
+Edited using built-in imagegen.
+
+Use case: precise-object-edit. Input is the edit target, approved landing page mockup. Remove ONLY the three small pagination indicator circles (one gold and two gray) centered between the Get Started button and the bottom tagline. Seamlessly fill just those three circles with the surrounding pale cream background. Keep the empty spacing as is; do not move the button or tagline. Preserve every other detail exactly: all colors, phone frame, typography, text, notes and their positions, labels E G A# on upper staff and Bb D on lower staff, keyboard, cards, pen, lighting, composition. Preserve bottom text exactly 'A better way to practice piano.' No other changes. Same portrait dimensions.

@@ -24,7 +24,7 @@ nonisolated struct Session: Codable, Sendable, Hashable {
 actor SessionStore {
     static let shared = SessionStore()
 
-    private let key = "bms_auth"
+    private static let key = "bms_auth"
     private let store: SecretStore
     private var loaded = false
     private var session: Session?
@@ -36,7 +36,7 @@ actor SessionStore {
     func current() -> Session? {
         if !loaded {
             loaded = true
-            session = store.string(for: key)
+            session = store.string(for: Self.key)
                 .flatMap { $0.data(using: .utf8) }
                 .flatMap { try? JSONDecoder().decode(Session.self, from: $0) }
         }
@@ -47,13 +47,22 @@ actor SessionStore {
         self.session = session
         loaded = true
         if let data = try? JSONEncoder().encode(session) {
-            store.set(String(decoding: data, as: UTF8.self), for: key)
+            store.set(String(decoding: data, as: UTF8.self), for: Self.key)
         }
     }
 
     func clear() {
         session = nil
         loaded = true
-        store.set(nil, for: key)
+        store.set(nil, for: Self.key)
+    }
+
+    /// A synchronous existence check — is there a saved session at all,
+    /// valid or not — for the one place that can't afford to await an actor
+    /// hop before its first render: RootView deciding whether a returning,
+    /// signed-in visitor should see the welcome splash at all. Actual
+    /// validity (and refreshing an expired token) stays `current()`'s job.
+    nonisolated static func hasStoredSession(store: SecretStore = KeychainStore()) -> Bool {
+        store.string(for: key) != nil
     }
 }

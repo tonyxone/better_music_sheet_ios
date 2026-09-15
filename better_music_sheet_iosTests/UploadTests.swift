@@ -156,6 +156,49 @@ struct SheetUploaderTests {
         #expect(SheetUploader.isSupported(filename: "score.pdf"))
         #expect(!SheetUploader.isSupported(filename: "score.mxl"))
     }
+
+    @Test func sendsEveryOptionIncludingTheLabelColor() async throws {
+        let channel = StubProtocol.Channel([
+            .init(status: 201, body: Data(#"{"job_id": "j", "upload": {"url": "https://s3.example.com/b", "fields": {}}}"#.utf8)),
+            .init(status: 204),
+            .init(status: 202, body: Data("{}".utf8)),
+        ])
+        var options = AnnotationOptions.standard
+        options.style = .ascii
+        options.octave = true
+        options.fontSize = 8
+        options.dpi = 250
+        options.autoRetry = false
+        options.labelColor = "#2F6FB5"
+
+        _ = try await SheetUploader(client: client(channel))
+            .upload(filename: "a.pdf", data: Data("x".utf8), options: options)
+
+        let body = try #require(channel.recorded.first?.httpBodyData)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["style"] as? String == "ascii")
+        #expect(json["octave"] as? Bool == true)
+        #expect(json["font_size"] as? Double == 8)
+        #expect(json["dpi"] as? Int == 250)
+        #expect(json["auto_retry"] as? Bool == false)
+        #expect(json["label_color"] as? String == "#2F6FB5")
+    }
+
+    @Test func theLegacyEndpointGetsTheLabelColorToo() async throws {
+        let channel = StubProtocol.Channel([
+            .init(status: 404, body: Data(#"{"detail": "Direct uploads are not enabled"}"#.utf8)),
+            .init(status: 202, body: Data(#"{"job_id": "legacy1", "status": "queued"}"#.utf8)),
+        ])
+        var options = AnnotationOptions.standard
+        options.labelColor = "#A83C34"
+
+        _ = try await SheetUploader(client: client(channel))
+            .upload(filename: "a.pdf", data: Data("x".utf8), options: options)
+
+        let form = String(decoding: channel.recorded[1].httpBodyData ?? Data(), as: UTF8.self)
+        #expect(form.contains(#"name="label_color""#))
+        #expect(form.contains("#A83C34"))
+    }
 }
 
 struct AnnotationOptionsTests {
@@ -181,5 +224,24 @@ struct AnnotationOptionsTests {
     @Test func fallsBackToStandardWhenNothingIsStored() throws {
         let defaults = try #require(UserDefaults(suiteName: "empty-\(UUID().uuidString)"))
         #expect(AnnotationOptions.load(from: defaults) == .standard)
+    }
+
+    @Test func keepsOlderSavedChoicesWhenANewOptionAppears() throws {
+        // Saved before the label colour existed.
+        let old = Data(#"{"style": "ascii", "octave": true, "fontSize": 9, "autoRetry": false}"#.utf8)
+        let options = try JSONDecoder().decode(AnnotationOptions.self, from: old)
+        #expect(options.style == .ascii)
+        #expect(options.octave)
+        #expect(options.fontSize == 9)
+        #expect(!options.autoRetry)
+        #expect(options.labelColor == "#000000")
+    }
+
+    @Test func ignoresAColorTheBackendWouldRefuse() throws {
+        let saved = Data(#"{"labelColor": "red"}"#.utf8)
+        #expect(try JSONDecoder().decode(AnnotationOptions.self, from: saved).labelColor == "#000000")
+        #expect(AnnotationOptions.isValidColor("#a83c34"))
+        #expect(!AnnotationOptions.isValidColor("#A83C3"))
+        #expect(!AnnotationOptions.isValidColor("#A83C34F"))
     }
 }

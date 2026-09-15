@@ -5,6 +5,7 @@ import SwiftUI
 struct LibraryView: View {
     @State private var model = LibraryModel()
     @State private var showingAddSheet = false
+    @State private var showingAccount = false
     /// A sheet to open once the add panel has finished closing.
     @State private var pendingRoute: SheetRoute?
     @Binding var path: [SheetRoute]
@@ -24,7 +25,7 @@ struct LibraryView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    // Account screen lands with the auth phase.
+                    showingAccount = true
                 } label: {
                     Image(systemName: "person.crop.circle")
                         .font(.system(size: 20))
@@ -48,6 +49,9 @@ struct LibraryView: View {
                 pendingRoute = SheetRoute(jobID: jobID, provisionalName: "New sheet")
                 Task { await model.load() }
             }
+        }
+        .sheet(isPresented: $showingAccount, onDismiss: { Task { await model.load() } }) {
+            AccountView()
         }
     }
 

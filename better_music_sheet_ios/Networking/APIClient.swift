@@ -11,16 +11,19 @@ actor APIClient {
     private let urlSession: URLSession
     private let sessions: SessionStore
     private let guestID: GuestID
+    private let authService: AuthService
     private let decoder: JSONDecoder
 
     init(baseURL: URL = AppConfig.apiBase,
          urlSession: URLSession = .shared,
          sessions: SessionStore = .shared,
-         guestID: GuestID = GuestID()) {
+         guestID: GuestID = GuestID(),
+         authService: AuthService? = nil) {
         self.baseURL = baseURL
         self.urlSession = urlSession
         self.sessions = sessions
         self.guestID = guestID
+        self.authService = authService ?? AuthService(sessions: sessions, urlSession: urlSession)
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         self.decoder = decoder
@@ -109,8 +112,8 @@ actor APIClient {
     // MARK: - Internals
 
     private func attachIdentity(to request: inout URLRequest) async {
-        if let session = await sessions.current(), session.isFresh {
-            request.setValue("Bearer \(session.token)", forHTTPHeaderField: "Authorization")
+        if let token = await authService.validAccessToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         } else {
             request.setValue(guestID.current(), forHTTPHeaderField: "X-Guest-Id")
         }

@@ -98,6 +98,15 @@ nonisolated final class SynthEngine: @unchecked Sendable {
         state.lock.unlock()
     }
 
+    /// Switches to a sampled instrument, or back to the basic synth with nil.
+    /// Anything scheduled is dropped, since it was resolved for the old sound.
+    func setBank(_ bank: SampleBank?) {
+        restartIfNeeded()
+        state.lock.lock()
+        state.mixer.setBank(bank)
+        state.lock.unlock()
+    }
+
     func setMuted(_ muted: Bool) {
         state.muted.store(muted, ordering: .relaxed)
     }

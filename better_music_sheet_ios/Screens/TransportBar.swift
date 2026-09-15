@@ -9,6 +9,9 @@ struct TransportBar: View {
     @State private var isScrubbing = false
     @State private var showingTempo = false
     @State private var tempoText = ""
+    /// Collapsed by default: playing and stepping are what you reach for
+    /// while practising; the rest is set once and left.
+    @State private var showingOptions = false
 
     /// The web app's slider runs 0.1x to 2x. A menu of the useful stops fits a
     /// phone better than a slider squeezed into the same row.
@@ -52,16 +55,29 @@ struct TransportBar: View {
                 .padding(14)
         case .ready:
             VStack(spacing: 8) {
+                // The measure timeline stays; it also carries any loading or
+                // failure message for the instrument.
                 scrubber
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 8) {
-                        transport
-                        Spacer(minLength: 8)
-                        options
+
+                // The play button stays centred whatever sits beside it.
+                ZStack {
+                    transport
+                    HStack {
+                        Spacer()
+                        toggle("slider.horizontal.3", on: showingOptions,
+                               label: showingOptions ? "Hide options" : "Show options") {
+                            withAnimation(.snappy(duration: 0.22)) { showingOptions.toggle() }
+                        }
                     }
-                    VStack(spacing: 8) {
-                        transport
+                }
+
+                if showingOptions {
+                    // Scrolls sideways on a screen too narrow for one row.
+                    ViewThatFits(in: .horizontal) {
                         HStack(spacing: 8) { options }
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) { options }
+                        }
                     }
                 }
             }
@@ -94,11 +110,21 @@ struct TransportBar: View {
                 .tint(Brand.accent)
                 .accessibilityLabel("Position in the piece")
 
-            if let position = player.positionLabel {
-                Text(position)
-                    .font(.system(size: 12))
-                    .monospacedDigit()
-                    .foregroundStyle(Brand.inkSoft)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                if let position = player.positionLabel {
+                    Text(position)
+                        .font(.system(size: 12))
+                        .monospacedDigit()
+                        .foregroundStyle(Brand.inkSoft)
+                }
+                Spacer(minLength: 8)
+                if let status = player.soundStatus {
+                    Text(status)
+                        .font(.system(size: 12))
+                        .monospacedDigit()
+                        .foregroundStyle(player.soundFailed ? Brand.danger : Brand.inkSoft)
+                        .multilineTextAlignment(.trailing)
+                }
             }
         }
     }
@@ -108,8 +134,8 @@ struct TransportBar: View {
             roundButton("backward.end.fill", size: 40, filled: false, label: "Step to the previous note") {
                 player.step(-1)
             }
-            roundButton(player.isPlaying ? "pause.fill" : "play.fill", size: 46, filled: true,
-                        label: player.isPlaying ? "Pause" : "Play") {
+            roundButton(player.isPlaying || player.isWaitingForSound ? "pause.fill" : "play.fill", size: 46, filled: true,
+                        label: player.isPlaying || player.isWaitingForSound ? "Pause" : "Play") {
                 player.togglePlay()
             }
             roundButton("forward.end.fill", size: 40, filled: false, label: "Step to the next note") {
@@ -120,6 +146,28 @@ struct TransportBar: View {
 
     @ViewBuilder
     private var options: some View {
+        Menu {
+            Picker("Instrument", selection: Binding(get: { player.instrument },
+                                                    set: { player.setInstrument($0) })) {
+                ForEach(Instrument.allCases) { instrument in
+                    Text(instrument.name).tag(instrument)
+                }
+            }
+            // The samples' licences ask for credit where they are used.
+            Section("Sample credits") {
+                Text("Grand piano: Akai Steinway, public domain")
+                Text("Electric pianos: Greg Sullivan, CC BY 3.0")
+                Text("Organ: FluidR3 GM, CC BY 3.0")
+            }
+        } label: {
+            Image(systemName: "pianokeys")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Brand.ink)
+                .frame(width: 40, height: 40)
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Brand.paperDeep, lineWidth: 1))
+        }
+        .accessibilityLabel("Instrument, \(player.instrument.name)")
+
         Menu {
             ForEach(Self.speedPresets, id: \.self) { value in
                 Button {
