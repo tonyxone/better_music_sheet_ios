@@ -7,13 +7,17 @@ import SwiftUI
 ///
 /// Remembered between sessions: how much of each you want changes with how you
 /// practise, not with which sheet happens to be open.
-struct PlayLayout<Sheet: View, Controls: View, Roll: View, Keyboard: View>: View {
+struct PlayLayout<Sheet: View, Controls: View, Roll: View, Keyboard: View, LoadingOverlay: View>: View {
     /// The keyboard's natural height at a given width.
     let keyboardHeight: (CGFloat) -> CGFloat
     @ViewBuilder let sheet: () -> Sheet
     @ViewBuilder let controls: () -> Controls
     @ViewBuilder let roll: () -> Roll
     @ViewBuilder let keyboard: () -> Keyboard
+    /// Centred over the falling notes and keyboard combined — one indicator
+    /// for both, rather than two, since they're loading for the same reason
+    /// at the same time.
+    @ViewBuilder let loadingOverlay: () -> LoadingOverlay
 
     @AppStorage("play.sheetOpen") private var sheetOpen = true
     @AppStorage("play.rollOpen") private var rollOpen = true
@@ -74,6 +78,19 @@ struct PlayLayout<Sheet: View, Controls: View, Roll: View, Keyboard: View>: View
 
                 keyboard()
                     .frame(height: keysHeight)
+            }
+            .overlay(alignment: .top) {
+                // The exact same heights the VStack above just laid out with,
+                // so this lands centred over the roll and keyboard together
+                // regardless of which panels are open or how they're sized.
+                let topInset = Self.headerHeight + (sheetOpen ? heights.sheet : 0)
+                    + controlsHeight + Self.headerHeight
+                let sectionHeight = (rollOpen ? heights.roll : 0) + keysHeight
+                Color.clear
+                    .frame(width: proxy.size.width, height: sectionHeight)
+                    .overlay { loadingOverlay() }
+                    .offset(y: topInset)
+                    .allowsHitTesting(false)
             }
         }
     }

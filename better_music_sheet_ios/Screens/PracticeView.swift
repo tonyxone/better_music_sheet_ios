@@ -67,6 +67,8 @@ struct PracticeView: View {
                 KeyboardView(range: keyRange,
                              litKeys: player.litKeys,
                              showNames: player.showKeyNames)
+            } loadingOverlay: {
+                soundLoadingOverlay
             }
         } else {
             // Still loading playback, or none for this sheet: the page, with
@@ -75,6 +77,19 @@ struct PracticeView: View {
                 sheet
                 TransportBar(player: player)
             }
+        }
+    }
+
+    /// One indicator centred over the falling notes and keyboard together
+    /// while the piano's samples are still loading — both stay fully visible
+    /// underneath, just with a sign that sound isn't ready to play yet.
+    @ViewBuilder
+    private var soundLoadingOverlay: some View {
+        if case .loading = player.soundState {
+            RingSpinner(size: 28, lineWidth: 3)
+                .padding(16)
+                .background(.ultraThinMaterial, in: .circle)
+                .transition(.opacity)
         }
     }
 

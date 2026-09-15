@@ -99,12 +99,13 @@ final class PlayerModel {
     }
 
     /// A line about the sound for under the scrubber, when there is
-    /// something to say.
+    /// something to say. Loading has its own overlay on the falling notes
+    /// and keyboard instead (see PracticeView) — this is only for the
+    /// outcome once that's done.
     var soundStatus: String? {
         switch soundState {
-        case .loading(let fraction): "Loading \(instrument.name)… \(Int((fraction * 100).rounded()))%"
         case .failed(let message): message
-        case .idle, .ready: nil
+        case .idle, .loading, .ready: nil
         }
     }
 
@@ -159,9 +160,16 @@ final class PlayerModel {
             geometry = SheetGeometry(timeline: loaded)
             onsetBeats = Array(Set(loaded.notes.map(\.startBeat))).sorted()
             pieceKeyRange = Self.keyboardLayout.range(covering: loaded.notes.map(\.midi))
-            availability = loaded.notes.isEmpty
-                ? .unavailable("No notes were recognized for playback.")
-                : .ready
+            if loaded.notes.isEmpty {
+                availability = .unavailable("No notes were recognized for playback.")
+            } else {
+                availability = .ready
+                // Starts loading the piano now rather than waiting for the
+                // first Play tap, so it's ready (or well underway) by the
+                // time the visitor actually presses it. play(from:) already
+                // knows how to pick up a load already in flight.
+                prepareSound(thenPlayFrom: nil)
+            }
         } catch {
             availability = .unavailable("Playback isn't available for this sheet.")
         }
