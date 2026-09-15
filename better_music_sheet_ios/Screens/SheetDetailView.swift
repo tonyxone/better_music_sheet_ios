@@ -46,9 +46,13 @@ struct SheetDetailView: View {
                     .accessibilityHint("Opens the sheet with the keyboard and falling notes")
                 }
 
-                // Without this the system draws adjacent items as one grouped
-                // button; a fixed spacer gives each its own.
-                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                // Without this, iOS 26's glass toolbar draws adjacent items
+                // as one grouped button; a fixed spacer gives each its own.
+                // Earlier OS versions never group them, so there's nothing
+                // to separate.
+                if #available(iOS 26.0, *) {
+                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                }
 
                 if let url = model.exportURL() {
                     ToolbarItem(placement: .topBarTrailing) {

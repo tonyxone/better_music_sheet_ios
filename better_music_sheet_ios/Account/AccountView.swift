@@ -23,6 +23,18 @@ struct AccountView: View {
             }
         }
         .task { await model.load() }
+        // A brief pause so "Signed in as X" is actually visible for a beat,
+        // rather than the screen vanishing the instant it appears — but only
+        // for a sign-in that just happened, never for opening the screen to
+        // look at an account you were already signed into (see
+        // AccountModel.justSignedIn).
+        .onChange(of: model.justSignedIn) { _, justSignedIn in
+            guard justSignedIn else { return }
+            Task {
+                try? await Task.sleep(for: .seconds(0.6))
+                dismiss()
+            }
+        }
     }
 
     @ViewBuilder

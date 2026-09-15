@@ -27,11 +27,22 @@ struct LibraryView: View {
                 Button {
                     showingAccount = true
                 } label: {
-                    Image(systemName: "person.crop.circle")
-                        .font(.system(size: 20))
+                    if let name = model.currentUser?.displayName ?? model.currentUser?.email {
+                        HStack(spacing: 5) {
+                            Text(name)
+                                .font(.system(size: 14, weight: .semibold))
+                                .lineLimit(1)
+                            Image(systemName: "person.crop.circle.fill")
+                                .font(.system(size: 18))
+                        }
                         .foregroundStyle(Brand.inkSoft)
+                    } else {
+                        Image(systemName: "person.crop.circle")
+                            .font(.system(size: 20))
+                            .foregroundStyle(Brand.inkSoft)
+                    }
                 }
-                .accessibilityLabel("Account")
+                .accessibilityLabel(model.currentUser.map { "Account, signed in as \($0.displayName ?? $0.email ?? "")" } ?? "Account")
             }
         }
         // Reloads on appearing, and again whenever the app returns to the
@@ -78,7 +89,7 @@ struct LibraryView: View {
                 EmptyLibrary()
             } else {
                 List {
-                    ForEach(model.jobs) { job in
+                    ForEach(model.visibleJobs) { job in
                         SheetRow(job: job) {
                             path.append(SheetRoute(jobID: job.jobID, provisionalName: job.displayName))
                         } practice: {
@@ -95,6 +106,17 @@ struct LibraryView: View {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
+                    }
+
+                    if model.hasMoreToShow {
+                        Button("Show more") { model.loadMore() }
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Brand.accent)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
                     }
                 }
                 .listStyle(.plain)

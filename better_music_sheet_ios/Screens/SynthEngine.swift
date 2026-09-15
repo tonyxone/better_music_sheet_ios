@@ -1,5 +1,30 @@
 import AVFAudio
-import Synchronization
+import os
+
+/// A tiny stand-in for Swift 6's `Atomic<T>` (the Synchronization framework),
+/// which needs iOS 18 — this app's floor is iOS 17, to reach devices like
+/// Tao's iPad. `os_unfair_lock` around a single word's read/write costs
+/// nanoseconds, well under the audio render thread's budget, and every use
+/// here only ever wanted relaxed (plain atomicity, no ordering) semantics
+/// anyway, so there is no `ordering:` parameter to carry over.
+nonisolated final class LockedValue<Value>: @unchecked Sendable {
+    private var value: Value
+    private var lock = os_unfair_lock()
+
+    init(_ value: Value) { self.value = value }
+
+    func load() -> Value {
+        os_unfair_lock_lock(&lock)
+        defer { os_unfair_lock_unlock(&lock) }
+        return value
+    }
+
+    func store(_ newValue: Value) {
+        os_unfair_lock_lock(&lock)
+        defer { os_unfair_lock_unlock(&lock) }
+        value = newValue
+    }
+}
 
 /// The part of the synthesizer the audio thread touches.
 ///
@@ -13,8 +38,8 @@ nonisolated final class SynthRenderState: @unchecked Sendable {
     var mixer: SynthMixer
     /// Frames rendered since the engine started: the clock that sound, the
     /// highlight and the playhead are all timed against.
-    let renderedFrames = Atomic<Int64>(0)
-    let muted = Atomic<Bool>(false)
+    let renderedFrames = LockedValue<Int64>(0)
+    let muted = LockedValue<Bool>(false)
 
     init(sampleRate: Double) {
         mixer = SynthMixer(sampleRate: sampleRate)
@@ -23,8 +48,8 @@ nonisolated final class SynthRenderState: @unchecked Sendable {
     func render(frameCount: AVAudioFrameCount, into bufferList: UnsafeMutablePointer<AudioBufferList>) -> OSStatus {
         let buffers = UnsafeMutableAudioBufferListPointer(bufferList)
         let count = Int(frameCount)
-        let start = renderedFrames.load(ordering: .relaxed)
-        defer { renderedFrames.store(start + Int64(count), ordering: .relaxed) }
+        let start = renderedFrames.load()
+        defer { renderedFrames.store(start + Int64(count)) }
 
         guard let first = buffers.first?.mData?.assumingMemoryBound(to: Float.self) else { return 0 }
         if lock.try() {
@@ -33,7 +58,7 @@ nonisolated final class SynthRenderState: @unchecked Sendable {
         } else {
             first.update(repeating: 0, count: count)
         }
-        if muted.load(ordering: .relaxed) {
+        if muted.load() {
             // Rendered anyway, so voices, timing and the keyboard stay exactly
             // as they would be; only the output is silenced.
             first.update(repeating: 0, count: count)
@@ -83,7 +108,7 @@ nonisolated final class SynthEngine: @unchecked Sendable {
         try engine.start()
     }
 
-    var currentFrame: Int64 { state.renderedFrames.load(ordering: .relaxed) }
+    var currentFrame: Int64 { state.renderedFrames.load() }
 
     func schedule(_ notes: [SynthNote]) {
         restartIfNeeded()
@@ -108,7 +133,7 @@ nonisolated final class SynthEngine: @unchecked Sendable {
     }
 
     func setMuted(_ muted: Bool) {
-        state.muted.store(muted, ordering: .relaxed)
+        state.muted.store(muted)
     }
 
     /// The system stops the engine on an interruption — a call, another app

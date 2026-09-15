@@ -14,6 +14,12 @@ final class AccountModel {
     /// actions below can run at a time from the sign-in form.
     private(set) var busy = false
     private(set) var busyProvider: SocialProvider?
+    /// Flips true exactly once, when an active sign-in completes — not when
+    /// `load()` merely finds an already-signed-in session. AccountView
+    /// watches this (rather than `state` itself) to auto-dismiss only after
+    /// something the visitor just did, never when they open the screen to
+    /// look at an account they were already signed into.
+    private(set) var justSignedIn = false
 
     private let sessions: SessionStore
     private let authService: AuthService
@@ -43,6 +49,7 @@ final class AccountModel {
         defer { busyProvider = nil }
         let session = try await authService.signIn(provider: provider)
         state = .signedIn(session.user)
+        justSignedIn = true
     }
 
     // MARK: - Email + password
@@ -52,6 +59,7 @@ final class AccountModel {
         defer { busy = false }
         let session = try await authService.signIn(email: email, password: password)
         state = .signedIn(session.user)
+        justSignedIn = true
     }
 
     /// Returns true when Cognito still needs the emailed code before the new
