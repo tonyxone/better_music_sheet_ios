@@ -73,14 +73,9 @@ struct KeyboardView: View {
                 context.fill(Path(roundedRect: rect,
                                   cornerRadii: RectangleCornerRadii(bottomLeading: radius, bottomTrailing: radius)),
                              with: .color(Self.color(base: Self.ebony, role: role, mix: Self.blackMix)))
-
-                if labelsFit, rect.width >= 10 {
-                    context.draw(Text(KeyboardLayout.noteName(midi))
-                                    .font(.system(size: min(9, unit * 0.4), weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.85)),
-                                 at: CGPoint(x: rect.midX, y: rect.maxY - 4),
-                                 anchor: .bottom)
-                }
+                // Unlabelled: a black key is a sharp or a flat depending on
+                // the key signature, and a name here would be wrong half the
+                // time.
             }
         }
         // Shows through the hairlines between white keys.
