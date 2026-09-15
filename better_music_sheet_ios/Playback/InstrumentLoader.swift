@@ -1,11 +1,11 @@
 import AVFAudio
 import Foundation
 
-/// Fetches, caches and decodes an instrument's samples.
+/// Reads, caches and decodes an instrument's samples.
 ///
-/// Mirrors the web app, which loads through smplr with a CacheStorage in front
-/// of the network: samples are downloaded once and kept, so an instrument used
-/// before loads without a connection.
+/// The instruments' samples ship inside the app (see `Instrument`), and are
+/// read straight from the bundle. Remote URLs still work, downloaded once and
+/// kept in Caches, as the web app keeps them in CacheStorage.
 nonisolated struct InstrumentLoader: Sendable {
     typealias Fetch = @Sendable (URL) async throws -> Data
 
@@ -30,6 +30,9 @@ nonisolated struct InstrumentLoader: Sendable {
     init(session: URLSession = .shared, cacheDirectory: URL? = InstrumentLoader.defaultCacheDirectory) {
         self.cacheDirectory = cacheDirectory
         self.fetch = { url in
+            // Bundled samples. A format that isn't bundled throws, which moves
+            // on to the next one just as a failed download does.
+            if url.isFileURL { return try Data(contentsOf: url) }
             let (data, response) = try await session.data(from: url)
             guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw LoadError.unreachable }
             return data

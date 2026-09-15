@@ -28,15 +28,18 @@ nonisolated enum Instrument: String, CaseIterable, Identifiable, Sendable {
 
     // MARK: - Where the samples live
     //
-    // The same hosts smplr loads from, so both apps play the same recordings.
+    // Bundled with the app: a copy of the web app's own public/instrument-samples,
+    // laid out the same way, so both apps play the same recordings and every
+    // instrument works offline from the first launch.
 
-    private static let gregSullivanPianos = "https://smpldsnds.github.io/sfzinstruments-greg-sullivan-e-pianos"
+    static let samplesDirectory = Bundle.main.url(forResource: "InstrumentSamples", withExtension: "bundle")
+        ?? Bundle.main.bundleURL.appending(path: "InstrumentSamples.bundle", directoryHint: .isDirectory)
 
     /// The SFZ file describing an electric piano's samples.
     var sfzURL: URL? {
         switch self {
-        case .electric: URL(string: "\(Self.gregSullivanPianos)/wurlitzer-ep200/Wurlitzer%20EP200.sfz")
-        case .cp80: URL(string: "\(Self.gregSullivanPianos)/cp80/CP80.sfz")
+        case .electric: Self.samplesDirectory.appending(path: "wurlitzer/wurlitzer-ep200.sfz")
+        case .cp80: Self.samplesDirectory.appending(path: "cp80/CP80.sfz")
         default: nil
         }
     }
@@ -44,15 +47,14 @@ nonisolated enum Instrument: String, CaseIterable, Identifiable, Sendable {
     /// Where an electric piano's sample paths are resolved from.
     var sampleBaseURL: URL? {
         switch self {
-        case .electric: URL(string: "\(Self.gregSullivanPianos)/wurlitzer-ep200")
-        case .cp80: URL(string: "\(Self.gregSullivanPianos)/cp80")
+        case .electric: Self.samplesDirectory.appending(path: "wurlitzer")
+        case .cp80: Self.samplesDirectory.appending(path: "cp80")
         default: nil
         }
     }
 
-    /// FluidR3 GM's church organ as a MIDI.js soundfont. MP3 rather than Ogg,
-    /// which is what smplr picks on Safari too.
-    static let organSoundfontURL = URL(string: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/church_organ-mp3.js")!
+    /// FluidR3 GM's church organ as a MIDI.js soundfont, with MP3 samples.
+    static let organSoundfontURL = samplesDirectory.appending(path: "organ/church_organ.js")
     /// Loop points that let an organ note sustain for as long as it is held.
-    static let organLoopsURL = URL(string: "https://goldst.dev/midi-js-soundfonts/FluidR3_GM/church_organ-loop.json")!
+    static let organLoopsURL = samplesDirectory.appending(path: "organ/church_organ-loop.json")
 }

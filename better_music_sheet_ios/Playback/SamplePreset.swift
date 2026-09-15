@@ -119,7 +119,7 @@ nonisolated struct SamplePreset: Sendable {
 
     // MARK: - Grand piano
 
-    static let splendidGrandBaseURL = URL(string: "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples")!
+    static let splendidGrandBaseURL = Instrument.samplesDirectory.appending(path: "grand")
 
     /// smplr's `SplendidGrandPiano` as the web app loads it: only the samples
     /// recorded at keys the piece plays, spread across the keyboard, with a

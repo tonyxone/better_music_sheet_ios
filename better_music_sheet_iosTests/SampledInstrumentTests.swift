@@ -38,7 +38,16 @@ struct SamplePresetTests {
 
         #expect(preset.fileExtensions == ["ogg", "m4a"])
         #expect(preset.url(for: "PP B-1", fileExtension: "ogg")?.absoluteString
-                == "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20B-1.ogg")
+                == Instrument.samplesDirectory.appending(path: "grand/PP B-1.ogg").absoluteString)
+    }
+
+    @Test func everyInstrumentShipsWithTheApp() throws {
+        let files = FileManager.default
+        let grand = try #require(SamplePreset.splendidGrand(notes: [23]).url(for: "PP B-1", fileExtension: "ogg"))
+        for url in [grand, Instrument.organSoundfontURL, Instrument.organLoopsURL]
+            + Instrument.allCases.compactMap(\.sfzURL) {
+            #expect(files.fileExists(atPath: url.path(percentEncoded: false)), "\(url.lastPathComponent) isn't bundled")
+        }
     }
 
     @Test func velocitiesAPieceNeverReachesLoadNothing() {
