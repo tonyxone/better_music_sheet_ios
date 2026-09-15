@@ -30,7 +30,11 @@ struct KeyboardView: View {
     var body: some View {
         Canvas { context, size in
             let unit = size.width / range.width
-            let labelsFit = showNames && unit >= 12
+            // Every white key is named whenever asked, however narrow the keys.
+            // Hiding them below a width left a phone with a wide piece showing
+            // none. Sized to the key instead, so even "C4" stays inside its own
+            // key rather than running into the next name.
+            let labelSize = min(11, max(5, unit * 0.6))
 
             for midi in range.lowMIDI...range.highMIDI where !KeyboardLayout.isBlack(midi) {
                 let extent = Self.layout.extent(of: midi)
@@ -53,10 +57,10 @@ struct KeyboardView: View {
                                  with: .color(Color(hex: Self.keyLip)))
                 }
 
-                if labelsFit {
+                if showNames {
                     let name = KeyboardLayout.noteName(midi, withOctave: KeyboardLayout.pitchClass(midi) == 0)
                     context.draw(Text(name)
-                                    .font(.system(size: min(11, unit * 0.5), weight: .semibold))
+                                    .font(.system(size: labelSize, weight: .semibold))
                                     .foregroundStyle(role == nil ? Brand.inkSoft : .white),
                                  at: CGPoint(x: rect.midX, y: rect.maxY - max(6, unit * 0.45)),
                                  anchor: .bottom)
@@ -92,7 +96,7 @@ struct KeyboardView: View {
     }
 
     private var accessibilityDescription: String {
-        let names = litKeys.keys.sorted().map { KeyboardLayout.noteName($0, withOctave: true) }
+        let names = litKeys.keys.sorted().map(KeyboardLayout.spokenName)
         return names.isEmpty ? "Keyboard, nothing sounding" : "Keyboard, sounding " + names.joined(separator: ", ")
     }
 

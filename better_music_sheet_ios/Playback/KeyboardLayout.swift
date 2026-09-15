@@ -33,6 +33,17 @@ nonisolated struct KeyboardLayout: Sendable {
         noteNames[pitchClass(midi)] + (withOctave ? String(midi / 12 - 1) : "")
     }
 
+    private static let flatNames = [1: "D♭", 3: "E♭", 6: "G♭", 8: "A♭", 10: "B♭"]
+
+    /// For VoiceOver. A black key is a sharp or a flat depending on the key
+    /// signature, so it gets both spellings rather than one that's wrong half
+    /// the time: "C♯ or D♭4".
+    static func spokenName(_ midi: Int) -> String {
+        let octave = String(midi / 12 - 1)
+        guard let flat = flatNames[pitchClass(midi)] else { return noteName(midi) + octave }
+        return "\(noteName(midi)) or \(flat)\(octave)"
+    }
+
     /// A stretch of keyboard to draw, from the left edge of its lowest key to
     /// the right edge of its highest, in white-key units.
     struct KeyRange: Sendable, Hashable {

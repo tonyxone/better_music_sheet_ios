@@ -37,6 +37,10 @@ struct KeyboardLayoutTests {
     @Test func namesKeys() {
         #expect(KeyboardLayout.noteName(60, withOctave: true) == "C4")
         #expect(KeyboardLayout.noteName(61) == "C♯")
+        // Spoken names give a black key both spellings.
+        #expect(KeyboardLayout.spokenName(60) == "C4")
+        #expect(KeyboardLayout.spokenName(61) == "C♯ or D♭4")
+        #expect(KeyboardLayout.spokenName(22) == "A♯ or B♭0")
         #expect(KeyboardLayout.noteName(21, withOctave: true) == "A0")
         #expect(KeyboardLayout.noteName(108, withOctave: true) == "C8")
         #expect(KeyboardLayout.isBlack(70))
