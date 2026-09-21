@@ -31,6 +31,8 @@ final class SheetDetailModel {
     private(set) var job: AnnotationJob?
     private(set) var stage: Stage = .working("Queued")
     private(set) var pdfData: Data?
+    private(set) var originalPDFData: Data?
+    private(set) var isLoadingOriginal = false
 
     private let route: SheetRoute
     private let client: APIClient
@@ -47,6 +49,15 @@ final class SheetDetailModel {
     }
 
     var title: String { job?.displayName ?? route.provisionalName }
+
+    /// Fetches the uploaded PDF only when the reader asks to see it. The
+    /// annotated PDF is still ready immediately when a sheet opens.
+    func loadOriginal() async throws {
+        guard originalPDFData == nil, !isLoadingOriginal else { return }
+        isLoadingOriginal = true
+        defer { isLoadingOriginal = false }
+        originalPDFData = try await files.data(jobID: route.jobID, artifact: .original)
+    }
 
     /// Follows the job until it reaches a final state, then fetches the PDF.
     ///

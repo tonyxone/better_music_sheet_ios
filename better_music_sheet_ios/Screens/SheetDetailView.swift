@@ -3,7 +3,16 @@ import SwiftUI
 /// Reading one sheet, from "still being recognised" through to the annotated
 /// page. Practising it is a separate page, opened from the toolbar.
 struct SheetDetailView: View {
+    private enum PDFVersion: String, CaseIterable, Identifiable {
+        case annotated, original
+
+        var id: Self { self }
+        var title: String { rawValue.capitalized }
+    }
+
     @State private var model: SheetDetailModel
+    @State private var displayedVersion: PDFVersion = .annotated
+    @State private var originalError: String?
     @Environment(\.scenePhase) private var scenePhase
 
     init(route: SheetRoute, job: AnnotationJob? = nil) {
@@ -21,8 +30,15 @@ struct SheetDetailView: View {
                 ProgressView().tint(Brand.accent)
             case .ready:
                 if let data = model.pdfData {
-                    SheetPDFView(data: data)
+                    SheetPDFView(data: displayedVersion == .original ? (model.originalPDFData ?? data) : data)
                         .ignoresSafeArea(edges: .bottom)
+                        .overlay {
+                            if displayedVersion == .original, model.isLoadingOriginal {
+                                ProgressView("Loading original…")
+                                    .padding(16)
+                                    .background(Brand.card, in: .rect(cornerRadius: 12))
+                            }
+                        }
                 }
             case .failed(let message):
                 FailureView(title: model.title, message: message)
@@ -32,6 +48,17 @@ struct SheetDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if model.stage == .ready, let data = model.pdfData, let job = model.job {
+                ToolbarItem(placement: .topBarLeading) {
+                    Picker("Sheet version", selection: $displayedVersion) {
+                        ForEach(PDFVersion.allCases) { version in
+                            Text(version.title).tag(version)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 190)
+                    .accessibilityHint("Switches between the annotated sheet and the uploaded original")
+                }
+
                 // Just left of the download, as on the web app's result page.
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
@@ -69,6 +96,25 @@ struct SheetDetailView: View {
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             await model.run()
+        }
+        .task(id: displayedVersion) {
+            guard displayedVersion == .original else { return }
+            do {
+                try await model.loadOriginal()
+                originalError = nil
+            } catch {
+                // Keep the annotated document visible rather than leaving the
+                // reader on a blank page when an older server lacks originals.
+                displayedVersion = .annotated
+                originalError = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            }
+        }
+        .alert("Couldn't load the original", isPresented: Binding(
+            get: { originalError != nil }, set: { if !$0 { originalError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(originalError ?? "")
         }
     }
 }

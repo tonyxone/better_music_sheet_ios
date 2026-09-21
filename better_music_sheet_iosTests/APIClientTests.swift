@@ -194,7 +194,7 @@ struct APIClientTests {
 
     @Test func presignedFetchesDropOurCredentials() async throws {
         let channel = StubProtocol.Channel([
-            .init(body: Data(#"{"direct": true, "pdf": "https://s3.example.com/x.pdf", "timeline": null}"#.utf8)),
+            .init(body: Data(#"{"direct": true, "pdf": "https://s3.example.com/x.pdf", "original": null, "timeline": null}"#.utf8)),
             .init(body: Data("%PDF-1.7 fake".utf8)),
         ])
 
@@ -206,6 +206,18 @@ struct APIClientTests {
         // Neither identity may travel to another origin.
         #expect(s3.value(forHTTPHeaderField: "Authorization") == nil)
         #expect(s3.value(forHTTPHeaderField: "X-Guest-Id") == nil)
+    }
+
+    @Test func fetchesTheOriginalArtifact() async throws {
+        let channel = StubProtocol.Channel([
+            .init(body: Data(#"{"direct": false, "pdf": "/annotated.pdf", "original": "/original.pdf", "timeline": null}"#.utf8)),
+            .init(body: Data("%PDF-1.7 original".utf8)),
+        ])
+
+        let data = try await SheetFiles(client: client(channel)).data(jobID: "job123", artifact: .original)
+
+        #expect(String(decoding: data, as: UTF8.self) == "%PDF-1.7 original")
+        #expect(channel.recorded.last?.url?.path == "/original.pdf")
     }
 }
 
