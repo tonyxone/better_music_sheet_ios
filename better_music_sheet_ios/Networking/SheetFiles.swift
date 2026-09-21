@@ -8,11 +8,14 @@ import Foundation
 /// post-dates the streaming ones and a deployed backend may not have it yet
 /// (mirrors the web app's lib/sheet-files.ts).
 nonisolated enum SheetArtifact: Sendable {
-    case pdf, timeline
+    /// `pdf` is the annotated result; `original` is the PDF the reader
+    /// uploaded before annotation.
+    case pdf, original, timeline
 
     var legacyPath: String {
         switch self {
         case .pdf: "download?inline=1"
+        case .original: "original?inline=1"
         case .timeline: "timeline"
         }
     }
@@ -21,11 +24,13 @@ nonisolated enum SheetArtifact: Sendable {
 nonisolated struct SheetAssets: Codable, Sendable {
     let direct: Bool
     let pdf: String?
+    let original: String?
     let timeline: String?
 
     func url(for artifact: SheetArtifact) -> String? {
         switch artifact {
         case .pdf: pdf
+        case .original: original
         case .timeline: timeline
         }
     }

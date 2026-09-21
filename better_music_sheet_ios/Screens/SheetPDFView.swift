@@ -26,6 +26,7 @@ struct SheetPDFView: UIViewRepresentable {
         // Loaded once. Comparing documents on every update would re-serialize
         // the whole PDF thirty times a second while playing.
         view.document = PDFDocument(data: data)
+        context.coordinator.loadedData = data
 
         let tap = UITapGestureRecognizer(target: context.coordinator,
                                          action: #selector(Coordinator.tapped(_:)))
@@ -40,6 +41,14 @@ struct SheetPDFView: UIViewRepresentable {
     }
 
     func updateUIView(_ view: PDFView, context: Context) {
+        // This view is also used to compare the annotated PDF with the
+        // uploaded original. UIViewRepresentable retains its PDFView when
+        // `data` changes, so replace the document explicitly.
+        if context.coordinator.loadedData != data {
+            context.coordinator.loadedData = data
+            view.document = PDFDocument(data: data)
+            context.coordinator.clearMarks()
+        }
         context.coordinator.onTap = onTap
         context.coordinator.show(measure: highlightedMeasure, playhead: playhead)
     }
@@ -54,11 +63,19 @@ struct SheetPDFView: UIViewRepresentable {
     final class Coordinator: NSObject {
         weak var view: PDFView?
         var onTap: (@MainActor (CGPoint, Int) -> Void)?
+        var loadedData: Data?
 
         private var measureMark: PDFAnnotation?
         private var playheadMark: PDFAnnotation?
         private var shownMeasure: TimelineMeasure?
         private var shownPlayhead: PlayheadOnset?
+
+        func clearMarks() {
+            measureMark = nil
+            playheadMark = nil
+            shownMeasure = nil
+            shownPlayhead = nil
+        }
 
         @objc func tapped(_ recognizer: UITapGestureRecognizer) {
             guard let view, let document = view.document else { return }

@@ -6,6 +6,13 @@ import SwiftUI
 /// A page of its own rather than a mode of the reading page. Reading a sheet
 /// and practising it are different moments, and each gets the whole screen.
 struct PracticeView: View {
+    private enum PDFVersion: String, CaseIterable, Identifiable {
+        case annotated, original
+
+        var id: Self { self }
+        var title: String { rawValue.capitalized }
+    }
+
     let title: String
 
     @State private var player: PlayerModel
@@ -13,6 +20,10 @@ struct PracticeView: View {
     /// fetched here when opened straight from the library.
     @State private var pdfData: Data?
     @State private var pdfFailed = false
+    @State private var originalPDFData: Data?
+    @State private var isLoadingOriginal = false
+    @State private var displayedVersion: PDFVersion = .annotated
+    @State private var originalError: String?
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -34,8 +45,31 @@ struct PracticeView: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Picker("Sheet version", selection: $displayedVersion) {
+                    ForEach(PDFVersion.allCases) { version in
+                        Text(version.title).tag(version)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 190)
+                .accessibilityHint("Switches between the annotated sheet and the uploaded original")
+            }
+        }
         .task { await player.load() }
         .task { await loadPDFIfNeeded() }
+        .task(id: displayedVersion) {
+            guard displayedVersion == .original else { return }
+            await loadOriginalIfNeeded()
+        }
+        .alert("Couldn't load the original", isPresented: Binding(
+            get: { originalError != nil }, set: { if !$0 { originalError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(originalError ?? "")
+        }
         // Without background audio the system suspends the engine, so pause
         // cleanly instead of resuming onto a stale clock.
         .onChange(of: scenePhase) { _, phase in
@@ -98,10 +132,17 @@ struct PracticeView: View {
     @ViewBuilder
     private var sheet: some View {
         if let pdfData {
-            SheetPDFView(data: pdfData,
+            SheetPDFView(data: displayedVersion == .original ? (originalPDFData ?? pdfData) : pdfData,
                          highlightedMeasure: player.highlightedMeasure,
                          playhead: player.playhead) { point, page in
                 player.handleTap(at: point, page: page)
+            }
+            .overlay {
+                if displayedVersion == .original, isLoadingOriginal {
+                    ProgressView("Loading original…")
+                        .padding(16)
+                        .background(Brand.card, in: .rect(cornerRadius: 12))
+                }
             }
         } else if pdfFailed {
             Text("The sheet couldn't be loaded, but practice still works.")
@@ -123,6 +164,23 @@ struct PracticeView: View {
             pdfData = try await files.data(jobID: jobID, artifact: .pdf)
         } catch {
             pdfFailed = true
+        }
+    }
+
+    /// Practice playback is based on the timeline, not the rendered PDF, so
+    /// switching documents leaves its current position and sound untouched.
+    private func loadOriginalIfNeeded() async {
+        guard originalPDFData == nil, !isLoadingOriginal else { return }
+        isLoadingOriginal = true
+        defer { isLoadingOriginal = false }
+        do {
+            originalPDFData = try await files.data(jobID: jobID, artifact: .original)
+            originalError = nil
+        } catch {
+            // Continue showing the annotated sheet if an older server does
+            // not expose the uploaded original.
+            displayedVersion = .annotated
+            originalError = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
     }
 }
