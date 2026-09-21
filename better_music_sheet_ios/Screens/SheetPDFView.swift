@@ -56,7 +56,7 @@ struct SheetPDFView: UIViewRepresentable {
         var onTap: (@MainActor (CGPoint, Int) -> Void)?
 
         private var measureMark: PDFAnnotation?
-        private var playheadMark: PDFAnnotation?
+        private var playheadMarks: [PDFAnnotation] = []
         private var shownMeasure: TimelineMeasure?
         private var shownPlayhead: PlayheadOnset?
 
@@ -97,28 +97,51 @@ struct SheetPDFView: UIViewRepresentable {
 
             if playhead != shownPlayhead {
                 shownPlayhead = playhead
-                if let old = playheadMark {
+                for old in playheadMarks {
                     old.page?.removeAnnotation(old)
-                    playheadMark = nil
                 }
+                playheadMarks = []
                 if let playhead, let page = document.page(at: playhead.page - 1) {
-                    // A hairline drawn as a filled box, so its position doesn't
-                    // depend on how a line annotation reads its end points.
                     let crop = page.bounds(for: .cropBox)
-                    let rect = CGRect(x: crop.minX + playhead.x - 0.7,
-                                      y: crop.minY + crop.height - playhead.y1,
-                                      width: 1.4,
-                                      height: playhead.y1 - playhead.y0)
-                    let mark = PDFAnnotation(bounds: rect, forType: .square, withProperties: nil)
-                    mark.color = .clear
-                    mark.interiorColor = UIColor(Brand.accent)
-                    let border = PDFBorder()
-                    border.lineWidth = 0
-                    mark.border = border
-                    page.addAnnotation(mark)
-                    playheadMark = mark
+                    let x = crop.minX + playhead.x
+                    let bottom = crop.minY + crop.height - playhead.y1
+                    let top = crop.minY + crop.height - playhead.y0
+                    // Matches the web app's `.playhead` rule in globals.css: a 2px
+                    // dashed border-left in the accent colour. Built from filled
+                    // segments, like the measure box, rather than a PDFKit Line
+                    // annotation — Line annotations don't reliably get an
+                    // appearance stream generated on iOS.
+                    playheadMarks = Self.dashSegments(x: x, bottom: bottom, top: top)
+                        .map { segment in
+                            let mark = PDFAnnotation(bounds: segment, forType: .square, withProperties: nil)
+                            mark.color = .clear
+                            mark.interiorColor = UIColor(Brand.accent)
+                            let border = PDFBorder()
+                            border.lineWidth = 0
+                            mark.border = border
+                            return mark
+                        }
+                    for mark in playheadMarks {
+                        page.addAnnotation(mark)
+                    }
                 }
             }
+        }
+
+        /// Rects for a vertical dashed line's filled segments, in the page's
+        /// bottom-up space, spanning from `bottom` up to `top` at `x`.
+        private static func dashSegments(x: CGFloat, bottom: CGFloat, top: CGFloat) -> [CGRect] {
+            let width: CGFloat = 2
+            let dash: CGFloat = 5
+            let gap: CGFloat = 4
+            var segments: [CGRect] = []
+            var y = bottom
+            while y < top {
+                let height = min(dash, top - y)
+                segments.append(CGRect(x: x - width / 2, y: y, width: width, height: height))
+                y += dash + gap
+            }
+            return segments
         }
 
         /// The timeline's top-down box in this page's bottom-up space,
