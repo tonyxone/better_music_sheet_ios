@@ -18,8 +18,11 @@ let package = Package(
         .target(
             name: "better_music_sheet_ios",
             path: "better_music_sheet_ios",
-            exclude: ["App", "Library", "UI", "Screens", "Assets.xcassets"],
-            sources: ["Models", "Networking", "Auth", "Config", "Playback", "Sheet", "Upload"]
+            // PaywallView imports SwiftUI, so — like the rest of the UI —
+            // it stays app-target-only even though it lives in Subscription/
+            // alongside the StoreKit/Foundation code that is tested here.
+            exclude: ["App", "Library", "UI", "Screens", "Assets.xcassets", "Subscription/PaywallView.swift"],
+            sources: ["Models", "Networking", "Auth", "Config", "Playback", "Sheet", "Upload", "Subscription"]
         ),
         .testTarget(
             name: "better_music_sheet_iosTests",

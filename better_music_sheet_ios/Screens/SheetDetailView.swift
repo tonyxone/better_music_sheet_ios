@@ -13,6 +13,7 @@ struct SheetDetailView: View {
     @State private var model: SheetDetailModel
     @State private var displayedVersion: PDFVersion = .annotated
     @State private var originalError: String?
+    @State private var entitlements = EntitlementStore.shared
     @Environment(\.scenePhase) private var scenePhase
 
     init(route: SheetRoute, job: AnnotationJob? = nil) {
@@ -62,7 +63,13 @@ struct SheetDetailView: View {
                 // Just left of the download, as on the web app's result page.
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
-                        PracticeView(jobID: job.jobID, title: model.title, pdfData: data)
+                        // Practice mode is premium-gated; a free-tier or
+                        // guest visitor sees the paywall in its place.
+                        if entitlements.isEntitled {
+                            PracticeView(jobID: job.jobID, title: model.title, pdfData: data)
+                        } else {
+                            PaywallView()
+                        }
                     } label: {
                         KeyboardIcon()
                             .foregroundStyle(Brand.ink)
@@ -115,6 +122,11 @@ struct SheetDetailView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(originalError ?? "")
+        }
+        .safeAreaInset(edge: .bottom) {
+            if !entitlements.isEntitled {
+                AdBannerView().frame(height: 50)
+            }
         }
     }
 }

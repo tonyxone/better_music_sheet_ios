@@ -18,10 +18,12 @@ final class LibraryModel {
 
     private let client: APIClient
     private let sessions: SessionStore
+    private let entitlements: EntitlementStore
 
-    init(client: APIClient = .shared, sessions: SessionStore = .shared) {
+    init(client: APIClient = .shared, sessions: SessionStore = .shared, entitlements: EntitlementStore = .shared) {
         self.client = client
         self.sessions = sessions
+        self.entitlements = entitlements
     }
 
     var hasWorkInProgress: Bool { jobs.contains { $0.status.isInProgress } }
@@ -66,6 +68,11 @@ final class LibraryModel {
 
     func load() async {
         currentUser = await sessions.current()?.user
+        // Runs alongside rather than ahead of the sheet fetch below — a slow
+        // subscription check shouldn't hold up the library the user came
+        // here to see. This is also what re-checks entitlement "on account
+        // change," since every sign-in and sign-out already calls load().
+        Task { await entitlements.refresh() }
         if jobs.isEmpty { state = .loading }
         do {
             let fetched: [AnnotationJob] = try await client.get("/api/sheets")

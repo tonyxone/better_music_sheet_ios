@@ -13,6 +13,7 @@ struct RootView: View {
     /// the splash never flashes on screen only to be dismissed a moment
     /// later once the async check would have resolved.
     @State private var welcomeSeen = SessionStore.hasStoredSession()
+    @State private var entitlements = EntitlementStore.shared
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -22,7 +23,14 @@ struct RootView: View {
                     case .sheet:
                         SheetDetailView(route: route)
                     case .practice:
-                        PracticeView(jobID: route.jobID, title: route.provisionalName)
+                        // Practice mode is premium-gated; a signed-in
+                        // free-tier or guest visitor sees the paywall in
+                        // place of the practice screen itself.
+                        if entitlements.isEntitled {
+                            PracticeView(jobID: route.jobID, title: route.provisionalName)
+                        } else {
+                            PaywallView()
+                        }
                     }
                 }
         }

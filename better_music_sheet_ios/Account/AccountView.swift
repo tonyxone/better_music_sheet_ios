@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The account screen — reached from the library toolbar's person icon (see
 /// LibraryView). Sign-in is optional everywhere else in the app; uploading,
@@ -58,6 +59,8 @@ private struct SignedInContent: View {
     @State private var deleteConfirmationText = ""
     @State private var deleting = false
     @State private var deleteError: String?
+    @State private var restoring = false
+    @State private var restoreError: String?
 
     var body: some View {
         VStack(spacing: 20) {
@@ -75,6 +78,26 @@ private struct SignedInContent: View {
                     Text(email)
                         .font(.system(size: 13))
                         .foregroundStyle(Brand.inkSoft)
+                }
+            }
+
+            VStack(spacing: 10) {
+                Button("Manage Subscription", action: openSubscriptionManagement)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Brand.accent)
+
+                Button(restoring ? "Restoring…" : "Restore Purchases") {
+                    Task { await restore() }
+                }
+                .font(.system(size: 13))
+                .foregroundStyle(Brand.inkSoft)
+                .disabled(restoring)
+
+                if let restoreError {
+                    Text(restoreError)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Brand.danger)
+                        .multilineTextAlignment(.center)
                 }
             }
 
@@ -131,6 +154,25 @@ private struct SignedInContent: View {
             try await model.deleteAccount()
         } catch {
             deleteError = (error as? APIError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    private func openSubscriptionManagement() {
+        guard let url = URL(string: "https://apps.apple.com/account/subscriptions") else { return }
+        UIApplication.shared.open(url)
+    }
+
+    private func restore() async {
+        restoreError = nil
+        restoring = true
+        defer { restoring = false }
+        do {
+            try await SubscriptionManager.shared.restore()
+            if !EntitlementStore.shared.isEntitled {
+                restoreError = "No active subscription found for this Apple ID."
+            }
+        } catch {
+            restoreError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }
 }
