@@ -8,6 +8,7 @@ struct LibraryView: View {
     @State private var showingAccount = false
     /// A sheet to open once the add panel has finished closing.
     @State private var pendingRoute: SheetRoute?
+    @State private var entitlements = EntitlementStore.shared
     @Binding var path: [SheetRoute]
     @Environment(\.scenePhase) private var scenePhase
 
@@ -19,6 +20,11 @@ struct LibraryView: View {
                 .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 84) }
 
             addButton
+        }
+        .safeAreaInset(edge: .top) {
+            if !entitlements.isEntitled {
+                AdBannerView().frame(height: 50)
+            }
         }
         .navigationTitle("Library")
         .navigationBarTitleDisplayMode(.large)
