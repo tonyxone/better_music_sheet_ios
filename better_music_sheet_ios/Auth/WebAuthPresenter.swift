@@ -1,5 +1,7 @@
 import AuthenticationServices
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// Presents Cognito's hosted UI in a system browser sheet and resolves with
 /// the callback URL it redirects to afterward. Google and Apple both need
@@ -44,11 +46,17 @@ final class WebAuthPresenter: NSObject, ASWebAuthenticationPresentationContextPr
     /// be marked `@MainActor` from this side.
     nonisolated func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         MainActor.assumeIsolated {
+            #if canImport(UIKit)
             // There's always a foreground window scene while this can be
             // called — it's only invoked while presenting UI on one.
             let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
             return scenes.flatMap(\.windows).first { $0.isKeyWindow }
                 ?? ASPresentationAnchor(windowScene: scenes[0])
+            #else
+            // Only reached by the macOS `swift test` harness, which never
+            // presents sign-in.
+            return ASPresentationAnchor()
+            #endif
         }
     }
 }

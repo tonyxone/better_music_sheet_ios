@@ -72,7 +72,7 @@ struct SheetPDFView: UIViewRepresentable {
 
         func clearMarks() {
             measureMark = nil
-            playheadMark = nil
+            playheadMarks = []
             shownMeasure = nil
             shownPlayhead = nil
         }
