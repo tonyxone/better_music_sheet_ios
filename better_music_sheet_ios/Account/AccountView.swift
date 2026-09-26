@@ -2,9 +2,10 @@ import SwiftUI
 import UIKit
 
 /// The account screen — reached from the library toolbar's person icon (see
-/// LibraryView). Sign-in is optional everywhere else in the app; uploading,
-/// annotating and practising all work as a guest. This is the one screen
-/// that's about identity rather than sheet music.
+/// LibraryView). A guest can read their existing sheets and try the sample;
+/// uploading and subscribing need an account, since one subscription covers
+/// the web app and this one. This is the one screen that's about identity
+/// rather than sheet music.
 struct AccountView: View {
     @State private var model = AccountModel()
     @Environment(\.dismiss) private var dismiss
@@ -82,9 +83,7 @@ private struct SignedInContent: View {
             }
 
             VStack(spacing: 10) {
-                Button("Manage Subscription", action: openSubscriptionManagement)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Brand.accent)
+                SubscriptionSection()
 
                 Button(restoring ? "Restoring…" : "Restore Purchases") {
                     Task { await restore() }
@@ -155,11 +154,6 @@ private struct SignedInContent: View {
         } catch {
             deleteError = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
-    }
-
-    private func openSubscriptionManagement() {
-        guard let url = URL(string: "https://apps.apple.com/account/subscriptions") else { return }
-        UIApplication.shared.open(url)
     }
 
     private func restore() async {

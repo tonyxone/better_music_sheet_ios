@@ -4,7 +4,9 @@ import GoogleMobileAds
 @main
 struct BetterMusicSheetApp: App {
     init() {
-        MobileAds.shared.start(completionHandler: nil)
+        if AdConfig.isEnabled {
+            MobileAds.shared.start(completionHandler: nil)
+        }
     }
 
     var body: some Scene {

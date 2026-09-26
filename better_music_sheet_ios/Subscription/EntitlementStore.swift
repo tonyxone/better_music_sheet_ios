@@ -46,6 +46,20 @@ final class EntitlementStore {
         }
     }
 
+    /// Cancels at period end, through whichever store billed it. Only a web
+    /// (Stripe) subscription can be cancelled by the server; an App Store one
+    /// is cancelled in Settings, which the account screen opens instead. The
+    /// platform is named so the server refuses if this view is out of date.
+    func cancelWebSubscription() async throws {
+        guard let platform = status?.platform else { return }
+        struct Body: Encodable { let platform: String }
+        let updated: SubscriptionStatus = try await client.post("/api/subscriptions/cancel", body: Body(platform: platform))
+        apply(entitled: updated.isPremium, status: SubscriptionStatus(
+            tier: updated.tier, plan: updated.plan, status: updated.status, startedAt: updated.startedAt,
+            currentPeriodEnd: updated.currentPeriodEnd, cancelAtPeriodEnd: updated.cancelAtPeriodEnd,
+            platform: updated.platform, trialEligible: status?.trialEligible ?? updated.trialEligible))
+    }
+
     private func apply(entitled: Bool, status: SubscriptionStatus?) {
         isEntitled = entitled
         self.status = status

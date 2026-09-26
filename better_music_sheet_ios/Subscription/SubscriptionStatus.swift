@@ -8,9 +8,19 @@ nonisolated struct SubscriptionStatus: Codable, Sendable, Equatable {
     let tier: String
     let plan: String?
     let status: String?
+    /// When the current subscription began, trial included (epoch seconds).
+    var startedAt: Double? = nil
     let currentPeriodEnd: Double?
     let cancelAtPeriodEnd: Bool?
+    /// "apple" or "stripe": which store bills it, and so where it's cancelled.
     let platform: String?
+    /// Whether a new subscription would start with the 7-day free trial —
+    /// only an account that has never subscribed before gets one. Absent
+    /// from older backends, which gave everyone the trial.
+    var trialEligible: Bool? = nil
 
     var isPremium: Bool { tier == "premium" }
+    var isTrialing: Bool { status == "trialing" }
+    var isBilledByApple: Bool { platform == "apple" }
+    var offersTrial: Bool { trialEligible != false }
 }

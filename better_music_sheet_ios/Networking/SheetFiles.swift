@@ -9,14 +9,16 @@ import Foundation
 /// (mirrors the web app's lib/sheet-files.ts).
 nonisolated enum SheetArtifact: Sendable {
     /// `pdf` is the annotated result; `original` is the PDF the reader
-    /// uploaded before annotation.
-    case pdf, original, timeline
+    /// uploaded before annotation; `labels` is the placed note names as data
+    /// (see Editing/SheetLabels.swift).
+    case pdf, original, timeline, labels
 
     var legacyPath: String {
         switch self {
         case .pdf: "download?inline=1"
         case .original: "original?inline=1"
         case .timeline: "timeline"
+        case .labels: "labels"
         }
     }
 }
@@ -26,12 +28,23 @@ nonisolated struct SheetAssets: Codable, Sendable {
     let pdf: String?
     let original: String?
     let timeline: String?
+    /// Null for sheets annotated before label export, and absent from older
+    /// backends.
+    let labels: String?
+    /// The upload's media type. Only a PDF can be drawn over; a photo upload
+    /// can't stand in for the annotated copy.
+    let originalType: String?
+
+    var originalIsPDF: Bool {
+        original != nil && (originalType == nil || originalType == "application/pdf")
+    }
 
     func url(for artifact: SheetArtifact) -> String? {
         switch artifact {
         case .pdf: pdf
         case .original: original
         case .timeline: timeline
+        case .labels: labels
         }
     }
 }
@@ -43,11 +56,18 @@ nonisolated struct SheetFiles: Sendable {
         self.client = client
     }
 
-    func data(jobID: String, artifact: SheetArtifact) async throws -> Data {
-        let assets: SheetAssets
+    /// Nil from a backend that predates the assets endpoint.
+    func assets(jobID: String) async throws -> SheetAssets? {
         do {
-            assets = try await client.get("/api/sheets/\(jobID)/assets")
+            return try await client.get("/api/sheets/\(jobID)/assets")
         } catch let error as APIError where error.isNotFound {
+            return nil
+        }
+    }
+
+    func data(jobID: String, artifact: SheetArtifact, assets known: SheetAssets? = nil) async throws -> Data {
+        let fetched: SheetAssets? = if let known { known } else { try await assets(jobID: jobID) }
+        guard let assets = fetched else {
             let (data, _) = try await client.call("/api/sheets/\(jobID)/\(artifact.legacyPath)")
             return data
         }
