@@ -84,6 +84,36 @@ struct EntitlementStoreTests {
         #expect(!entitlements.isEntitled)
         #expect(defaults.bool(forKey: Self.cacheKey) == false)
     }
+    @Test func readsTrialEligibilityAndCancelsAWebSubscriptionByPlatform() async throws {
+        let channel = StubProtocol.Channel([
+            .init(body: Data(#"""
+            {"tier": "premium", "plan": "monthly", "status": "trialing", "started_at": 1700000000,
+             "current_period_end": 1999999999, "cancel_at_period_end": false, "platform": "stripe",
+             "trial_eligible": false}
+            """#.utf8)),
+            .init(body: Data(#"""
+            {"tier": "premium", "plan": "monthly", "status": "trialing", "started_at": 1700000000,
+             "current_period_end": 1999999999, "cancel_at_period_end": true, "platform": "stripe"}
+            """#.utf8)),
+        ])
+        let sessions = SessionStore(store: InMemorySecretStore())
+        await sessions.save(session())
+        let entitlements = store(channel: channel, sessions: sessions, defaults: freshDefaults())
+
+        await entitlements.refresh()
+        #expect(entitlements.status?.offersTrial == false)
+        #expect(entitlements.status?.startedAt == 1700000000)
+        #expect(entitlements.status?.isBilledByApple == false)
+
+        try await entitlements.cancelWebSubscription()
+        #expect(entitlements.isEntitled)
+        #expect(entitlements.status?.cancelAtPeriodEnd == true)
+        // The cancel answer has no trial field; what was known is kept.
+        #expect(entitlements.status?.offersTrial == false)
+        let cancel = try #require(channel.recorded.last)
+        #expect(cancel.url?.path == "/api/subscriptions/cancel")
+        #expect(cancel.httpMethod == "POST")
+    }
 }
 
 struct SubscriptionStatusDecodingTests {
@@ -113,4 +143,5 @@ struct SubscriptionStatusDecodingTests {
         #expect(!status.isPremium)
         #expect(status.plan == nil)
     }
+
 }

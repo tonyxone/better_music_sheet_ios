@@ -25,11 +25,13 @@ struct RootView: View {
                     case .practice:
                         // Practice mode is premium-gated; a signed-in
                         // free-tier or guest visitor sees the paywall in
-                        // place of the practice screen itself.
-                        if entitlements.isEntitled {
+                        // place of the practice screen itself. The bundled
+                        // sample is the exception: it plays in full for
+                        // everyone, which is the point of it.
+                        if entitlements.isEntitled || DemoSheet.isDemo(route.jobID) {
                             PracticeView(jobID: route.jobID, title: route.provisionalName)
                         } else {
-                            PaywallView()
+                            PaywallView(pushed: true)
                         }
                     }
                 }

@@ -24,6 +24,13 @@ struct PracticeView: View {
     @State private var isLoadingOriginal = false
     @State private var displayedVersion: PDFVersion = .annotated
     @State private var originalError: String?
+    /// The names as data, drawn over the original — so names moved or
+    /// retyped on the reading page show here as they do there. Nil keeps the
+    /// annotated copy as it was made.
+    @State private var labels: LabelSet?
+    /// Holds the sheet back until it's known which copy to show, rather than
+    /// flashing the annotated one first.
+    @State private var overlayReady = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -46,19 +53,36 @@ struct PracticeView: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Picker("Sheet version", selection: $displayedVersion) {
-                    ForEach(PDFVersion.allCases) { version in
-                        Text(version.title).tag(version)
+            if #available(iOS 26.0, *) {
+                // The segmented control is its own box; without this iOS 26
+                // also draws the toolbar's glass capsule around it.
+                ToolbarItem(placement: .topBarLeading) {
+                    Picker("Sheet version", selection: $displayedVersion) {
+                        ForEach(PDFVersion.allCases) { version in
+                            Text(version.title).tag(version)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .frame(width: 190)
+                    .accessibilityHint("Switches between the annotated sheet and the uploaded original")
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 190)
-                .accessibilityHint("Switches between the annotated sheet and the uploaded original")
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .topBarLeading) {
+                    Picker("Sheet version", selection: $displayedVersion) {
+                        ForEach(PDFVersion.allCases) { version in
+                            Text(version.title).tag(version)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 190)
+                    .accessibilityHint("Switches between the annotated sheet and the uploaded original")
+                }
             }
         }
         .task { await player.load() }
         .task { await loadPDFIfNeeded() }
+        .task { await loadLabels() }
         .task(id: displayedVersion) {
             guard displayedVersion == .original else { return }
             await loadOriginalIfNeeded()
@@ -131,10 +155,15 @@ struct PracticeView: View {
     /// sheet that fails to load leaves everything else working.
     @ViewBuilder
     private var sheet: some View {
-        if let pdfData {
-            SheetPDFView(data: displayedVersion == .original ? (originalPDFData ?? pdfData) : pdfData,
+        if let pdfData, overlayReady {
+            let namesLive = labels != nil && originalPDFData != nil
+            let base = displayedVersion == .original || namesLive ? (originalPDFData ?? pdfData) : pdfData
+            SheetPDFView(data: base,
                          highlightedMeasure: player.highlightedMeasure,
-                         playhead: player.playhead) { point, page in
+                         playhead: player.playhead,
+                         overlay: SheetOverlayContent(labels: labels?.adoptingIDs(of: player.edits.labels.keys),
+                                                      edits: player.edits,
+                                                      showsNames: namesLive && displayedVersion == .annotated)) { point, page in
                 player.handleTap(at: point, page: page)
             }
             .overlay {
@@ -156,6 +185,25 @@ struct PracticeView: View {
                 .tint(Brand.accent)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    private func loadLabels() async {
+        defer { overlayReady = true }
+        guard let assets = try? await files.assets(jobID: jobID) else { return }
+        let (original, labelData) = await SheetDetailModel.labelSources(jobID: jobID, assets: assets, files: files)
+        guard let original else { return }
+        var found = labelData.flatMap(LabelSet.decode)
+        if found == nil {
+            // Older sheets: the names are read back out of the annotated PDF.
+            let annotated: Data?
+            if let pdfData { annotated = pdfData } else { annotated = try? await files.data(jobID: jobID, artifact: .pdf, assets: assets) }
+            if let annotated {
+                found = await Task.detached { LabelSet.reading(pdf: annotated, timeline: nil) }.value
+            }
+        }
+        guard let found else { return }
+        if originalPDFData == nil { originalPDFData = original }
+        labels = found
     }
 
     private func loadPDFIfNeeded() async {

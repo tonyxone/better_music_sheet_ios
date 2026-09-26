@@ -2,42 +2,92 @@ import SwiftUI
 import StoreKit
 
 /// Presented in place of PracticeView wherever practice mode is gated (see
-/// RootView and SheetDetailView) — the only place in the app that asks for
-/// money.
+/// RootView and SheetDetailView), and in place of the upload panel — the only
+/// place in the app that asks for money.
+///
+/// One subscription covers the web app and this one, recorded against the
+/// signed-in account — so buying needs an account first, and an account
+/// already subscribed (on either) is told so instead of being billed twice.
 struct PaywallView: View {
     @State private var manager = SubscriptionManager.shared
+    @State private var entitlements = EntitlementStore.shared
     @State private var selectedProductID: String?
     @State private var purchasing = false
     @State private var restoring = false
     @State private var errorMessage: String?
+    /// Nil until the session check settles.
+    @State private var signedIn: Bool?
+    @State private var showingAccount = false
     @Environment(\.dismiss) private var dismiss
 
+    private static let benefits = [
+        "Upload your own sheets",
+        "Every note labelled",
+        "Practise on a keyboard",
+        "Unlimited sheet storage",
+        "Access anywhere — web and iPhone",
+    ]
+
+    /// True when pushed onto the app's navigation stack (in place of the
+    /// practice page) rather than presented as a sheet. A pushed paywall must
+    /// not bring its own NavigationStack: one nested inside the app's typed
+    /// stack crashes SwiftUI when the path changes.
+    var pushed = false
+
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Brand.paper.ignoresSafeArea()
-                content
-            }
-            .navigationTitle("Premium")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+        Group {
+            if pushed {
+                page
+            } else {
+                NavigationStack {
+                    page
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Close") { dismiss() }
+                            }
+                        }
                 }
             }
         }
         .task {
+            await checkAccount()
             await manager.loadProducts()
             if selectedProductID == nil {
                 selectedProductID = manager.products.first { $0.id == SubscriptionProduct.yearlyID }?.id
                     ?? manager.products.first?.id
             }
         }
+        .sheet(isPresented: $showingAccount, onDismiss: { Task { await checkAccount() } }) {
+            AccountView()
+        }
+    }
+
+    private var page: some View {
+        ZStack {
+            Brand.paper.ignoresSafeArea()
+            content
+        }
+        .navigationTitle("Premium")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func checkAccount() async {
+        signedIn = await SessionStore.shared.current() != nil
+        await entitlements.refresh()
+    }
+
+    /// Only an account that has never subscribed gets the trial, whichever
+    /// store it subscribed through — and StoreKit must agree for this Apple ID.
+    private var offersTrial: Bool {
+        guard entitlements.status?.offersTrial != false else { return false }
+        return manager.products.contains { $0.subscription?.introductoryOffer?.paymentMode == .freeTrial }
     }
 
     @ViewBuilder
     private var content: some View {
-        if manager.isLoadingProducts && manager.products.isEmpty {
+        if entitlements.isEntitled, let status = entitlements.status {
+            AlreadySubscribed(status: status) { dismiss() }
+        } else if signedIn == nil || (manager.isLoadingProducts && manager.products.isEmpty) {
             ProgressView().tint(Brand.accent)
         } else if manager.products.isEmpty {
             RetryNotice(message: manager.loadError ?? "Couldn't load subscription options.") {
@@ -57,16 +107,22 @@ struct PaywallView: View {
 
                     VStack(spacing: 12) {
                         ForEach(manager.products) { product in
-                            PlanCard(product: product, isSelected: product.id == selectedProductID) {
+                            PlanCard(product: product, isSelected: product.id == selectedProductID, offersTrial: offersTrial) {
                                 selectedProductID = product.id
                             }
                         }
                     }
 
-                    purchaseButton
-                    restoreButton
+                    benefits
 
-                    Text("A 7-day free trial, then the plan you choose. Cancel anytime in Settings.")
+                    if signedIn == true {
+                        purchaseButton
+                        restoreButton
+                    } else {
+                        signInButton
+                    }
+
+                    Text(terms)
                         .font(.system(size: 11.5))
                         .foregroundStyle(Brand.inkSoft)
                         .multilineTextAlignment(.center)
@@ -82,10 +138,10 @@ struct PaywallView: View {
             Image(systemName: "pianokeys")
                 .font(.system(size: 30))
                 .foregroundStyle(Brand.accent)
-            Text("Practice without limits")
+            Text("Your own sheet music, labelled")
                 .font(Brand.title(22))
                 .foregroundStyle(Brand.ink)
-            Text("Premium unlocks practice mode on every sheet, with a 7-day free trial.")
+            Text("Upload your piano music and get it back with the letter name above every note, then practise it on a keyboard that lights up each note\(offersTrial ? ". Starts with a 7-day free trial." : ".")")
                 .font(.system(size: 14))
                 .foregroundStyle(Brand.inkSoft)
                 .multilineTextAlignment(.center)
@@ -93,9 +149,52 @@ struct PaywallView: View {
         .padding(.top, 12)
     }
 
+    private var benefits: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            ForEach(Self.benefits, id: \.self) { benefit in
+                Label {
+                    Text(benefit).foregroundStyle(Brand.ink)
+                } icon: {
+                    Image(systemName: "checkmark").foregroundStyle(Brand.success)
+                }
+                .font(.system(size: 14))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 6)
+    }
+
+    /// The cancellation and refund terms, stated before buying — as the web
+    /// app's checkout asks the visitor to agree to them.
+    private var terms: String {
+        let start = offersTrial
+            ? "7-day free trial for new subscribers, then the plan you choose. Cancel during the trial and you won't be charged."
+            : "Billed from today for the plan you choose."
+        return "\(start) Cancelling stops the next renewal: you keep access until the end of the period you've paid for, and payments already made aren't refunded. Manage it in Settings."
+    }
+
+    private var signInButton: some View {
+        VStack(spacing: 8) {
+            Button {
+                showingAccount = true
+            } label: {
+                Text("Sign in to subscribe")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Brand.accent, in: .capsule)
+            }
+            Text("Your subscription belongs to your account, so it works on the web too.")
+                .font(.system(size: 12.5))
+                .foregroundStyle(Brand.inkSoft)
+                .multilineTextAlignment(.center)
+        }
+    }
+
     private var purchaseButton: some View {
         Button(action: purchase) {
-            Text(purchasing ? "Starting your trial…" : "Start free trial")
+            Text(purchasing ? "Starting…" : offersTrial ? "Start 7-day free trial" : "Subscribe")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -123,7 +222,7 @@ struct PaywallView: View {
             defer { purchasing = false }
             do {
                 try await manager.purchase(product)
-                dismiss()
+                if entitlements.isEntitled { dismiss() }
             } catch {
                 errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             }
@@ -154,6 +253,7 @@ struct PaywallView: View {
 private struct PlanCard: View {
     let product: Product
     let isSelected: Bool
+    var offersTrial = true
     let select: () -> Void
 
     var body: some View {
@@ -163,7 +263,7 @@ private struct PlanCard: View {
                     Text(title)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Brand.ink)
-                    if hasFreeTrial {
+                    if hasFreeTrial && offersTrial {
                         Text("7-day free trial")
                             .font(.system(size: 12.5))
                             .foregroundStyle(Brand.success)
@@ -190,6 +290,37 @@ private struct PlanCard: View {
 
     private var hasFreeTrial: Bool {
         product.subscription?.introductoryOffer?.paymentMode == .freeTrial
+    }
+}
+
+/// An account already subscribed — possibly on the web — has nothing to buy
+/// here; a second subscription would only bill them twice.
+private struct AlreadySubscribed: View {
+    let status: SubscriptionStatus
+    let done: () -> Void
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 34))
+                .foregroundStyle(Brand.success)
+            Text("You're subscribed")
+                .font(Brand.title(22))
+                .foregroundStyle(Brand.ink)
+            Text(status.isBilledByApple
+                 ? "Premium is active on this account."
+                 : "Premium is active on this account through the website, so it works here too — there's nothing more to buy.")
+                .font(.system(size: 14))
+                .foregroundStyle(Brand.inkSoft)
+                .multilineTextAlignment(.center)
+            Button("Continue", action: done)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 28)
+                .frame(height: 46)
+                .background(Brand.accent, in: .capsule)
+        }
+        .padding(.horizontal, 32)
     }
 }
 

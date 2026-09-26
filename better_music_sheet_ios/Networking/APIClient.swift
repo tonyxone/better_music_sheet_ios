@@ -60,6 +60,18 @@ actor APIClient {
               method: String = "GET",
               body: Data? = nil,
               contentType: String? = nil) async throws -> (Data, HTTPURLResponse) {
+        let (data, http) = try await response(path, method: method, body: body, contentType: contentType)
+        try check(http, data)
+        return (data, http)
+    }
+
+    /// Like `call`, but hands back an error status with its body rather than
+    /// throwing — for the few answers whose error body carries data, such as
+    /// the edits endpoint's 409 with the copy another window saved.
+    func response(_ path: String,
+                  method: String = "GET",
+                  body: Data? = nil,
+                  contentType: String? = nil) async throws -> (Data, HTTPURLResponse) {
         guard let url = URL(string: path, relativeTo: baseURL) else { throw APIError.invalidURL }
 
         var request = URLRequest(url: url)
@@ -80,8 +92,6 @@ actor APIClient {
             await attachIdentity(to: &retry)
             (data, http) = try await perform(retry)
         }
-
-        try check(http, data)
         return (data, http)
     }
 
@@ -135,7 +145,7 @@ actor APIClient {
         return (data, http)
     }
 
-    private func check(_ response: HTTPURLResponse, _ data: Data) throws {
+    nonisolated func check(_ response: HTTPURLResponse, _ data: Data) throws {
         guard !(200..<300).contains(response.statusCode) else { return }
         let body = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
         throw APIError.http(status: response.statusCode, detail: body?["detail"] as? String)

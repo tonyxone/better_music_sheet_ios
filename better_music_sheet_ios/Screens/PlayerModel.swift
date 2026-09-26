@@ -38,6 +38,10 @@ final class PlayerModel {
     /// The keys this piece uses, rounded out to whole octaves.
     private(set) var pieceKeyRange = KeyboardLayout().fullRange
     private(set) var timeline: Timeline?
+    /// The reader's own changes to the sheet, made on its reading page:
+    /// retyped names correct what plays, and the names and marks are drawn
+    /// over the page here too.
+    private(set) var edits: SheetEdits = .empty
 
     var showKeyNames = false
     private(set) var isMuted = false
@@ -151,8 +155,15 @@ final class PlayerModel {
         case .unloaded, .unavailable: break
         }
         availability = .loading
+        // Playback works without them, so a failure here costs only the
+        // reader's fixes, not the practice page.
+        async let saved = try? SheetEditsStore.fetch(jobID: jobID)
         do {
             var loaded = try await files.timeline(jobID: jobID)
+            if let saved = await saved {
+                edits = saved
+                loaded = loaded.applying(saved.corrections)
+            }
             // Sorted once here: the falling notes binary-search them on every
             // frame, and nothing else depends on the order they arrived in.
             loaded.notes.sort { $0.startBeat < $1.startBeat }

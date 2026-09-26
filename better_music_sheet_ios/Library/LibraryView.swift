@@ -9,6 +9,11 @@ struct LibraryView: View {
     /// A sheet to open once the add panel has finished closing.
     @State private var pendingRoute: SheetRoute?
     @State private var entitlements = EntitlementStore.shared
+    @State private var demo = DemoVisibility()
+    @State private var showingPaywall = false
+    /// Set when Add was tapped signed out, so signing in carries on to it.
+    @State private var addAfterSignIn = false
+    @State private var checkingAccess = false
     @Binding var path: [SheetRoute]
     @Environment(\.scenePhase) private var scenePhase
 
@@ -22,7 +27,7 @@ struct LibraryView: View {
             addButton
         }
         .safeAreaInset(edge: .top) {
-            if !entitlements.isEntitled {
+            if AdConfig.isEnabled, !entitlements.isEntitled {
                 AdBannerView().frame(height: 50)
             }
         }
@@ -56,19 +61,56 @@ struct LibraryView: View {
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             await model.load()
+            await demo.load()
         }
         .task(id: model.hasWorkInProgress) {
             await model.pollWhileWorking()
         }
-        .refreshable { await model.load() }
+        .refreshable {
+            await model.load()
+            await demo.load()
+        }
         .sheet(isPresented: $showingAddSheet, onDismiss: openPendingSheet) {
             AddSheetView { jobID in
                 pendingRoute = SheetRoute(jobID: jobID, provisionalName: "New sheet")
                 Task { await model.load() }
             }
         }
-        .sheet(isPresented: $showingAccount, onDismiss: { Task { await model.load() } }) {
+        .sheet(isPresented: $showingAccount, onDismiss: afterAccount) {
             AccountView()
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView()
+        }
+    }
+
+    private func afterAccount() {
+        Task {
+            await model.load()
+            await demo.load()
+            if addAfterSignIn {
+                addAfterSignIn = false
+                if model.currentUser != nil { await startAdding() }
+            }
+        }
+    }
+
+    /// Uploading is a members feature, as on the web: a signed-in account
+    /// with an active subscription, checked fresh rather than trusted from
+    /// whatever was cached before signing in.
+    private func startAdding() async {
+        guard model.currentUser != nil else {
+            addAfterSignIn = true
+            showingAccount = true
+            return
+        }
+        checkingAccess = true
+        await entitlements.refresh()
+        checkingAccess = false
+        if entitlements.isEntitled {
+            showingAddSheet = true
+        } else {
+            showingPaywall = true
         }
     }
 
@@ -91,8 +133,13 @@ struct LibraryView: View {
             RetryNotice(message: message) { Task { await model.load() } }
 
         default:
-            if model.jobs.isEmpty {
-                EmptyLibrary()
+            if model.jobs.isEmpty && demo.isHidden != false {
+                VStack(spacing: 18) {
+                    EmptyLibrary()
+                    if demo.isHidden == true {
+                        showSampleButton
+                    }
+                }
             } else {
                 List {
                     ForEach(model.visibleJobs) { job in
@@ -114,6 +161,12 @@ struct LibraryView: View {
                         }
                     }
 
+                    // Built-in sample, not the reader's own music — always
+                    // last, so it never sits among their sheets.
+                    if !model.hasMoreToShow {
+                        demoRow
+                    }
+
                     if model.hasMoreToShow {
                         Button("Show more") { model.loadMore() }
                             .font(.system(size: 14, weight: .semibold))
@@ -131,11 +184,49 @@ struct LibraryView: View {
         }
     }
 
+    @ViewBuilder
+    private var demoRow: some View {
+        switch demo.isHidden {
+        case false?:
+            DemoRow {
+                path.append(SheetRoute(jobID: DemoSheet.jobID, provisionalName: DemoSheet.title))
+            } practice: {
+                path.append(SheetRoute(jobID: DemoSheet.jobID, provisionalName: DemoSheet.title, page: .practice))
+            }
+            .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .swipeActions(edge: .trailing) {
+                Button(role: .destructive) {
+                    Task { await demo.setHidden(true) }
+                } label: {
+                    Label("Remove", systemImage: "eye.slash")
+                }
+            }
+        case true?:
+            showSampleButton
+                .frame(maxWidth: .infinity)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+        case nil:
+            EmptyView()
+        }
+    }
+
+    private var showSampleButton: some View {
+        Button("Show the sample again") {
+            Task { await demo.setHidden(false) }
+        }
+        .font(.system(size: 14, weight: .semibold))
+        .foregroundStyle(Brand.accent)
+        .padding(.vertical, 8)
+    }
+
     private var addButton: some View {
         Button {
-            showingAddSheet = true
+            Task { await startAdding() }
         } label: {
-            Label("Add sheet", systemImage: "plus")
+            Label(checkingAccess ? "Checking…" : "Add sheet", systemImage: "plus")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 26)
@@ -144,6 +235,63 @@ struct LibraryView: View {
                 .shadow(color: Brand.accentDeep.opacity(0.32), radius: 12, y: 6)
         }
         .padding(.bottom, 16)
+        .disabled(checkingAccess)
+    }
+}
+
+/// "Try a sample": the bundled demo, which anyone can open and practise in
+/// full — no upload, no account, no subscription. Shaped like a sheet row,
+/// so it reads as one more thing to open rather than an advert.
+private struct DemoRow: View {
+    let open: () -> Void
+    let practice: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button(action: open) {
+                HStack(spacing: 14) {
+                    Text("🎼")
+                        .font(.system(size: 24))
+                        .frame(width: 42, height: 54)
+                        .background(Brand.gold.opacity(0.16), in: .rect(cornerRadius: 6))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Try a sample")
+                            .font(Brand.title(17))
+                            .foregroundStyle(Brand.ink)
+                        Text("\(DemoSheet.title) · \(DemoSheet.detail)")
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(Brand.inkSoft)
+                            .lineLimit(2)
+                    }
+                    Spacer(minLength: 6)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Brand.hairline)
+                }
+                .padding(.vertical, 13)
+                .padding(.horizontal, 14)
+                .frame(maxHeight: .infinity)
+                .background(Brand.card, in: .rect(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Brand.paperDeep, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the sample sheet, annotated — free, no account needed")
+
+            Button(action: practice) {
+                KeyboardIcon()
+                    .foregroundStyle(Brand.ink)
+                    .frame(width: 30, height: 20)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Brand.card, in: .rect(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Brand.paperDeep, lineWidth: 1))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .frame(width: 64)
+            .accessibilityLabel("Practice the sample")
+        }
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 

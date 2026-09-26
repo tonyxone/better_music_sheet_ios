@@ -150,8 +150,11 @@ Which sample plays for each key and velocity follows
 | Live Activity, notifications | Designed |
 | Instruments: grand piano, electric pianos, organ, basic synth | Implemented, tested |
 | Sign-in with Google and Apple | Implemented, tested, not yet verified on device |
+| Subscription: App Store purchase, one subscription shared with the web, web-subscription cancel | Implemented, tested, not yet verified on device |
+| "Try a sample" demo sheet, hideable per viewer | Implemented, not yet verified on device |
+| Sheet editing: move, retype and hide names (retyping fixes playback), pen, highlighter, text notes, eraser, undo, reset, Customized PDF export; synced with the web app | Model and sync implemented and tested; editing UI not yet verified on device |
 
-172 tests across 23 suites currently pass.
+206 tests across 29 suites; all pass except `everyInstrumentShipsWithTheApp`, which cannot find the instrument sample bundle when run under `swift test`.
 
 ---
 
