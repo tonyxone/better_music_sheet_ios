@@ -3,6 +3,8 @@ import GoogleMobileAds
 
 @main
 struct BetterMusicSheetApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
     init() {
         if AdConfig.isEnabled {
             MobileAds.shared.start(completionHandler: nil)
@@ -21,6 +23,11 @@ struct BetterMusicSheetApp: App {
                 .preferredColorScheme(.light)
                 .task {
                     SubscriptionManager.shared.start()
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active {
+                        Task { await SubscriptionManager.shared.syncCurrentEntitlement() }
+                    }
                 }
         }
     }

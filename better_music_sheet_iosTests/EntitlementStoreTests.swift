@@ -55,20 +55,42 @@ struct EntitlementStoreTests {
     @Test func aFailedFetchKeepsTheCachedValue() async {
         let defaults = freshDefaults()
         defaults.set(true, forKey: Self.cacheKey)
+        defaults.set("u1", forKey: "bms_entitled_owner")
+        let cached = SubscriptionStatus(tier: "premium", plan: "monthly", status: "active", currentPeriodEnd: 1999999999, cancelAtPeriodEnd: false, platform: "apple")
+        defaults.set(try? JSONEncoder().encode(cached), forKey: "bms_subscription_status")
         let channel = StubProtocol.Channel([.init(status: 500, body: Data(#"{"detail": "boom"}"#.utf8))])
         let sessions = SessionStore(store: InMemorySecretStore())
         await sessions.save(session())
         let entitlements = store(channel: channel, sessions: sessions, defaults: defaults)
-        #expect(entitlements.isEntitled)  // seeded from the cache at init
+        #expect(!entitlements.isEntitled)  // waits until the signed-in owner is known
 
         await entitlements.refresh()
 
         #expect(entitlements.isEntitled)
     }
 
+    @Test func anOfflineAccountSwitchNeverKeepsThePreviousUsersPremium() async {
+        let channel = StubProtocol.Channel([
+            .init(body: Data(#"{"tier":"premium","plan":"monthly","status":"active","platform":"apple","cancel_at_period_end":false}"#.utf8)),
+            .init(status: 500)
+        ])
+        let sessions = SessionStore(store: InMemorySecretStore())
+        await sessions.save(session())
+        let entitlements = store(channel: channel, sessions: sessions, defaults: freshDefaults())
+        await entitlements.refresh()
+        #expect(entitlements.isEntitled)
+        await sessions.save(session(User(userID: "u2", email: nil, displayName: nil, createdAt: 0)))
+        await entitlements.refresh()
+        #expect(!entitlements.isEntitled)
+        #expect(entitlements.status == nil)
+    }
+
     @Test func aFreeTierResponseClearsAPreviouslyCachedEntitlement() async {
         let defaults = freshDefaults()
         defaults.set(true, forKey: Self.cacheKey)
+        defaults.set("u1", forKey: "bms_entitled_owner")
+        let cached = SubscriptionStatus(tier: "premium", plan: "monthly", status: "active", currentPeriodEnd: 1999999999, cancelAtPeriodEnd: false, platform: "apple")
+        defaults.set(try? JSONEncoder().encode(cached), forKey: "bms_subscription_status")
         let channel = StubProtocol.Channel([
             .init(body: Data(#"""
             {"tier": "free", "plan": null, "status": null,

@@ -16,6 +16,9 @@ final class EntitlementStore {
     private(set) var status: SubscriptionStatus?
 
     private static let cacheKey = "bms_entitled"
+    private static let ownerKey = "bms_entitled_owner"
+    private static let statusKey = "bms_subscription_status"
+    private var accountID: String?
     private let client: APIClient
     private let sessions: SessionStore
     private let defaults: UserDefaults
@@ -24,7 +27,7 @@ final class EntitlementStore {
         self.client = client
         self.sessions = sessions
         self.defaults = defaults
-        self.isEntitled = defaults.bool(forKey: Self.cacheKey)
+        self.isEntitled = false
     }
 
     /// Re-checks entitlement against the backend. Called on launch
@@ -34,12 +37,26 @@ final class EntitlementStore {
     /// whatever was cached rather than locking out someone with an active
     /// subscription over a flaky connection.
     func refresh() async {
-        guard await sessions.current() != nil else {
+        guard let userID = await sessions.current()?.user.userID else {
+            accountID = nil
             apply(entitled: false, status: nil)
             return
         }
+        if accountID != userID {
+            accountID = userID
+            status = nil
+            isEntitled = false
+            if defaults.string(forKey: Self.ownerKey) == userID,
+               let data = defaults.data(forKey: Self.statusKey),
+               let cached = try? JSONDecoder().decode(SubscriptionStatus.self, from: data),
+               cached.currentPeriodEnd == nil || cached.currentPeriodEnd! > Date().timeIntervalSince1970 {
+                status = cached
+                isEntitled = cached.isPremium
+            }
+        }
         do {
             let status: SubscriptionStatus = try await client.get("/api/me/subscription")
+            guard await sessions.current()?.user.userID == userID else { return }
             apply(entitled: status.isPremium, status: status)
         } catch {
             // Keep the cached value.
@@ -61,9 +78,17 @@ final class EntitlementStore {
             master: updated.master ?? status?.master))
     }
 
+    /// Applied only after the backend has verified and linked the Apple transaction.
+    func acceptPurchase(_ status: SubscriptionStatus, userID: String) {
+        accountID = userID
+        apply(entitled: status.isPremium, status: status)
+    }
+
     private func apply(entitled: Bool, status: SubscriptionStatus?) {
         isEntitled = entitled
         self.status = status
         defaults.set(entitled, forKey: Self.cacheKey)
+        defaults.set(accountID, forKey: Self.ownerKey)
+        defaults.set(status.flatMap { try? JSONEncoder().encode($0) }, forKey: Self.statusKey)
     }
 }

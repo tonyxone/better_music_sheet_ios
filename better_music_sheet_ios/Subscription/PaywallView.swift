@@ -52,6 +52,7 @@ struct PaywallView: View {
         .task {
             await checkAccount()
             await manager.loadProducts()
+            await manager.syncCurrentEntitlement()
             if selectedProductID == nil {
                 selectedProductID = manager.products.first { $0.id == SubscriptionProduct.yearlyID }?.id
                     ?? manager.products.first?.id
@@ -76,11 +77,10 @@ struct PaywallView: View {
         await entitlements.refresh()
     }
 
-    /// Only an account that has never subscribed gets the trial, whichever
-    /// store it subscribed through — and StoreKit must agree for this Apple ID.
+    /// Apple determines introductory eligibility for this Apple Account and group.
     private var offersTrial: Bool {
-        guard entitlements.status?.offersTrial != false else { return false }
-        return manager.products.contains { $0.subscription?.introductoryOffer?.paymentMode == .freeTrial }
+        guard let selectedProductID else { return false }
+        return manager.introductoryEligibleIDs.contains(selectedProductID)
     }
 
     @ViewBuilder
@@ -90,15 +90,23 @@ struct PaywallView: View {
         } else if signedIn == nil || (manager.isLoadingProducts && manager.products.isEmpty) {
             ProgressView().tint(Brand.accent)
         } else if manager.products.isEmpty {
-            RetryNotice(message: manager.loadError ?? "Couldn't load subscription options.") {
-                Task { await manager.loadProducts() }
+            VStack(spacing: 16) {
+                RetryNotice(message: manager.loadError ?? "Couldn't load subscription options.") {
+                    Task { await manager.loadProducts() }
+                }
+                if signedIn == true { restoreButton } else { signInButton }
+                legalLinks
+                if let message = errorMessage ?? manager.syncError {
+                    Text(message).font(.footnote).foregroundStyle(Brand.danger)
+                }
             }
+            .padding(28)
         } else {
             ScrollView {
                 VStack(spacing: 22) {
                     header
 
-                    if let errorMessage {
+                    if let errorMessage = errorMessage ?? manager.syncError {
                         Text(errorMessage)
                             .font(.system(size: 13))
                             .foregroundStyle(Brand.danger)
@@ -107,7 +115,7 @@ struct PaywallView: View {
 
                     VStack(spacing: 12) {
                         ForEach(manager.products) { product in
-                            PlanCard(product: product, isSelected: product.id == selectedProductID, offersTrial: offersTrial) {
+                            PlanCard(product: product, isSelected: product.id == selectedProductID, offersTrial: manager.introductoryEligibleIDs.contains(product.id)) {
                                 selectedProductID = product.id
                             }
                         }
@@ -122,6 +130,8 @@ struct PaywallView: View {
                         signInButton
                     }
 
+                    legalLinks
+
                     Text(terms)
                         .font(.system(size: 11.5))
                         .foregroundStyle(Brand.inkSoft)
@@ -131,6 +141,14 @@ struct PaywallView: View {
                 .padding(.vertical, 24)
             }
         }
+    }
+
+    private var legalLinks: some View {
+        HStack(spacing: 20) {
+            Link("Privacy Policy", destination: URL(string: "https://bettermusicsheet.com/privacy/")!)
+            Link("Terms of Use", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+        }
+        .font(.system(size: 12))
     }
 
     private var header: some View {
@@ -170,7 +188,7 @@ struct PaywallView: View {
         let start = offersTrial
             ? "7-day free trial for new subscribers, then the plan you choose. Cancel during the trial and you won't be charged."
             : "Billed from today for the plan you choose."
-        return "\(start) Cancelling stops the next renewal: you keep access until the end of the period you've paid for, and payments already made aren't refunded. Manage it in Settings."
+        return "\(start) Payment is charged to your Apple Account. The subscription renews automatically unless cancelled at least 24 hours before the current period ends. Your account is charged for renewal within 24 hours before the period ends. Manage or cancel in Apple Account Settings. Refund requests are handled by Apple."
     }
 
     private var signInButton: some View {
