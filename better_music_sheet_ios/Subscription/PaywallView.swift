@@ -304,10 +304,12 @@ private struct AlreadySubscribed: View {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 34))
                 .foregroundStyle(Brand.success)
-            Text("You're subscribed")
+            Text(status.isMasterOnly ? "You have full access" : "You're subscribed")
                 .font(Brand.title(22))
                 .foregroundStyle(Brand.ink)
-            Text(status.isBilledByApple
+            Text(status.isMasterOnly
+                 ? "This is a master account, with full access to everything — no subscription needed."
+                 : status.isBilledByApple
                  ? "Premium is active on this account."
                  : "Premium is active on this account through the website, so it works here too — there's nothing more to buy.")
                 .font(.system(size: 14))

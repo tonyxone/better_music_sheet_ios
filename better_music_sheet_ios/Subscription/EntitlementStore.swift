@@ -57,7 +57,8 @@ final class EntitlementStore {
         apply(entitled: updated.isPremium, status: SubscriptionStatus(
             tier: updated.tier, plan: updated.plan, status: updated.status, startedAt: updated.startedAt,
             currentPeriodEnd: updated.currentPeriodEnd, cancelAtPeriodEnd: updated.cancelAtPeriodEnd,
-            platform: updated.platform, trialEligible: status?.trialEligible ?? updated.trialEligible))
+            platform: updated.platform, trialEligible: status?.trialEligible ?? updated.trialEligible,
+            master: updated.master ?? status?.master))
     }
 
     private func apply(entitled: Bool, status: SubscriptionStatus?) {

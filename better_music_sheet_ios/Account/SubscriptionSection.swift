@@ -17,7 +17,9 @@ struct SubscriptionSection: View {
 
     var body: some View {
         Group {
-            if let status = entitlements.status, status.isPremium {
+            if let status = entitlements.status, status.isMasterOnly {
+                masterAccount
+            } else if let status = entitlements.status, status.isPremium {
                 subscribed(status)
             } else {
                 Button("See Premium plans") { showingPaywall = true }
@@ -31,6 +33,19 @@ struct SubscriptionSection: View {
         .onChange(of: managingWithApple) { _, open in
             if !open { Task { await SubscriptionManager.shared.syncCurrentEntitlement() } }
         }
+    }
+
+    /// Full access without a subscription (the backend's master users
+    /// table): no plan, no renewal date, nothing to cancel — as on the web.
+    private var masterAccount: some View {
+        VStack(spacing: 6) {
+            row("Plan", "Master account")
+            row("Status", "Full access, no subscription needed")
+        }
+        .padding(14)
+        .background(Brand.card, in: .rect(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Brand.paperDeep, lineWidth: 1))
+        .padding(.horizontal, 32)
     }
 
     private func subscribed(_ status: SubscriptionStatus) -> some View {

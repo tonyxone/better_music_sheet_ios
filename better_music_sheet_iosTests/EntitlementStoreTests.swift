@@ -84,6 +84,43 @@ struct EntitlementStoreTests {
         #expect(!entitlements.isEntitled)
         #expect(defaults.bool(forKey: Self.cacheKey) == false)
     }
+    @Test func aMasterAccountIsEntitledWithNoPlanToManage() async throws {
+        // The backend's shape for a master user with no subscription of its own.
+        let channel = StubProtocol.Channel([
+            .init(body: Data(#"""
+            {"tier": "premium", "plan": null, "status": null, "started_at": null,
+             "current_period_end": null, "cancel_at_period_end": false, "platform": null,
+             "master": true, "trial_eligible": true}
+            """#.utf8)),
+        ])
+        let sessions = SessionStore(store: InMemorySecretStore())
+        await sessions.save(session())
+        let entitlements = store(channel: channel, sessions: sessions, defaults: freshDefaults())
+
+        await entitlements.refresh()
+
+        #expect(entitlements.isEntitled)
+        #expect(entitlements.status?.isMasterOnly == true)
+    }
+
+    @Test func aMasterWhoAlsoSubscribedStillShowsThatSubscription() throws {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let status = try decoder.decode(SubscriptionStatus.self, from: Data(#"""
+        {"tier": "premium", "plan": "yearly", "status": "active", "current_period_end": 1999999999,
+         "cancel_at_period_end": false, "platform": "apple", "master": true}
+        """#.utf8))
+        #expect(status.isPremium)
+        #expect(!status.isMasterOnly)
+
+        // Older backends send no `master` at all.
+        let older = try decoder.decode(SubscriptionStatus.self, from: Data(#"""
+        {"tier": "free", "plan": null, "status": null, "current_period_end": null,
+         "cancel_at_period_end": false, "platform": null}
+        """#.utf8))
+        #expect(older.master == nil && !older.isMasterOnly)
+    }
+
     @Test func readsTrialEligibilityAndCancelsAWebSubscriptionByPlatform() async throws {
         let channel = StubProtocol.Channel([
             .init(body: Data(#"""

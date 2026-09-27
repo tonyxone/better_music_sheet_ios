@@ -18,8 +18,15 @@ nonisolated struct SubscriptionStatus: Codable, Sendable, Equatable {
     /// only an account that has never subscribed before gets one. Absent
     /// from older backends, which gave everyone the trial.
     var trialEligible: Bool? = nil
+    /// A master account: premium because it's listed in the backend's master
+    /// users table, not because it pays. Absent from older backends.
+    var master: Bool? = nil
 
     var isPremium: Bool { tier == "premium" }
+    /// Premium with no subscription of its own behind it — nothing to show
+    /// as a plan and nothing to cancel. A master account that also bought a
+    /// subscription keeps showing (and can cancel) that subscription.
+    var isMasterOnly: Bool { master == true && platform == nil }
     var isTrialing: Bool { status == "trialing" }
     var isBilledByApple: Bool { platform == "apple" }
     var offersTrial: Bool { trialEligible != false }
