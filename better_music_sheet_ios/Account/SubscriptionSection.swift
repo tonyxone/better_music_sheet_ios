@@ -22,9 +22,15 @@ struct SubscriptionSection: View {
             } else if let status = entitlements.status, status.isPremium {
                 subscribed(status)
             } else {
-                Button("See Premium plans") { showingPaywall = true }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Brand.accent)
+                VStack(spacing: 10) {
+                    Text("You're on the Free plan: 1 sheet at a time, with ads.")
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Brand.inkSoft)
+                        .multilineTextAlignment(.center)
+                    Button("See Premium Plans") { showingPaywall = true }
+                        .buttonStyle(.premium)
+                }
+                .padding(.horizontal, 32)
             }
         }
         .task { await entitlements.refresh() }
@@ -68,12 +74,10 @@ struct SubscriptionSection: View {
                     .multilineTextAlignment(.center)
             } else if status.isBilledByApple {
                 Button("Manage Subscription") { managingWithApple = true }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Brand.accent)
+                    .buttonStyle(.account(.filled))
             } else {
                 Button(cancelling ? "Cancelling…" : "Cancel Subscription") { confirmingCancel = true }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Brand.danger)
+                    .buttonStyle(.account(tint: Brand.danger))
                     .disabled(cancelling)
             }
 

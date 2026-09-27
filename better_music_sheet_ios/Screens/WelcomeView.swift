@@ -13,9 +13,6 @@ struct WelcomeView: View {
     /// Where the artwork's Get Started button sits, as fractions of the image.
     private static let buttonFrame = CGRect(x: 50.0 / 750, y: 1207.0 / 1472,
                                             width: 646.0 / 750, height: 109.0 / 1472)
-    /// The artwork button's own gradient, top-leading to bottom-trailing.
-    private static let buttonGradient = [Color(hex: 0xFCE3AF), Color(hex: 0xA37239)]
-
     var body: some View {
         GeometryReader { proxy in
             // Fitted rather than filled, so nothing at the sides is cut off;
@@ -39,7 +36,7 @@ struct WelcomeView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: buttonHeight)
                         .background(
-                            LinearGradient(colors: Self.buttonGradient,
+                            LinearGradient(colors: Brand.goldGradient,
                                           startPoint: .topLeading, endPoint: .bottomTrailing),
                             in: .capsule
                         )

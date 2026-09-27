@@ -13,7 +13,6 @@ struct RootView: View {
     /// the splash never flashes on screen only to be dismissed a moment
     /// later once the async check would have resolved.
     @State private var welcomeSeen = SessionStore.hasStoredSession()
-    @State private var entitlements = EntitlementStore.shared
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -23,16 +22,9 @@ struct RootView: View {
                     case .sheet:
                         SheetDetailView(route: route)
                     case .practice:
-                        // Practice mode is premium-gated; a signed-in
-                        // free-tier or guest visitor sees the paywall in
-                        // place of the practice screen itself. The bundled
-                        // sample is the exception: it plays in full for
-                        // everyone, which is the point of it.
-                        if entitlements.isEntitled || DemoSheet.isDemo(route.jobID) {
-                            PracticeView(jobID: route.jobID, title: route.provisionalName)
-                        } else {
-                            PaywallView(pushed: true)
-                        }
+                        // Open to every plan: the free plan limits how many
+                        // sheets you keep, not what you can do with them.
+                        PracticeView(jobID: route.jobID, title: route.provisionalName)
                     }
                 }
         }

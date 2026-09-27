@@ -47,4 +47,34 @@ nonisolated struct AnnotationJob: Codable, Sendable, Identifiable, Hashable {
 
     var createdDate: Date { Date(timeIntervalSince1970: createdAt) }
     var displayName: String { sheetName ?? musicSheetID }
+
+    /// The slice of a progress bar the job's current stage covers. The backend
+    /// reports only a stage name (processor.py STAGES), so the bar's position
+    /// is inferred from it: recognition gets most of the width because it
+    /// takes most of the time, split per page once "(page x of y)" appears.
+    var progressRange: ClosedRange<Double> {
+        let stage = stage ?? ""
+        if status == .uploading || stage.hasPrefix("Uploading") { return 0.00...0.08 }
+        if stage.hasPrefix("Reading sheet music") {
+            let reading = 0.12...0.70
+            guard let (page, pages) = Self.page(in: stage) else { return reading }
+            let share = (reading.upperBound - reading.lowerBound) / Double(pages)
+            let start = reading.lowerBound + share * Double(page - 1)
+            return start...(start + share)
+        }
+        if stage.hasPrefix("Re-reading unclear pages") { return 0.70...0.82 }
+        if stage.hasPrefix("Matching pitches to notes") { return 0.82...0.90 }
+        if stage.hasPrefix("Building playback timeline") { return 0.90...0.95 }
+        if stage.hasPrefix("Drawing the annotated sheet") { return 0.95...0.99 }
+        // Queued, waiting for a worker, or retrying.
+        return 0.08...0.12
+    }
+
+    /// "(page 2 of 5)" as (2, 5); worker.py appends it during recognition.
+    private static func page(in stage: String) -> (Int, Int)? {
+        guard let match = stage.firstMatch(of: /\(page (\d+) of (\d+)\)/),
+              let page = Int(match.1), let pages = Int(match.2),
+              pages > 0, (1...pages).contains(page) else { return nil }
+        return (page, pages)
+    }
 }

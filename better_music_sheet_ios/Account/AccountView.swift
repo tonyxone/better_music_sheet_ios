@@ -62,6 +62,7 @@ private struct SignedInContent: View {
     @State private var deleteError: String?
     @State private var restoring = false
     @State private var restoreError: String?
+    @State private var explainingRestore = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -85,12 +86,22 @@ private struct SignedInContent: View {
             VStack(spacing: 10) {
                 SubscriptionSection()
 
-                Button(restoring ? "Restoring…" : "Restore Purchases") {
-                    Task { await restore() }
+                HStack(spacing: 0) {
+                    Button(restoring ? "Restoring…" : "Restore Purchases") {
+                        Task { await restore() }
+                    }
+                    .disabled(restoring)
+                    Button {
+                        explainingRestore = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .frame(width: 36, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel("About Restore Purchases")
                 }
                 .font(.system(size: 13))
                 .foregroundStyle(Brand.inkSoft)
-                .disabled(restoring)
 
                 if let restoreError {
                     Text(restoreError)
@@ -113,13 +124,13 @@ private struct SignedInContent: View {
                         .padding(.horizontal, 24)
                 }
 
-                Button("Sign out") {
+                Button("Sign Out") {
                     Task { await model.signOut() }
                 }
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Brand.danger)
+                .buttonStyle(.account(tint: Brand.danger))
+                .padding(.horizontal, 32)
 
-                Button("Delete account") {
+                Button("Delete Account") {
                     deleteConfirmationText = ""
                     deleteError = nil
                     showingDeleteConfirmation = true
@@ -128,6 +139,12 @@ private struct SignedInContent: View {
                 .foregroundStyle(Brand.inkSoft)
                 .padding(.bottom, 24)
             }
+        }
+        .alert("Restore Purchases", isPresented: $explainingRestore) {
+            Button("Restore Now") { Task { await restore() } }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Already paid for Premium through the App Store but it isn't showing? Restore checks your Apple Account for purchases and adds them back to this account — useful after reinstalling the app or moving to a new device.\n\nIt doesn't charge you. A subscription stays with the account that bought it, so it can't be moved to a different account.")
         }
         // A native alert with a text field, rather than reproducing the web
         // app's bespoke confirmation modal — same friction (typing "delete"
@@ -191,6 +208,7 @@ private struct SignInForm: View {
     @State private var code = ""
     @State private var errorMessage: String?
     @State private var notice: String?
+    @State private var showingPlans = false
 
     var body: some View {
         ScrollView {
@@ -256,11 +274,18 @@ private struct SignInForm: View {
                 }
 
                 links
+
+                if step == .signIn {
+                    Button("See Premium Plans") { showingPlans = true }
+                        .buttonStyle(.premium)
+                        .padding(.top, 8)
+                }
             }
             .padding(.horizontal, 28)
             .padding(.bottom, 24)
         }
         .scrollDismissesKeyboard(.interactively)
+        .sheet(isPresented: $showingPlans) { PaywallView(previewOnly: true) }
     }
 
     @ViewBuilder

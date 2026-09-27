@@ -26,6 +26,9 @@ enum Brand {
     static let accent = Color(hex: 0xA83C34)
     static let accentDeep = Color(hex: 0x8C4A1F)
     static let gold = Color(hex: 0xD9A441)
+    /// The welcome artwork's Get Started button, top-leading to bottom-trailing
+    /// (sampled from Welcome.png).
+    static let goldGradient = [Color(hex: 0xFCE3AF), Color(hex: 0xA37239)]
     static let success = Color(hex: 0x5C7A4E)
     static let danger = Color(hex: 0xA83C34)
 

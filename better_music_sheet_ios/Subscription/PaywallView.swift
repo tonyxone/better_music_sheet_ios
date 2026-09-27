@@ -25,7 +25,8 @@ struct PaywallView: View {
         "Every note labelled",
         "Practise on a keyboard",
         "Unlimited sheet storage",
-        "Access anywhere — web and iPhone",
+        "No ads",
+        "Access anywhere — web, iPhone and iPad",
     ]
 
     /// True when pushed onto the app's navigation stack (in place of the
@@ -33,6 +34,10 @@ struct PaywallView: View {
     /// not bring its own NavigationStack: one nested inside the app's typed
     /// stack crashes SwiftUI when the path changes.
     var pushed = false
+
+    /// Shows the plans and prices only — no buying, restoring or signing in.
+    /// For a signed-out visitor who just wants to see what Premium costs.
+    var previewOnly = false
 
     var body: some View {
         Group {
@@ -52,11 +57,7 @@ struct PaywallView: View {
         .task {
             await checkAccount()
             await manager.loadProducts()
-            await manager.syncCurrentEntitlement()
-            if selectedProductID == nil {
-                selectedProductID = manager.products.first { $0.id == SubscriptionProduct.yearlyID }?.id
-                    ?? manager.products.first?.id
-            }
+            if !previewOnly { await manager.syncCurrentEntitlement() }
         }
         .sheet(isPresented: $showingAccount, onDismiss: { Task { await checkAccount() } }) {
             AccountView()
@@ -77,9 +78,11 @@ struct PaywallView: View {
         await entitlements.refresh()
     }
 
-    /// Apple determines introductory eligibility for this Apple Account and group.
+    /// Apple determines introductory eligibility for this Apple Account and
+    /// group. No plan is chosen up front, so until one is, it's whether any
+    /// plan offers the trial.
     private var offersTrial: Bool {
-        guard let selectedProductID else { return false }
+        guard let selectedProductID else { return !manager.introductoryEligibleIDs.isEmpty }
         return manager.introductoryEligibleIDs.contains(selectedProductID)
     }
 
@@ -94,7 +97,9 @@ struct PaywallView: View {
                 RetryNotice(message: manager.loadError ?? "Couldn't load subscription options.") {
                     Task { await manager.loadProducts() }
                 }
-                if signedIn == true { restoreButton } else { signInButton }
+                if !previewOnly {
+                    if signedIn == true { restoreButton } else { signInButton }
+                }
                 legalLinks
                 if let message = errorMessage ?? manager.syncError {
                     Text(message).font(.footnote).foregroundStyle(Brand.danger)
@@ -115,7 +120,9 @@ struct PaywallView: View {
 
                     VStack(spacing: 12) {
                         ForEach(manager.products) { product in
-                            PlanCard(product: product, isSelected: product.id == selectedProductID, offersTrial: manager.introductoryEligibleIDs.contains(product.id)) {
+                            PlanCard(product: product, isSelected: !previewOnly && product.id == selectedProductID,
+                                     offersTrial: manager.introductoryEligibleIDs.contains(product.id),
+                                     selectable: !previewOnly) {
                                 selectedProductID = product.id
                             }
                         }
@@ -123,12 +130,19 @@ struct PaywallView: View {
 
                     benefits
 
-                    if signedIn == true {
+                    if previewOnly {
+                        Text("Sign in to subscribe. Your subscription belongs to your account, so it works on the web too.")
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(Brand.inkSoft)
+                            .multilineTextAlignment(.center)
+                    } else if signedIn == true {
                         purchaseButton
                         restoreButton
                     } else {
                         signInButton
                     }
+
+                    FreePlanCard()
 
                     legalLinks
 
@@ -218,7 +232,7 @@ struct PaywallView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
                 .background(Brand.accent, in: .capsule)
-                .opacity(purchasing ? 0.6 : 1)
+                .opacity(purchasing || selectedProductID == nil ? 0.5 : 1)
         }
         .disabled(purchasing || selectedProductID == nil)
     }
@@ -266,12 +280,55 @@ struct PaywallView: View {
     }
 }
 
+/// What the free plan includes, beside Premium's plans for comparison. Not a
+/// choice: it's what an account has without subscribing.
+private struct FreePlanCard: View {
+    private static let points: [(included: Bool, text: String)] = [
+        (true, "Every note labelled"),
+        (true, "Practise on a keyboard"),
+        (false, "1 music sheet at a time"),
+        (false, "Shows ads"),
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Free")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Brand.ink)
+                Spacer()
+                Text("Your plan without Premium")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Brand.inkSoft)
+            }
+            VStack(alignment: .leading, spacing: 7) {
+                ForEach(Self.points, id: \.text) { point in
+                    Label {
+                        Text(point.text).foregroundStyle(Brand.ink)
+                    } icon: {
+                        Image(systemName: point.included ? "checkmark" : "minus")
+                            .foregroundStyle(point.included ? Brand.success : Brand.danger)
+                    }
+                    .font(.system(size: 14))
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Brand.paperDeep.opacity(0.5), in: .rect(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Brand.hairline, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// One plan's price card — the web app has no equivalent to mirror; this is
 /// designed from scratch for iOS.
 private struct PlanCard: View {
     let product: Product
     let isSelected: Bool
     var offersTrial = true
+    /// False shows the plan without a selection circle, and taps do nothing.
+    var selectable = true
     let select: () -> Void
 
     var body: some View {
@@ -291,8 +348,10 @@ private struct PlanCard: View {
                 Text(product.displayPrice)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Brand.ink)
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Brand.accent : Brand.hairline)
+                if selectable {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(isSelected ? Brand.accent : Brand.hairline)
+                }
             }
             .padding(16)
             .background(Brand.card, in: .rect(cornerRadius: 14))
@@ -300,6 +359,7 @@ private struct PlanCard: View {
                 .stroke(isSelected ? Brand.accent : Brand.hairline, lineWidth: isSelected ? 2 : 1))
         }
         .buttonStyle(.plain)
+        .allowsHitTesting(selectable)
     }
 
     private var title: String {
