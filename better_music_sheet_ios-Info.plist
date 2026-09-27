@@ -7,6 +7,15 @@
 	     Info.plist. Kept outside the synchronized source folder so it isn't
 	     also copied into the app as a resource. -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>ca-app-pub-3606656264491246~3082223161</string>
+	<!-- Google's own SKAdNetwork id, so ad conversions can be attributed
+	     without tracking (see the AdMob iOS quick start). -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 </dict>
 </plist>

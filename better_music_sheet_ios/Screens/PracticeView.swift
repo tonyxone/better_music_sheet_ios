@@ -31,6 +31,7 @@ struct PracticeView: View {
     /// Holds the sheet back until it's known which copy to show, rather than
     /// flashing the annotated one first.
     @State private var overlayReady = false
+    @State private var entitlements = EntitlementStore.shared
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -49,6 +50,12 @@ struct PracticeView: View {
         ZStack {
             Brand.paper.ignoresSafeArea()
             content
+        }
+        // Above the sheet, so the keyboard keeps the bottom of the screen.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if AdConfig.isEnabled, !entitlements.isEntitled {
+                AdBannerView().frame(height: 50)
+            }
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)

@@ -10,6 +10,10 @@ struct AddSheetView: View {
     @State private var model = UploadModel()
     @State private var showingFiles = false
     @State private var photo: PhotosPickerItem?
+    @State private var showingPhotos = false
+    @State private var showingCamera = false
+    /// The photo source waiting on the accuracy warning.
+    @State private var pendingPhotoSource: PhotoSource?
     /// The option whose explanation is showing, if any.
     @State private var openHelp: Option?
     /// Hidden by default: the remembered choices are usually right.
@@ -53,22 +57,51 @@ struct AddSheetView: View {
                 }
             }
         }
+        .photosPicker(isPresented: $showingPhotos, selection: $photo, matching: .images)
+        .fullScreenCover(isPresented: $showingCamera) {
+            CameraPicker { image in
+                showingCamera = false
+                guard let image else { return }
+                uploadPhoto(image.jpegData(compressionQuality: 0.9))
+            }
+            .ignoresSafeArea()
+        }
+        .alert("Photos are less accurate", isPresented: Binding(
+            get: { pendingPhotoSource != nil },
+            set: { if !$0 { pendingPhotoSource = nil } }
+        ), presenting: pendingPhotoSource) { source in
+            Button("Continue") {
+                switch source {
+                case .camera: showingCamera = true
+                case .library: showingPhotos = true
+                }
+            }
+            Button("Choose a PDF Instead") { showingFiles = true }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("Notes are read less reliably from a photo than from a PDF, and some photos can't be processed at all. For the best photo, lay the page flat in even light and fill the frame with it.")
+        }
         .onChange(of: photo) { _, item in
             guard let item else { return }
             Task {
-                guard let data = try? await item.loadTransferable(type: Data.self) else {
-                    photo = nil
-                    return
-                }
-                if let jobID = await model.upload(filename: "Scan.jpg", data: data) {
-                    onStarted(jobID)
-                    dismiss()
-                }
+                let data = try? await item.loadTransferable(type: Data.self)
                 photo = nil
+                // Library photos are often HEIC, which the backend can't read.
+                uploadPhoto(data.flatMap(UIImage.init(data:))?.jpegData(compressionQuality: 0.9))
             }
         }
         .onChange(of: model.options) { _, options in
             options.save()
+        }
+    }
+
+    private func uploadPhoto(_ jpeg: Data?) {
+        guard let jpeg else { return }
+        Task {
+            if let jobID = await model.upload(filename: "Photo.jpg", data: jpeg) {
+                onStarted(jobID)
+                dismiss()
+            }
         }
     }
 
@@ -83,9 +116,16 @@ struct AddSheetView: View {
             }
             Button { showingFiles = true } label: {
                 SourceRow(icon: "doc", title: "Choose a PDF",
-                          detail: "From Files or iCloud Drive")
+                          detail: "From Files or iCloud Drive. Most accurate.",
+                          recommended: true)
             }
-            PhotosPicker(selection: $photo, matching: .images) {
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button { pendingPhotoSource = .camera } label: {
+                    SourceRow(icon: "camera", title: "Take a photo",
+                              detail: "Photograph a page with the camera")
+                }
+            }
+            Button { pendingPhotoSource = .library } label: {
                 SourceRow(icon: "photo", title: "Photo library",
                           detail: "A photo of a page you already took")
             }
@@ -371,10 +411,47 @@ private struct LabelPreview: View {
     }
 }
 
+private enum PhotoSource: Hashable {
+    case camera, library
+}
+
+/// The system camera, for photographing a page. Hands back the photo, or nil
+/// when cancelled.
+private struct CameraPicker: UIViewControllerRepresentable {
+    let done: (UIImage?) -> Void
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ picker: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(done: done) }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let done: (UIImage?) -> Void
+
+        init(done: @escaping (UIImage?) -> Void) { self.done = done }
+
+        func imagePickerController(_ picker: UIImagePickerController,
+                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            done(info[.originalImage] as? UIImage)
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            done(nil)
+        }
+    }
+}
+
 private struct SourceRow: View {
     let icon: String
     let title: String
     let detail: String
+    var recommended = false
 
     var body: some View {
         HStack(spacing: 14) {
@@ -385,9 +462,19 @@ private struct SourceRow: View {
                 .background(Brand.gold.opacity(0.16), in: .rect(cornerRadius: 12))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Brand.ink)
+                HStack(spacing: 8) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Brand.ink)
+                    if recommended {
+                        Text("Recommended")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(Brand.accent, in: .capsule)
+                    }
+                }
                 Text(detail)
                     .font(.system(size: 12.5))
                     .foregroundStyle(Brand.inkSoft)

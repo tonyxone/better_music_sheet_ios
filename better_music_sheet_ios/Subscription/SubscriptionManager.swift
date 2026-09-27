@@ -44,13 +44,39 @@ final class SubscriptionManager {
         loadError = nil
         defer { isLoadingProducts = false }
         do {
+#if DEBUG
+            let storefront = await Storefront.current
+            print("[StoreKit catalog] bundle=\(Bundle.main.bundleIdentifier ?? "unknown") requested=\(SubscriptionProduct.allIDs.joined(separator: ",")) storefront=\(storefront?.countryCode ?? "unknown")")
+#endif
             products = try await Product.products(for: SubscriptionProduct.allIDs)
                 .sorted { $0.price < $1.price }
+#if DEBUG
+            print("[StoreKit catalog] returned=\(products.map(\.id).joined(separator: ",")) count=\(products.count)")
+            if products.isEmpty,
+               ProcessInfo.processInfo.arguments.contains("--storekit-app-diagnostic") {
+                do {
+                    let result = try await AppTransaction.shared
+                    switch result {
+                    case .verified(let app):
+                        print("[StoreKit catalog] verified appID=\(app.appID) bundle=\(app.bundleID) environment=\(app.environment)")
+                    case .unverified(_, let failure):
+                        print("[StoreKit catalog] app verification failed: \(failure.localizedDescription)")
+                    }
+                } catch {
+                    let failure = error as NSError
+                    print("[StoreKit catalog] app transaction failed domain=\(failure.domain) code=\(failure.code) description=\(failure.localizedDescription)")
+                }
+            }
+#endif
             if products.count != SubscriptionProduct.allIDs.count {
                 loadError = "Some subscription plans are unavailable. Please try again later."
             }
             await refreshIntroductoryEligibility()
         } catch {
+#if DEBUG
+            let failure = error as NSError
+            print("[StoreKit catalog] failed domain=\(failure.domain) code=\(failure.code) description=\(failure.localizedDescription)")
+#endif
             loadError = "Couldn't load subscription options. \(error.localizedDescription)"
         }
     }

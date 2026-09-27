@@ -11,6 +11,7 @@ struct LibraryView: View {
     @State private var entitlements = EntitlementStore.shared
     @State private var demo = DemoVisibility()
     @State private var showingPaywall = false
+    @State private var showingFreeLimit = false
     /// Set when Add was tapped signed out, so signing in carries on to it.
     @State private var addAfterSignIn = false
     @State private var checkingAccess = false
@@ -82,6 +83,12 @@ struct LibraryView: View {
         .sheet(isPresented: $showingPaywall) {
             PaywallView()
         }
+        .alert("Free plan: 1 sheet at a time", isPresented: $showingFreeLimit) {
+            Button("See Premium Plans") { showingPaywall = true }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Delete your current sheet to upload another, or go Premium for unlimited sheets and no ads.")
+        }
     }
 
     private func afterAccount() {
@@ -95,9 +102,10 @@ struct LibraryView: View {
         }
     }
 
-    /// Uploading is a members feature, as on the web: a signed-in account
-    /// with an active subscription, checked fresh rather than trusted from
-    /// whatever was cached before signing in.
+    /// Uploading needs an account. Premium uploads freely; the free plan keeps
+    /// one sheet at a time (the backend enforces it too), so a free account
+    /// that already has one is told to delete it or go Premium. Entitlement
+    /// is checked fresh rather than trusted from before signing in.
     private func startAdding() async {
         guard model.currentUser != nil else {
             addAfterSignIn = true
@@ -107,10 +115,10 @@ struct LibraryView: View {
         checkingAccess = true
         await entitlements.refresh()
         checkingAccess = false
-        if entitlements.isEntitled {
+        if entitlements.isEntitled || !model.hasKeptSheet {
             showingAddSheet = true
         } else {
-            showingPaywall = true
+            showingFreeLimit = true
         }
     }
 
@@ -250,10 +258,7 @@ private struct DemoRow: View {
         HStack(spacing: 8) {
             Button(action: open) {
                 HStack(spacing: 14) {
-                    Text("🎼")
-                        .font(.system(size: 24))
-                        .frame(width: 42, height: 54)
-                        .background(Brand.gold.opacity(0.16), in: .rect(cornerRadius: 6))
+                    SheetThumbnail()
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Try a sample")
                             .font(Brand.title(17))
@@ -301,6 +306,43 @@ private struct DemoRow: View {
 ///
 /// Practising sits beside the card rather than inside it, as a small card of its
 /// own at the same height so the two read as a pair.
+/// A determinate bar for a job still being read. Within its stage's slice it
+/// eases toward the slice's end — fast at first, never reaching it — so the
+/// bar keeps moving while a long stage runs, without claiming the stage is
+/// done before the server says so.
+private struct JobProgressBar: View {
+    let range: ClosedRange<Double>
+
+    /// Seconds to cover about two-thirds of the remaining slice.
+    private static let easing: Double = 40
+    @State private var stageStart = Date.now
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.5)) { context in
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Brand.paperDeep)
+                    Capsule()
+                        .fill(Brand.accent)
+                        .frame(width: proxy.size.width * fraction(at: context.date))
+                        .animation(.linear(duration: 0.5), value: fraction(at: context.date))
+                }
+            }
+        }
+        .frame(height: 4)
+        .onChange(of: range) { stageStart = .now }
+        .accessibilityElement()
+        .accessibilityLabel("Progress")
+        .accessibilityValue(Text(fraction(at: .now), format: .percent.precision(.fractionLength(0))))
+    }
+
+    private func fraction(at date: Date) -> Double {
+        let elapsed = max(0, date.timeIntervalSince(stageStart))
+        let eased = 1 - exp(-elapsed / Self.easing)
+        return range.lowerBound + (range.upperBound - range.lowerBound) * eased
+    }
+}
+
 private struct SheetRow: View {
     let job: AnnotationJob
     let open: () -> Void
@@ -389,10 +431,7 @@ private struct SheetRow: View {
                 Text(job.stage ?? "Queued")
                     .font(.system(size: 12.5))
                     .foregroundStyle(Brand.inkSoft)
-                ProgressView()
-                    .progressViewStyle(.linear)
-                    .tint(Brand.accent)
-                    .frame(height: 3)
+                JobProgressBar(range: job.progressRange)
                     .padding(.top, 3)
             }
         }
