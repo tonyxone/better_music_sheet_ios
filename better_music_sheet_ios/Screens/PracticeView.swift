@@ -54,7 +54,7 @@ struct PracticeView: View {
         // Above the sheet, so the keyboard keeps the bottom of the screen.
         .safeAreaInset(edge: .top, spacing: 0) {
             if AdConfig.isEnabled, !entitlements.isEntitled {
-                AdBannerView().frame(height: 50)
+                AdBannerSlot()
             }
         }
         .navigationTitle(title)

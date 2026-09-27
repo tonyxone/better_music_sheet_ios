@@ -90,7 +90,7 @@ struct SheetDetailView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if AdConfig.isEnabled, !isEditing, !entitlements.isEntitled {
-                AdBannerView().frame(height: 50)
+                AdBannerSlot()
             }
         }
     }
