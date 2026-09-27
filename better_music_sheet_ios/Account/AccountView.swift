@@ -109,6 +109,8 @@ private struct SignedInContent: View {
                         .foregroundStyle(Brand.danger)
                         .multilineTextAlignment(.center)
                 }
+
+                AdPrivacyChoicesButton()
             }
 
             Spacer()
@@ -184,6 +186,23 @@ private struct SignedInContent: View {
             }
         } catch {
             restoreError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+}
+
+/// Where someone who was asked for ad consent can change their answer —
+/// Google requires the way back to be easy to find. Hidden where no consent
+/// was needed.
+private struct AdPrivacyChoicesButton: View {
+    @State private var consent = AdConsent.shared
+
+    var body: some View {
+        if consent.privacyOptionsRequired {
+            Button("Ad Privacy Choices") {
+                Task { await consent.presentPrivacyOptions() }
+            }
+            .font(.system(size: 13))
+            .foregroundStyle(Brand.inkSoft)
         }
     }
 }
@@ -279,6 +298,7 @@ private struct SignInForm: View {
                     Button("See Premium Plans") { showingPlans = true }
                         .buttonStyle(.premium)
                         .padding(.top, 8)
+                    AdPrivacyChoicesButton()
                 }
             }
             .padding(.horizontal, 28)

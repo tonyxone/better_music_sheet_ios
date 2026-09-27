@@ -163,6 +163,16 @@ final class SubscriptionManager {
             throw SubscriptionError.failedVerification
         }
         guard SubscriptionProduct.allIDs.contains(transaction.productID) else { return }
+        // Bought through an Xcode StoreKit configuration: Apple's servers have
+        // never heard of it, so the backend can only reject it (HTTP 400), and
+        // left unfinished it would be retried, and fail, on every launch.
+        if transaction.environment == .xcode {
+#if DEBUG
+            print("[StoreKit] finishing Xcode-environment transaction \(transaction.id) without reporting it")
+#endif
+            await transaction.finish()
+            return
+        }
         let signedInID = await sessions.current()?.user.userID
         guard let owner = userID ?? signedInID else {
             throw SubscriptionError.signInRequired

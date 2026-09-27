@@ -6,6 +6,10 @@
 	     only passes through the ones it knows). Merged with the generated
 	     Info.plist. Kept outside the synchronized source folder so it isn't
 	     also copied into the app as a resource. -->
+	<!-- Only HTTPS and Apple's own crypto, which is exempt: skips App Store
+	     Connect's export compliance question on every upload. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-3606656264491246~3082223161</string>
 	<!-- Google's own SKAdNetwork id, so ad conversions can be attributed

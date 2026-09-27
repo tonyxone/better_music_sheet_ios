@@ -29,7 +29,7 @@ struct LibraryView: View {
         }
         .safeAreaInset(edge: .top) {
             if AdConfig.isEnabled, !entitlements.isEntitled {
-                AdBannerView().frame(height: 50)
+                AdBannerSlot()
             }
         }
         .navigationTitle("Library")

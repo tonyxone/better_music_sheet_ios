@@ -1,15 +1,8 @@
 import SwiftUI
-import GoogleMobileAds
 
 @main
 struct BetterMusicSheetApp: App {
     @Environment(\.scenePhase) private var scenePhase
-
-    init() {
-        if AdConfig.isEnabled {
-            MobileAds.shared.start(completionHandler: nil)
-        }
-    }
 
     var body: some Scene {
         WindowGroup {
