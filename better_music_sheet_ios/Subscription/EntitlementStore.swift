@@ -22,11 +22,14 @@ final class EntitlementStore {
     private let client: APIClient
     private let sessions: SessionStore
     private let defaults: UserDefaults
+    private let now: () -> Date
 
-    init(client: APIClient = .shared, sessions: SessionStore = .shared, defaults: UserDefaults = .standard) {
+    init(client: APIClient = .shared, sessions: SessionStore = .shared, defaults: UserDefaults = .standard,
+         now: @escaping () -> Date = Date.init) {
         self.client = client
         self.sessions = sessions
         self.defaults = defaults
+        self.now = now
         self.isEntitled = false
     }
 
@@ -49,10 +52,16 @@ final class EntitlementStore {
             if defaults.string(forKey: Self.ownerKey) == userID,
                let data = defaults.data(forKey: Self.statusKey),
                let cached = try? JSONDecoder().decode(SubscriptionStatus.self, from: data),
-               cached.currentPeriodEnd == nil || cached.currentPeriodEnd! > Date().timeIntervalSince1970 {
+               cached.master == true || cached.currentPeriodEnd == nil || cached.currentPeriodEnd! > now().timeIntervalSince1970 {
                 status = cached
                 isEntitled = cached.isPremium
             }
+        }
+        // A previously valid snapshot may expire while this account stays
+        // signed in. Failed refreshes must not extend its paid period.
+        if let status, status.master != true, let end = status.currentPeriodEnd,
+           end <= now().timeIntervalSince1970 {
+            apply(entitled: false, status: nil)
         }
         do {
             let status: SubscriptionStatus = try await client.get("/api/me/subscription")
