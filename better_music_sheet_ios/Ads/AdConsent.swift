@@ -2,6 +2,7 @@ import GoogleMobileAds
 import SwiftUI
 import UIKit
 import UserMessagingPlatform
+import OSLog
 
 /// Google's consent requirements for ads (GDPR in the EEA and UK, and US state
 /// privacy laws), through its User Messaging Platform. The message itself is
@@ -24,8 +25,14 @@ final class AdConsent {
 
     private var gathering = false
     private var adsStarted = false
+    private let logger = Logger(subsystem: "com.bettermusicsheet.app", category: "Ads")
 
     private init() {
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--reset-ad-consent") {
+            UMPConsentInformation.sharedInstance.reset()
+        }
+#endif
         canRequestAds = UMPConsentInformation.sharedInstance.canRequestAds
         if canRequestAds { startAds() }
     }
@@ -44,8 +51,9 @@ final class AdConsent {
         } catch {
             // No network or no message configured: fall through to whatever
             // an earlier launch settled, which may still allow ads.
+            logger.error("Consent update failed: \(error.localizedDescription, privacy: .public)")
 #if DEBUG
-            print("[AdConsent] \(error.localizedDescription)")
+            print("[Ads] Consent update failed: \(error.localizedDescription)")
 #endif
         }
         update()
@@ -60,6 +68,10 @@ final class AdConsent {
     private func update() {
         let consent = UMPConsentInformation.sharedInstance
         canRequestAds = consent.canRequestAds
+        logger.notice("Consent refreshed; can request ads: \(self.canRequestAds)")
+#if DEBUG
+        print("[Ads] Consent refreshed; can request ads: \(canRequestAds)")
+#endif
         privacyOptionsRequired = consent.privacyOptionsRequirementStatus == .required
         if canRequestAds { startAds() }
     }
@@ -71,17 +83,22 @@ final class AdConsent {
     }
 }
 
-/// Where a banner goes: gathers consent the first time it's shown and holds
-/// the space empty until ads may be requested.
+/// Keeps the consent task alive even before consent is available, but reserves
+/// screen space only after a banner has successfully loaded.
 struct AdBannerSlot: View {
     @State private var consent = AdConsent.shared
+    @State private var hasLoadedAd = false
 
     var body: some View {
-        Group {
+        ZStack {
+            Color.clear
             if consent.canRequestAds {
-                AdBannerView().frame(height: 50)
+                AdBannerView(hasLoadedAd: $hasLoadedAd)
+                    .frame(width: 320, height: 50)
             }
         }
+        .frame(height: consent.canRequestAds && hasLoadedAd ? 50 : 0)
+        .clipped()
         .task { await consent.gather() }
     }
 }
