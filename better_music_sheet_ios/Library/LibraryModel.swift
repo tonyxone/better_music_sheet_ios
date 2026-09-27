@@ -19,6 +19,7 @@ final class LibraryModel {
     private let client: APIClient
     private let sessions: SessionStore
     private let entitlements: EntitlementStore
+    private var lastSubscriptionUserID: String?
 
     init(client: APIClient = .shared, sessions: SessionStore = .shared, entitlements: EntitlementStore = .shared) {
         self.client = client
@@ -68,11 +69,18 @@ final class LibraryModel {
 
     func load() async {
         currentUser = await sessions.current()?.user
+        let accountChanged = currentUser?.userID != lastSubscriptionUserID
+        lastSubscriptionUserID = currentUser?.userID
         // Runs alongside rather than ahead of the sheet fetch below — a slow
         // subscription check shouldn't hold up the library the user came
         // here to see. This is also what re-checks entitlement "on account
         // change," since every sign-in and sign-out already calls load().
-        Task { await entitlements.refresh() }
+        Task {
+            await entitlements.refresh()
+            if accountChanged {
+                await SubscriptionManager.shared.syncCurrentEntitlement()
+            }
+        }
         if jobs.isEmpty { state = .loading }
         do {
             let fetched: [AnnotationJob] = try await client.get("/api/sheets")

@@ -1,39 +1,37 @@
 import Foundation
 import StoreKit
 
-/// StoreKit 2 purchase flow and entitlement listener. Keeps no entitlement
-/// state of its own — EntitlementStore is the single source of truth for
-/// "can this account use practice mode," since it also has to agree with a
-/// subscription bought on the web. This only drives StoreKit and tells the
-/// backend what StoreKit said.
 @MainActor
 @Observable
 final class SubscriptionManager {
     static let shared = SubscriptionManager()
 
     private(set) var products: [Product] = []
+    private(set) var introductoryEligibleIDs: Set<String> = []
     private(set) var isLoadingProducts = false
     private(set) var loadError: String?
+    private(set) var syncError: String?
 
     private let client: APIClient
     private let entitlements: EntitlementStore
+    private let sessions: SessionStore
     private var updatesTask: Task<Void, Never>?
+    private var syncing = false
 
-    init(client: APIClient = .shared, entitlements: EntitlementStore = .shared) {
+    init(client: APIClient = .shared, entitlements: EntitlementStore = .shared,
+         sessions: SessionStore = .shared) {
         self.client = client
         self.entitlements = entitlements
+        self.sessions = sessions
     }
 
-    /// Called once, at app launch (see BetterMusicSheetApp). Starts
-    /// listening for transactions StoreKit delivers outside of an explicit
-    /// purchase() call — renewals, family sharing, a purchase made on
-    /// another device — loads the product list, and reports whatever is
-    /// currently entitled.
     func start() {
         guard updatesTask == nil else { return }
         updatesTask = Task { [weak self] in
             for await update in Transaction.updates {
-                await self?.handleUpdate(update)
+                guard let self else { return }
+                do { try await self.deliver(update) }
+                catch { self.syncError = error.localizedDescription }
             }
         }
         Task { await loadProducts() }
@@ -41,86 +39,111 @@ final class SubscriptionManager {
     }
 
     func loadProducts() async {
-        guard products.isEmpty else { return }
+        guard !isLoadingProducts else { return }
         isLoadingProducts = true
+        loadError = nil
         defer { isLoadingProducts = false }
         do {
             products = try await Product.products(for: SubscriptionProduct.allIDs)
                 .sorted { $0.price < $1.price }
+            if products.count != SubscriptionProduct.allIDs.count {
+                loadError = "Some subscription plans are unavailable. Please try again later."
+            }
+            await refreshIntroductoryEligibility()
         } catch {
             loadError = "Couldn't load subscription options. \(error.localizedDescription)"
         }
     }
 
+    func refreshIntroductoryEligibility() async {
+        var eligible: Set<String> = []
+        for product in products {
+            if let info = product.subscription,
+               info.introductoryOffer?.paymentMode == .freeTrial,
+               await info.isEligibleForIntroOffer {
+                eligible.insert(product.id)
+            }
+        }
+        introductoryEligibleIDs = eligible
+    }
+
     func purchase(_ product: Product) async throws {
-        let result = try await product.purchase()
+        guard SubscriptionProduct.allIDs.contains(product.id),
+              let session = await sessions.current(),
+              let token = UUID(uuidString: session.user.userID) else {
+            throw SubscriptionError.signInRequired
+        }
+        // Refuse a second charge based on a fresh server answer, not a cached paywall.
+        let current: SubscriptionStatus = try await client.get("/api/me/subscription")
+        if current.isPremium { throw SubscriptionError.alreadySubscribed }
+        guard await sessions.current()?.user.userID == session.user.userID else {
+            throw SubscriptionError.accountChanged
+        }
+        let result = try await product.purchase(options: [.appAccountToken(token)])
         switch result {
         case .success(let verification):
-            try await handlePurchase(verification)
-        case .userCancelled, .pending:
+            try await deliver(verification, userID: session.user.userID)
+        case .userCancelled:
             break
+        case .pending:
+            throw SubscriptionError.purchasePending
         @unknown default:
             break
         }
     }
 
-    /// Required by App Store review for any subscription app: re-links
-    /// purchases StoreKit already knows about (a reinstall, a new device)
-    /// without charging anything again.
     func restore() async throws {
+        guard await sessions.current() != nil else { throw SubscriptionError.signInRequired }
         try await AppStore.sync()
-        await syncCurrentEntitlement()
+        try await syncTransactions()
     }
 
-    /// Walks current entitlements for the latest non-revoked, non-expired
-    /// transaction and reports it to the backend and EntitlementStore.
+    /// Retries unfinished delivery on launch, foreground, and after sign-in.
     func syncCurrentEntitlement() async {
-        var latest: (transaction: Transaction, jws: String)?
-        for await result in Transaction.currentEntitlements {
-            guard case .verified(let transaction) = result,
-                  transaction.revocationDate == nil,
-                  (transaction.expirationDate ?? .distantFuture) > Date() else { continue }
-            if latest == nil || transaction.purchaseDate > latest!.transaction.purchaseDate {
-                latest = (transaction, result.jwsRepresentation)
+        do { try await syncTransactions() }
+        catch { syncError = error.localizedDescription }
+    }
+
+    private func syncTransactions() async throws {
+        guard !syncing else { return }
+        guard let userID = await sessions.current()?.user.userID else {
+            await entitlements.refresh()
+            return
+        }
+        syncing = true
+        defer { syncing = false }
+        syncError = nil
+        var seen: Set<UInt64> = []
+        for await result in Transaction.unfinished {
+            if case .verified(let transaction) = result,
+               SubscriptionProduct.allIDs.contains(transaction.productID) {
+                try await deliver(result, userID: userID)
+                seen.insert(transaction.id)
             }
         }
-        if let latest {
-            await report(latest.jws)
+        for await result in Transaction.currentEntitlements {
+            if case .verified(let transaction) = result,
+               SubscriptionProduct.allIDs.contains(transaction.productID),
+               !seen.contains(transaction.id) {
+                try await deliver(result, userID: userID)
+            }
         }
         await entitlements.refresh()
+        await refreshIntroductoryEligibility()
     }
 
-    // MARK: - Internals
-
-    private func handlePurchase(_ result: VerificationResult<Transaction>) async throws {
+    private func deliver(_ result: VerificationResult<Transaction>, userID: String? = nil) async throws {
         guard case .verified(let transaction) = result else {
             throw SubscriptionError.failedVerification
         }
-        await report(result.jwsRepresentation)
+        guard SubscriptionProduct.allIDs.contains(transaction.productID) else { return }
+        let signedInID = await sessions.current()?.user.userID
+        guard let owner = userID ?? signedInID else {
+            throw SubscriptionError.signInRequired
+        }
+        let reporter = ApplePurchaseReporter(client: client, sessions: sessions, entitlements: entitlements)
+        try await reporter.report(result.jwsRepresentation, userID: owner)
         await transaction.finish()
-        await entitlements.refresh()
-    }
-
-    /// The Transaction.updates listener's own handler: a transaction that
-    /// fails verification here is quietly dropped rather than thrown, since
-    /// there's no caller left to hand the error to.
-    private func handleUpdate(_ update: VerificationResult<Transaction>) async {
-        guard case .verified(let transaction) = update else { return }
-        await report(update.jwsRepresentation)
-        await transaction.finish()
-        await entitlements.refresh()
-    }
-
-    /// Posts the raw JWS so the backend can record the purchase against this
-    /// account. POST /api/subscriptions/apple/transaction is shipping in
-    /// parallel on the backend — a 404/501 (or any other failure) is silent
-    /// and not retried; StoreKit's own verified transaction already grants
-    /// the purchase locally, and the next launch or purchase/update tries
-    /// the report again.
-    private func report(_ jws: String) async {
-        struct Body: Encodable { let transaction: String }
-        guard let encoded = try? JSONEncoder().encode(Body(transaction: jws)) else { return }
-        _ = try? await client.call("/api/subscriptions/apple/transaction", method: "POST",
-                                   body: encoded, contentType: "application/json")
+        syncError = nil
     }
 }
