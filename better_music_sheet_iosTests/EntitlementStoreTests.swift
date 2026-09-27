@@ -85,6 +85,39 @@ struct EntitlementStoreTests {
         #expect(entitlements.status == nil)
     }
 
+    @Test func anOfflineSnapshotExpiresWithoutChangingAccounts() async {
+        var clock = Date(timeIntervalSince1970: 1_700_000_000)
+        let channel = StubProtocol.Channel([.init(status: 503), .init(status: 503)])
+        let sessions = SessionStore(store: InMemorySecretStore())
+        await sessions.save(session())
+        let defaults = freshDefaults()
+        let client = APIClient(baseURL: base, urlSession: channel.session(),
+                               sessions: sessions, guestID: GuestID(store: InMemorySecretStore()))
+        let entitlements = EntitlementStore(client: client, sessions: sessions, defaults: defaults,
+                                            now: { clock })
+        entitlements.acceptPurchase(SubscriptionStatus(tier: "premium", plan: "monthly", status: "active",
+            currentPeriodEnd: 1_700_000_010, cancelAtPeriodEnd: false, platform: "apple"), userID: "u1")
+        await entitlements.refresh()
+        #expect(entitlements.isEntitled)
+        clock = Date(timeIntervalSince1970: 1_700_000_011)
+        await entitlements.refresh()
+        #expect(!entitlements.isEntitled)
+        #expect(entitlements.status == nil)
+        #expect(!defaults.bool(forKey: Self.cacheKey))
+    }
+
+    @Test func anExpiredPaidPeriodDoesNotRemoveMasterAccessOffline() async {
+        let channel = StubProtocol.Channel([.init(status: 503)])
+        let sessions = SessionStore(store: InMemorySecretStore())
+        await sessions.save(session())
+        let entitlements = store(channel: channel, sessions: sessions, defaults: freshDefaults())
+        entitlements.acceptPurchase(SubscriptionStatus(tier: "premium", plan: "monthly", status: "active",
+            currentPeriodEnd: 1, cancelAtPeriodEnd: false, platform: "apple", master: true), userID: "u1")
+        await entitlements.refresh()
+        #expect(entitlements.isEntitled)
+        #expect(entitlements.status?.master == true)
+    }
+
     @Test func aFreeTierResponseClearsAPreviouslyCachedEntitlement() async {
         let defaults = freshDefaults()
         defaults.set(true, forKey: Self.cacheKey)
