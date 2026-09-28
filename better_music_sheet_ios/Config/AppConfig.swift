@@ -52,5 +52,5 @@ nonisolated enum AppConfig {
     static let authCallbackURL = "bettermusicsheet://auth/callback"
 
     /// Matches the backend's own cap (`MAX_UPLOAD_BYTES`).
-    static let maxUploadBytes = 32 * 1024 * 1024
+    static let maxUploadBytes = 10 * 1024 * 1024
 }
