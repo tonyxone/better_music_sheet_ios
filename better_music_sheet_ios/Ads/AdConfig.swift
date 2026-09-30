@@ -13,7 +13,7 @@ nonisolated enum AdConfig {
     static let isEnabled = true
 
 #if DEBUG
-    static let bannerUnitID = "ca-app-pub-3940256099942544/2934735716"
+    static let bannerUnitID = "ca-app-pub-3940256099942544/2435281174"
 #else
     static let bannerUnitID = "ca-app-pub-3606656264491246/5951929085"
 #endif

@@ -8,9 +8,19 @@ import UIKit
 /// rather than sheet music.
 struct AccountView: View {
     @State private var model = AccountModel()
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
+        Group {
+            if #available(iOS 18.0, *) {
+                accountPage.presentationSizing(.form)
+            } else {
+                accountPage
+            }
+        }
+        .task { await model.load() }
+    }
+
+    private var accountPage: some View {
         NavigationStack {
             ZStack {
                 Brand.paper.ignoresSafeArea()
@@ -18,25 +28,8 @@ struct AccountView: View {
             }
             .navigationTitle("Account")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
         }
-        .task { await model.load() }
-        // A brief pause so "Signed in as X" is actually visible for a beat,
-        // rather than the screen vanishing the instant it appears — but only
-        // for a sign-in that just happened, never for opening the screen to
-        // look at an account you were already signed into (see
-        // AccountModel.justSignedIn).
-        .onChange(of: model.justSignedIn) { _, justSignedIn in
-            guard justSignedIn else { return }
-            Task {
-                try? await Task.sleep(for: .seconds(0.6))
-                dismiss()
-            }
-        }
+        .presentationDetents([.height(730)])
     }
 
     @ViewBuilder
@@ -111,6 +104,10 @@ private struct SignedInContent: View {
                 }
 
                 AdPrivacyChoicesButton()
+
+                NavigationLink("Privacy Policy") { PrivacyPolicyView() }
+                    .font(.system(size: 13))
+                    .foregroundStyle(Brand.inkSoft)
             }
 
             Spacer()
@@ -230,8 +227,16 @@ private struct SignInForm: View {
     @State private var showingPlans = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
+        ViewThatFits(in: .vertical) {
+            formContent
+            ScrollView { formContent }
+                .scrollDismissesKeyboard(.interactively)
+        }
+        .sheet(isPresented: $showingPlans) { PaywallView(previewOnly: true) }
+    }
+
+    private var formContent: some View {
+        VStack(spacing: 20) {
                 VStack(spacing: 6) {
                     Text(title)
                         .font(Brand.title(22))
@@ -294,18 +299,19 @@ private struct SignInForm: View {
 
                 links
 
+                NavigationLink("Privacy Policy") { PrivacyPolicyView() }
+                    .font(.system(size: 13))
+                    .foregroundStyle(Brand.inkSoft)
+
                 if step == .signIn {
                     Button("See Premium Plans") { showingPlans = true }
                         .buttonStyle(.premium)
                         .padding(.top, 8)
                     AdPrivacyChoicesButton()
                 }
-            }
-            .padding(.horizontal, 28)
-            .padding(.bottom, 24)
         }
-        .scrollDismissesKeyboard(.interactively)
-        .sheet(isPresented: $showingPlans) { PaywallView(previewOnly: true) }
+        .padding(.horizontal, 28)
+        .padding(.bottom, 24)
     }
 
     @ViewBuilder

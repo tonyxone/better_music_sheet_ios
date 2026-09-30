@@ -15,6 +15,9 @@ nonisolated struct AnnotationOptions: Codable, Sendable, Hashable {
         }
     }
 
+    /// Letter names, or jianpu — scale degrees of the key — printed into
+    /// the annotated PDF. Either way the sheet can be switched while viewing.
+    var notation: Notation = .letters
     var style: LabelStyle = .unicode
     /// Appends the scientific octave number, e.g. B♭4.
     var octave = false
@@ -79,6 +82,7 @@ nonisolated extension AnnotationOptions {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let fallback = AnnotationOptions()
+        notation = try container.decodeIfPresent(Notation.self, forKey: .notation) ?? fallback.notation
         style = try container.decodeIfPresent(LabelStyle.self, forKey: .style) ?? fallback.style
         octave = try container.decodeIfPresent(Bool.self, forKey: .octave) ?? fallback.octave
         fontSize = try container.decodeIfPresent(Double.self, forKey: .fontSize) ?? fallback.fontSize

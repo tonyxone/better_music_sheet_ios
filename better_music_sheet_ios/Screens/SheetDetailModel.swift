@@ -186,6 +186,8 @@ final class SheetDetailModel {
         guard let base = showingOriginal || namesLive ? originalPDFData : pdfData else { return nil }
         var content = SheetOverlayContent(labels: editor.labels, edits: editor.doc,
                                           showsNames: namesLive && !showingOriginal)
+        content.notation = editor.notation
+        content.keyMarksByPage = editor.keyMarksByPage
         content.editing = false
         guard let data = SheetExport.customizedPDF(base: base, content: content) else { return nil }
         return write(data, suffix: " (customized)")

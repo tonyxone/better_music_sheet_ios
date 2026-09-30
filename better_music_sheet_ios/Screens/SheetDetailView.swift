@@ -102,6 +102,9 @@ struct SheetDetailView: View {
         let namesLive = model.editor?.namesLive == true && model.originalPDFData != nil
         let base = displayedVersion == .original || namesLive ? (model.originalPDFData ?? data) : data
         VStack(spacing: 0) {
+            if let job = model.job {
+                toolRow(job: job, namesLive: namesLive)
+            }
             if let editor = model.editor {
                 if editor.isEditing {
                     SheetEditToolbar(editor: editor)
@@ -138,94 +141,95 @@ struct SheetDetailView: View {
         }
     }
 
+    /// While editing, the back button gives way to how saving is going.
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        if model.stage == .ready, model.pdfData != nil, let job = model.job {
-            if let editor = model.editor, editor.isEditing {
-                ToolbarItem(placement: .topBarLeading) {
-                    Text(editor.store.saveState.message)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Brand.inkSoft)
-                        .lineLimit(1)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        editor.isEditing = false
-                        Task { await editor.store.flush() }
-                    }
-                    .bold()
-                }
-            } else {
-                if #available(iOS 26.0, *) {
-                    // The segmented control is its own box; without this iOS 26
-                    // also draws the toolbar's glass capsule around it.
-                    ToolbarItem(placement: .topBarLeading) {
-                        Picker("Sheet version", selection: $displayedVersion) {
-                            ForEach(PDFVersion.allCases) { version in
-                                Text(version.title).tag(version)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(width: 190)
-                        .accessibilityHint("Switches between the annotated sheet and the uploaded original")
-                    }
-                    .sharedBackgroundVisibility(.hidden)
-                } else {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Picker("Sheet version", selection: $displayedVersion) {
-                            ForEach(PDFVersion.allCases) { version in
-                                Text(version.title).tag(version)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(width: 190)
-                        .accessibilityHint("Switches between the annotated sheet and the uploaded original")
-                    }
-                }
-
-                if let editor = model.editor, editor.store.doc != nil {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            editor.showsNames = displayedVersion == .annotated
-                            editor.isEditing = true
-                        } label: {
-                            Image(systemName: "pencil.tip.crop.circle")
-                        }
-                        .accessibilityLabel("Edit sheet")
-                        .accessibilityHint(editor.namesLive
-                                           ? "Move or retype note names, draw, highlight and add notes"
-                                           : "Draw, highlight and add notes")
-                    }
-                }
-
-                // Just left of the download, as on the web app's result page.
-                ToolbarItem(placement: .topBarTrailing) {
-                    // A route, not a destination view: the app's stack is
-                    // bound to a typed path, and a view-destination link
-                    // pushed onto it crashes SwiftUI. RootView decides
-                    // between practice and the paywall.
-                    NavigationLink(value: SheetRoute(jobID: job.jobID, provisionalName: model.title, page: .practice)) {
-                        KeyboardIcon()
-                            .foregroundStyle(Brand.ink)
-                            .frame(width: 26, height: 18)
-                    }
-                    .tint(Brand.ink)
-                    .accessibilityLabel("Practice")
-                    .accessibilityHint("Opens the sheet with the keyboard and falling notes")
-                }
-
-                // Without this, iOS 26's glass toolbar draws adjacent items
-                // as one grouped button; a fixed spacer gives each its own.
-                // Earlier OS versions never group them, so there's nothing
-                // to separate.
-                if #available(iOS 26.0, *) {
-                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    shareMenu
-                }
+        if let editor = model.editor, editor.isEditing {
+            ToolbarItem(placement: .topBarLeading) {
+                Text(editor.store.saveState.message)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Brand.inkSoft)
+                    .lineLimit(1)
             }
+        }
+    }
+
+    /// The sheet's tools, in one row under its name: Edit on the left, then
+    /// on the right the version, letters or jianpu, Practice and Download.
+    /// Editing opens its own tools under this row, and Edit becomes Done.
+    private func toolRow(job: AnnotationJob, namesLive: Bool) -> some View {
+        let row = HStack(spacing: 6) {
+            editButton
+            Spacer(minLength: 6)
+            BrandSegmentedControl(
+                label: "Sheet version",
+                options: PDFVersion.allCases.map { ($0, $0.title, $0.title) },
+                selection: $displayedVersion)
+                .accessibilityHint("Switches between the annotated sheet and the uploaded original")
+            if displayedVersion == .annotated, namesLive, let editor = model.editor {
+                NotationToggle(fallback: editor.labels?.notation)
+            }
+            // Leaving for Practice or exporting mid-edit would strand the
+            // edit, so those wait until Done.
+            if !isEditing {
+                // A route, not a destination view: the app's stack is bound
+                // to a typed path, and a view-destination link pushed onto it
+                // crashes SwiftUI. RootView decides between practice and the
+                // paywall.
+                NavigationLink(value: SheetRoute(jobID: job.jobID, provisionalName: model.title, page: .practice)) {
+                    KeyboardIcon()
+                        .frame(width: 21, height: 14)
+                        .toolButton()
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Practice")
+                .accessibilityHint("Opens the sheet with the keyboard and falling notes")
+                shareMenu
+            }
+        }
+        return ViewThatFits(in: .horizontal) {
+            row
+            // A phone too narrow for the row scrolls it sideways.
+            ScrollView(.horizontal, showsIndicators: false) { row }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Brand.card)
+        .overlay(alignment: .bottom) { Rectangle().fill(Brand.paperDeep).frame(height: 1) }
+    }
+
+    /// Red like the choices beside it, with the pencil in white on it.
+    @ViewBuilder
+    private var editButton: some View {
+        if let editor = model.editor, editor.store.doc != nil {
+            Button {
+                if editor.isEditing {
+                    editor.isEditing = false
+                    Task { await editor.store.flush() }
+                } else {
+                    editor.showsNames = displayedVersion == .annotated
+                    editor.isEditing = true
+                }
+            } label: {
+                Group {
+                    if editor.isEditing {
+                        Text("Done").font(.system(size: 14, weight: .semibold)).padding(.horizontal, 12)
+                    } else {
+                        Image(systemName: "pencil.tip.crop.circle")
+                            .font(.system(size: 17, weight: .medium))
+                            .frame(width: 36)
+                    }
+                }
+                .foregroundStyle(.white)
+                .frame(height: 34)
+                .background(Brand.accent, in: .rect(cornerRadius: 9))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(editor.isEditing ? "Done editing" : "Edit sheet")
+            .accessibilityHint(editor.isEditing ? "" : editor.namesLive
+                               ? "Move or retype note names, draw, highlight and add notes"
+                               : "Draw, highlight and add notes")
         }
     }
 
@@ -259,11 +263,15 @@ struct SheetDetailView: View {
                 Text("The file as you uploaded it")
             }
         } label: {
-            if preparingShare {
-                ProgressView()
-            } else {
-                Image(systemName: "square.and.arrow.up")
+            Group {
+                if preparingShare {
+                    ProgressView()
+                } else {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 15, weight: .semibold))
+                }
             }
+            .toolButton()
         }
         .disabled(preparingShare)
         .accessibilityLabel("Share")
@@ -342,5 +350,15 @@ private struct FailureView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 32)
+    }
+}
+
+private extension View {
+    /// A plain square tool button, outlined like the controls on Practice.
+    func toolButton() -> some View {
+        foregroundStyle(Brand.ink)
+            .frame(width: 34, height: 34)
+            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Brand.paperDeep, lineWidth: 1))
+            .contentShape(Rectangle())
     }
 }

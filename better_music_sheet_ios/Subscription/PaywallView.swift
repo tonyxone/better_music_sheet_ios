@@ -18,6 +18,7 @@ struct PaywallView: View {
     /// Nil until the session check settles.
     @State private var signedIn: Bool?
     @State private var showingAccount = false
+    @State private var showingPrivacyPolicy = false
     @Environment(\.dismiss) private var dismiss
 
     private static let benefits = [
@@ -43,15 +44,10 @@ struct PaywallView: View {
         Group {
             if pushed {
                 page
+            } else if #available(iOS 18.0, *) {
+                presentedPage.presentationSizing(.page)
             } else {
-                NavigationStack {
-                    page
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Close") { dismiss() }
-                            }
-                        }
-                }
+                presentedPage
             }
         }
         .task {
@@ -62,6 +58,28 @@ struct PaywallView: View {
         .sheet(isPresented: $showingAccount, onDismiss: { Task { await checkAccount() } }) {
             AccountView()
         }
+        .sheet(isPresented: $showingPrivacyPolicy) {
+            NavigationStack {
+                PrivacyPolicyView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close") { showingPrivacyPolicy = false }
+                        }
+                    }
+            }
+        }
+    }
+
+    private var presentedPage: some View {
+        NavigationStack {
+            page
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Close") { dismiss() }
+                    }
+                }
+        }
+        .presentationDetents([.large])
     }
 
     private var page: some View {
@@ -107,59 +125,65 @@ struct PaywallView: View {
             }
             .padding(28)
         } else {
-            ScrollView {
-                VStack(spacing: 22) {
-                    header
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        header
 
-                    if let errorMessage = errorMessage ?? manager.syncError {
-                        Text(errorMessage)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Brand.danger)
-                            .multilineTextAlignment(.center)
-                    }
+                        if let errorMessage = errorMessage ?? manager.syncError {
+                            Text(errorMessage)
+                                .font(.system(size: 13))
+                                .foregroundStyle(Brand.danger)
+                                .multilineTextAlignment(.center)
+                        }
 
-                    VStack(spacing: 12) {
-                        ForEach(manager.products) { product in
-                            PlanCard(product: product, isSelected: !previewOnly && product.id == selectedProductID,
-                                     offersTrial: manager.introductoryEligibleIDs.contains(product.id),
-                                     selectable: !previewOnly) {
-                                selectedProductID = product.id
+                        VStack(spacing: 12) {
+                            ForEach(manager.products) { product in
+                                PlanCard(product: product, isSelected: !previewOnly && product.id == selectedProductID,
+                                         offersTrial: manager.introductoryEligibleIDs.contains(product.id),
+                                         selectable: !previewOnly) {
+                                    selectedProductID = product.id
+                                }
                             }
                         }
-                    }
 
-                    benefits
+                        benefits
 
-                    if previewOnly {
-                        Text("Sign in to subscribe. Your subscription belongs to your account, so it works on the web too.")
-                            .font(.system(size: 12.5))
+                        if previewOnly {
+                            Text("Sign in to subscribe. Your subscription belongs to your account, so it works on the web too.")
+                                .font(.system(size: 12.5))
+                                .foregroundStyle(Brand.inkSoft)
+                                .multilineTextAlignment(.center)
+                        } else if signedIn == true {
+                            purchaseButton
+                            restoreButton
+                        } else {
+                            signInButton
+                        }
+
+                        FreePlanCard()
+
+                        Text(terms)
+                            .font(.system(size: 11.5))
                             .foregroundStyle(Brand.inkSoft)
                             .multilineTextAlignment(.center)
-                    } else if signedIn == true {
-                        purchaseButton
-                        restoreButton
-                    } else {
-                        signInButton
                     }
-
-                    FreePlanCard()
-
-                    legalLinks
-
-                    Text(terms)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(Brand.inkSoft)
-                        .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 20)
                 }
-                .padding(.horizontal, 28)
-                .padding(.vertical, 24)
+
+                legalLinks
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
+                    .background(Brand.paper)
             }
         }
     }
 
     private var legalLinks: some View {
         HStack(spacing: 20) {
-            Link("Privacy Policy", destination: URL(string: "https://bettermusicsheet.com/privacy/")!)
+            Button("Privacy Policy") { showingPrivacyPolicy = true }
             Link("Terms of Use", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
         }
         .font(.system(size: 12))
@@ -169,7 +193,7 @@ struct PaywallView: View {
         VStack(spacing: 8) {
             Image(systemName: "pianokeys")
                 .font(.system(size: 30))
-                .foregroundStyle(Brand.accent)
+                .foregroundStyle(Brand.ink)
             Text("Your own sheet music, labelled")
                 .font(Brand.title(22))
                 .foregroundStyle(Brand.ink)

@@ -180,6 +180,18 @@ struct AddSheetView: View {
                     LabelPreview(options: model.options)
                     divider
 
+                    row(.notation) {
+                        Picker(Option.notation.title, selection: $model.options.notation) {
+                            Text("C D E").tag(Notation.letters)
+                                .accessibilityLabel("Letter names, C D E")
+                            Text("簡 1 2 3").tag(Notation.numbers)
+                                .accessibilityLabel("Jianpu, 1 2 3")
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 150)
+                    }
+                    divider
+
                     row(.style) {
                         Picker(Option.style.title, selection: $model.options.style) {
                             Text("B♭ C♯").tag(AnnotationOptions.LabelStyle.unicode)
@@ -256,7 +268,8 @@ struct AddSheetView: View {
         let color = AnnotationOptions.labelColorPresets
             .first { $0.hex == options.labelColor.uppercased() }?.name ?? "Custom color"
         let size = options.fontSize.formatted(.number.precision(.fractionLength(1)))
-        return [options.style == .unicode ? "B♭ C♯" : "Bb C#", "\(size) pt", color].joined(separator: " · ")
+        let names = options.notation == .numbers ? "簡" : options.style == .unicode ? "B♭ C♯" : "Bb C#"
+        return [names, "\(size) pt", color].joined(separator: " · ")
     }
 
     private var colorSwatches: some View {
@@ -347,10 +360,11 @@ struct AddSheetView: View {
 
 /// The upload options, with the web app's explanations.
 private enum Option: Hashable {
-    case style, fontSize, labelColor, dpi, octave, autoRetry
+    case notation, style, fontSize, labelColor, dpi, octave, autoRetry
 
     var title: String {
         switch self {
+        case .notation: "Note names"
         case .style: "Label style"
         case .fontSize: "Font size"
         case .labelColor: "Note name color"
@@ -362,6 +376,8 @@ private enum Option: Hashable {
 
     var help: String {
         switch self {
+        case .notation:
+            "Letter names each note C, D, E… Jianpu (numbered notation, 簡譜) shows numbers instead. In the app 1 is always C (1=C), and you can switch between letters and jianpu at any time while viewing. This option sets the printed download, which counts 1 from the key signature's home note instead (1=G in G major, so F♯ prints as 7)."
         case .style:
             "Unicode uses musical accidental symbols such as B♭ and C♯. ASCII uses plain-text Bb and C#, which can be easier to copy into older software."
         case .fontSize:
@@ -405,7 +421,12 @@ private struct LabelPreview: View {
     }
 
     private var sample: String {
-        let names = options.style == .unicode ? ["B♭", "F♯"] : ["Bb", "F#"]
+        let letters = options.style == .unicode ? ["B♭", "F♯"] : ["Bb", "F#"]
+        // Jianpu has no octave number; these are the same two notes in C.
+        if options.notation == .numbers {
+            return letters.map { Jianpu.numbered($0, fifths: 0) }.joined(separator: "   ")
+        }
+        let names = letters
         let octaves = options.octave ? ["4", "5"] : ["", ""]
         return zip(names, octaves).map { $0 + $1 }.joined(separator: "   ")
     }

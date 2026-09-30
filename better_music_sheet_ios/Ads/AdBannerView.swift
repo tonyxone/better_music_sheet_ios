@@ -6,9 +6,10 @@ import OSLog
 /// A banner shown to free users only (see LibraryView, SheetDetailView) —
 /// non-personalized, no AppTrackingTransparency prompt for v1.
 struct AdBannerView: UIViewRepresentable {
+    let adSize: AdSize
     @Binding var hasLoadedAd: Bool
     func makeUIView(context: Context) -> BannerView {
-        let banner = BannerView(adSize: AdSizeBanner)
+        let banner = BannerView(adSize: adSize)
         banner.adUnitID = AdConfig.bannerUnitID
         banner.rootViewController = Self.rootViewController()
         banner.delegate = context.coordinator

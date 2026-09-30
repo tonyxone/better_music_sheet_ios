@@ -166,6 +166,7 @@ struct SheetUploaderTests {
         var options = AnnotationOptions.standard
         options.style = .ascii
         options.octave = true
+        options.notation = .numbers
         options.fontSize = 8
         options.dpi = 250
         options.autoRetry = false
@@ -178,6 +179,7 @@ struct SheetUploaderTests {
         let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
         #expect(json["style"] as? String == "ascii")
         #expect(json["octave"] as? Bool == true)
+        #expect(json["notation"] as? String == "numbers")
         #expect(json["font_size"] as? Double == 8)
         #expect(json["dpi"] as? Int == 250)
         #expect(json["auto_retry"] as? Bool == false)
@@ -206,6 +208,7 @@ struct AnnotationOptionsTests {
     @Test func defaultsMatchTheBackend() {
         let options = AnnotationOptions.standard
         #expect(options.style == .unicode)
+        #expect(options.notation == .letters)
         #expect(options.fontSize == 6.5)
         #expect(options.dpi == nil)
         #expect(options.autoRetry)

@@ -24,7 +24,7 @@ nonisolated struct NoteCorrection: Codable, Sendable, Hashable {
 
 typealias Corrections = [String: NoteCorrection]
 
-extension Timeline {
+nonisolated extension Timeline {
     /// Apply saved corrections, returning a new timeline.
     ///
     /// Two behaviours here are easy to lose and hard to notice afterwards:

@@ -82,6 +82,8 @@ final class SheetEditorModel {
     private let timeline: Timeline?
     private let labelsByID: [String: LabelItem]
     let labelsByPage: [Int: [LabelItem]]
+    /// Where "1=C" goes on each page, for names shown as numbers.
+    let keyMarksByPage: [Int: [KeyMark]]
 
     var isEditing = false {
         didSet { if !isEditing { finishEditing() } }
@@ -114,10 +116,20 @@ final class SheetEditorModel {
         self.timeline = timeline
         self.labelsByID = Dictionary((labels?.items ?? []).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         self.labelsByPage = Dictionary(grouping: labels?.items ?? [], by: \.page)
+        self.keyMarksByPage = Dictionary(grouping: Jianpu.keyMarks(timeline), by: \.page)
     }
 
     var doc: SheetEdits { store.doc ?? .empty }
     var namesLive: Bool { labels != nil }
+
+    /// Letters or jianpu: the reader's choice, shared with every other page,
+    /// or the notation the sheet was made with until they make one.
+    var notation: Notation { NotationPreference.shared.notation(fallback: labels?.notation) }
+
+    /// A name as it's drawn right now, in the notation being shown.
+    func resolved(_ item: LabelItem) -> ResolvedLabel? {
+        doc.resolve(item, notation: notation)
+    }
 
     var notice: String? { store.notice }
 
@@ -146,7 +158,7 @@ final class SheetEditorModel {
 
     func resolvedLabels(page: Int) -> [ResolvedLabel] {
         guard showsNames else { return [] }
-        return (labelsByPage[page] ?? []).compactMap(doc.resolve)
+        return (labelsByPage[page] ?? []).compactMap(resolved)
     }
 
     static func labelBox(_ l: ResolvedLabel) -> CGRect {
@@ -402,8 +414,8 @@ final class SheetEditorModel {
     func openTextEditor(for item: SelectedItem) {
         switch item.kind {
         case .label:
-            guard let label = labelsByID[item.id], let resolved = doc.resolve(label) else { return }
-            textEditor = TextEditTarget(item: item, initialText: resolved.text, isNew: false)
+            guard let label = labelsByID[item.id], let shown = resolved(label) else { return }
+            textEditor = TextEditTarget(item: item, initialText: shown.text, isNew: false)
         case .text:
             guard let note = doc.texts.first(where: { $0.id == item.id }) else { return }
             textEditor = TextEditTarget(item: item, initialText: note.text, isNew: false)
@@ -468,7 +480,13 @@ final class SheetEditorModel {
 
     func retypeLabel(_ id: String, _ raw: String) {
         guard let item = labelsByID[id], let now = store.doc else { return }
-        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        // A scale degree typed while names read as numbers is stored as the
+        // letter it means, like every other name.
+        let typed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let numbered = notation == .numbers
+            ? Jianpu.letter(fromNumbered: typed, fifths: Jianpu.fixedFifths, original: item.text)
+            : nil
+        let text = numbered ?? typed
         var edit = now.labels[id] ?? SheetEdits.LabelEdit()
         if text.isEmpty {
             edit.hidden = true
@@ -488,10 +506,10 @@ final class SheetEditorModel {
                     corrections = result.corrections
                     message = text == item.text
                         ? "Back to the printed name; playback restored."
-                        : "Playback now plays \(text)\(result.changed > 1 ? " for \(result.changed) notes" : "")."
+                        : "Playback now plays \(typed)\(result.changed > 1 ? " for \(result.changed) notes" : "")."
                 }
             } else {
-                message = "\"\(text)\" isn't a note name, so playback stays the same."
+                message = "\"\(typed)\" isn't a note name, so playback stays the same."
             }
         } else {
             message = "Playback isn't available for this sheet, so only the page changes."

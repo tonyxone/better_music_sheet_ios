@@ -51,6 +51,12 @@ nonisolated struct TimelineNote: Codable, Sendable, Hashable, Identifiable {
     var fingering: String?
     var tieStart: Bool?
     var tieStop: Bool?
+    /// The key signature in force, as fifths (-7...7).
+    var keyFifths: Int?
+    /// The note as written: letter, alteration in semitones, octave.
+    var step: String?
+    var alter: Int?
+    var octave: Int?
     var measureIndex: Int
     /// 0 = top staff (right hand), 1 = bottom staff.
     var role: Int
@@ -72,7 +78,7 @@ nonisolated struct TimelineNote: Codable, Sendable, Hashable, Identifiable {
         case printedID = "printedId"
         case printedMeasureIndex, part, staff, voice, hand, attack, velocity
         case keyDurationBeats, pitchSource, confidence, fingering
-        case tieStart, tieStop, measureIndex, role, midi
+        case tieStart, tieStop, keyFifths, step, alter, octave, measureIndex, role, midi
         case startBeat, durationBeats, isGrace, bboxPt
     }
 

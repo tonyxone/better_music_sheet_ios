@@ -22,6 +22,8 @@ nonisolated struct LabelSet: Sendable, Equatable {
     /// "#RRGGBB" — the colour the names were printed in.
     let color: String
     let items: [LabelItem]
+    /// How the sheet was made to show its names, from the upload's option.
+    var notation: Notation = .letters
 
     /// Parses labels.json, dropping any item too malformed to draw rather
     /// than losing the rest. Nil when nothing usable is left.
@@ -38,7 +40,8 @@ nonisolated struct LabelSet: Sendable, Equatable {
         }
         guard !items.isEmpty else { return nil }
         let color = root["color"] as? String
-        return LabelSet(color: color.flatMap(SheetEdits.isColor) == true ? color! : "#000000", items: items)
+        return LabelSet(color: color.flatMap(SheetEdits.isColor) == true ? color! : "#000000", items: items,
+                        notation: root["notation"] as? String == "numbers" ? .numbers : .letters)
     }
 
     /// Names read out of an annotated PDF (see PDFLabelReader), for a sheet
@@ -85,7 +88,7 @@ nonisolated struct LabelSet: Sendable, Equatable {
             guard let id = renamed[index] else { return item }
             return LabelItem(id: id, group: id, page: item.page, x: item.x, y: item.y,
                              size: item.size, text: item.text, notes: item.notes)
-        })
+        }, notation: notation)
     }
 }
 
