@@ -45,7 +45,8 @@ nonisolated struct SheetUploader: Sendable {
             case contentType = "content_type"
             case fontSize = "font_size"
             case autoRetry = "auto_retry"
-            case labelColor = "label_color"
+            // The backend's name for it, as the web app sends it.
+            case labelColor = "color"
         }
     }
 
@@ -105,7 +106,7 @@ nonisolated struct SheetUploader: Sendable {
         form.addField(name: "notation", value: options.notation.rawValue)
         form.addField(name: "font_size", value: String(options.fontSize))
         form.addField(name: "auto_retry", value: String(options.autoRetry))
-        form.addField(name: "label_color", value: options.labelColor)
+        form.addField(name: "color", value: options.labelColor)
         if let dpi = options.dpi { form.addField(name: "dpi", value: String(dpi)) }
 
         let (body, _) = try await client.call("/api/sheets", method: "POST",
