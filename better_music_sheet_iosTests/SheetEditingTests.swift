@@ -295,10 +295,13 @@ struct SheetEditorModelTests {
                                     saveDelay: .seconds(3600))
         await store.load()
         let model = SheetEditorModel(store: store, labels: LabelSet(color: "#000000", items: labels),
-                                     timeline: try editingTimeline())
+                                     timeline: try editingTimeline(), notationPreference: notation)
         model.isEditing = true
         return model
     }
+
+    /// Letters until a test chooses otherwise, whatever the device last chose.
+    private let notation = NotationPreference(defaults: UserDefaults(suiteName: "SheetEditorModelTests-\(UUID())")!)
 
     private let named = LabelItem(id: "L1", group: "g", page: 1, x: 100, y: 100, size: 6.5, text: "C", notes: ["n1"])
 
@@ -313,6 +316,18 @@ struct SheetEditorModelTests {
         #expect(model.doc.labels["L1"]?.text == "D")
         #expect(model.doc.corrections["n1"]?.midi == 62)
         #expect(model.notice == "Playback now plays D.")
+    }
+
+    @Test func inJianpuANameRetypesAsANumberAndIsStoredAsItsLetter() async throws {
+        notation.choose(.numbers)
+        let model = try await editor(labels: [named])
+        model.openTextEditor(for: SelectedItem(kind: .label, id: "L1"))
+        #expect(model.textEditor?.initialText == "1")
+
+        model.closeTextEditor("2")
+        #expect(model.doc.labels["L1"]?.text == "D")
+        #expect(model.doc.corrections["n1"]?.midi == 62)
+        #expect(model.notice == "Playback now plays 2.")
     }
 
     @Test func draggingASelectedNameMovesItAsOneUndoStep() async throws {

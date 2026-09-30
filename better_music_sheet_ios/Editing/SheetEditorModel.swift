@@ -110,8 +110,14 @@ final class SheetEditorModel {
     /// The document without a new text note, so keeping it is one undo step.
     private var textBefore: SheetEdits?
 
-    init(store: SheetEditsStore, labels: LabelSet?, timeline: Timeline?) {
+    /// Where the letters/jianpu choice is read from: the shared one, except
+    /// in tests, which mustn't depend on what was last chosen on the device.
+    private let notationPreference: NotationPreference
+
+    init(store: SheetEditsStore, labels: LabelSet?, timeline: Timeline?,
+         notationPreference: NotationPreference = .shared) {
         self.store = store
+        self.notationPreference = notationPreference
         self.labels = labels
         self.timeline = timeline
         self.labelsByID = Dictionary((labels?.items ?? []).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -124,7 +130,7 @@ final class SheetEditorModel {
 
     /// Letters or jianpu: the reader's choice, shared with every other page,
     /// or the notation the sheet was made with until they make one.
-    var notation: Notation { NotationPreference.shared.notation(fallback: labels?.notation) }
+    var notation: Notation { notationPreference.notation(fallback: labels?.notation) }
 
     /// A name as it's drawn right now, in the notation being shown.
     func resolved(_ item: LabelItem) -> ResolvedLabel? {
