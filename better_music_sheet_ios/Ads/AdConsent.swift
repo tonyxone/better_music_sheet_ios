@@ -88,17 +88,34 @@ final class AdConsent {
 struct AdBannerSlot: View {
     @State private var consent = AdConsent.shared
     @State private var hasLoadedAd = false
+    @State private var availableWidth: CGFloat = 0
 
     var body: some View {
-        ZStack {
-            Color.clear
-            if consent.canRequestAds {
-                AdBannerView(hasLoadedAd: $hasLoadedAd)
-                    .frame(width: 320, height: 50)
+        let adSize = availableWidth > 0
+            ? largeAnchoredAdaptiveBanner(width: availableWidth)
+            : AdSizeBanner
+
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: consent.canRequestAds && hasLoadedAd ? adSize.size.height : 0)
+            .overlay {
+                if consent.canRequestAds && availableWidth > 0 {
+                    AdBannerView(adSize: adSize, hasLoadedAd: $hasLoadedAd)
+                        .id(Int(availableWidth.rounded()))
+                        .frame(width: adSize.size.width, height: adSize.size.height)
+                }
             }
-        }
-        .frame(height: consent.canRequestAds && hasLoadedAd ? 50 : 0)
-        .clipped()
-        .task { await consent.gather() }
+            .background {
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear { availableWidth = geometry.size.width }
+                        .onChange(of: geometry.size.width) { _, width in
+                            hasLoadedAd = false
+                            availableWidth = width
+                        }
+                }
+            }
+            .clipped()
+            .task { await consent.gather() }
     }
 }
