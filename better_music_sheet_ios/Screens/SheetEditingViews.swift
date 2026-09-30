@@ -199,7 +199,7 @@ struct SheetSelectionBar: View {
         switch item.kind {
         case .label:
             let label = editor.label(item.id)
-            let text = label.flatMap(editor.doc.resolve)?.text ?? ""
+            let text = label.flatMap(editor.resolved)?.text ?? ""
             Text("Note name \(Text(text).bold())\(label?.notes.isEmpty == false ? " · plays" : " · not linked to playback")")
             .foregroundStyle(Brand.ink)
             .frame(maxWidth: .infinity, alignment: .leading)

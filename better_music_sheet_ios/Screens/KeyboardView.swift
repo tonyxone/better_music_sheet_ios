@@ -11,6 +11,7 @@ struct KeyboardView: View {
     /// Keys to light, by MIDI note, valued by role: 0 right hand, 1 left.
     let litKeys: [Int: Int]
     let showNames: Bool
+    var notation: Notation = .letters
 
     private static let layout = KeyboardLayout()
 
@@ -58,7 +59,7 @@ struct KeyboardView: View {
                 }
 
                 if showNames {
-                    let name = KeyboardLayout.noteName(midi, withOctave: KeyboardLayout.pitchClass(midi) == 0)
+                    let name = KeyboardLayout.keyLabel(midi, notation: notation)
                     context.draw(Text(name)
                                     .font(.system(size: labelSize, weight: .semibold))
                                     .foregroundStyle(role == nil ? Brand.inkSoft : .white),

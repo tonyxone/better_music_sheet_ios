@@ -33,6 +33,14 @@ nonisolated struct KeyboardLayout: Sendable {
         noteNames[pitchClass(midi)] + (withOctave ? String(midi / 12 - 1) : "")
     }
 
+    /// What a key is labelled with: the white keys only, either by letter —
+    /// with the octave on each C (C4) — or by jianpu number, C being 1.
+    static func keyLabel(_ midi: Int, notation: Notation) -> String {
+        if isBlack(midi) { return "" }
+        return notation == .numbers ? Jianpu.display(noteName(midi), in: .numbers)
+                                    : noteName(midi, withOctave: pitchClass(midi) == 0)
+    }
+
     private static let flatNames = [1: "D♭", 3: "E♭", 6: "G♭", 8: "A♭", 10: "B♭"]
 
     /// For VoiceOver. A black key is a sharp or a flat depending on the key

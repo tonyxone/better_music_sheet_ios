@@ -142,14 +142,16 @@ nonisolated struct SheetEdits: Sendable, Equatable {
 
     // MARK: - Labels
 
-    /// A label as it should be drawn now: moved, retyped, or nil if hidden.
-    func resolve(_ item: LabelItem) -> ResolvedLabel? {
+    /// A label as it should be drawn now: moved, retyped, or nil if hidden —
+    /// its text in `notation` (edits themselves are always stored as letters).
+    func resolve(_ item: LabelItem, notation: Notation = .letters) -> ResolvedLabel? {
         let edit = labels[item.id]
         if edit?.hidden == true { return nil }
         return ResolvedLabel(id: item.id, page: item.page,
                              x: item.x + (edit?.dx ?? 0), y: item.y + (edit?.dy ?? 0),
-                             size: item.size, text: edit?.text ?? item.text, edited: edit != nil,
-                             color: edit?.color)
+                             size: item.size,
+                             text: Jianpu.display(edit?.text ?? item.text, in: notation),
+                             edited: edit != nil, color: edit?.color)
     }
 
     /// `edit` stored for `id`, or the entry removed when there is nothing

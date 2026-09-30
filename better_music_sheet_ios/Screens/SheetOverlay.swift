@@ -11,6 +11,9 @@ struct SheetOverlayContent: Equatable {
     var labelsByPage: [Int: [LabelItem]] = [:]
     var labelColor = "#000000"
     var showsNames = false
+    var notation: Notation = .letters
+    /// The "1=C" marks, drawn with the names when they read as numbers.
+    var keyMarksByPage: [Int: [KeyMark]] = [:]
     var edits: SheetEdits = .empty
     var editing = false
     var selection: Set<SelectedItem> = []
@@ -24,6 +27,8 @@ struct SheetOverlayContent: Equatable {
         labelsByPage = editor.labelsByPage
         labelColor = editor.labels?.color ?? "#000000"
         self.showsNames = showsNames && editor.namesLive
+        notation = editor.notation
+        keyMarksByPage = editor.keyMarksByPage
         edits = editor.doc
         editing = editor.isEditing
         selection = Set(editor.selection)
@@ -32,11 +37,14 @@ struct SheetOverlayContent: Equatable {
     }
 
     /// Read-only: practice mode shows the names and marks but never edits.
-    init(labels: LabelSet?, edits: SheetEdits, showsNames: Bool) {
+    init(labels: LabelSet?, edits: SheetEdits, showsNames: Bool,
+         notation: Notation = .letters, keyMarks: [KeyMark] = []) {
         labelsByPage = Dictionary(grouping: labels?.items ?? [], by: \.page)
         labelColor = labels?.color ?? "#000000"
         self.showsNames = showsNames && labels != nil
         self.edits = edits
+        self.notation = notation
+        keyMarksByPage = Dictionary(grouping: keyMarks, by: \.page)
     }
 }
 
@@ -55,8 +63,11 @@ enum SheetOverlayRenderer {
 
         if content.showsNames {
             let color = UIColor(hex: content.labelColor)
+            if content.notation == .numbers {
+                for mark in content.keyMarksByPage[page] ?? [] { drawKeyMark(mark, color: color) }
+            }
             for item in content.labelsByPage[page] ?? [] {
-                guard let label = content.edits.resolve(item) else { continue }
+                guard let label = content.edits.resolve(item, notation: content.notation) else { continue }
                 if content.editing {
                     let selected = content.selection.contains(SelectedItem(kind: .label, id: label.id))
                     let box = SheetEditorModel.labelBox(label)
@@ -152,6 +163,16 @@ enum SheetOverlayRenderer {
         let origin = CGPoint(x: label.x - width / 2, y: label.y - font.ascender)
         outline.draw(at: origin)
         fill.draw(at: origin)
+    }
+
+    /// "1=C", starting at x with its baseline on y, outlined like the names.
+    private static func drawKeyMark(_ mark: KeyMark, color: UIColor) {
+        let font = LabelFont.font(size: mark.size)
+        let text = LabelFont.printable(mark.text)
+        let origin = CGPoint(x: mark.x, y: mark.y - font.ascender)
+        NSAttributedString(string: text, attributes: [.font: font, .strokeColor: UIColor.white, .strokeWidth: 16])
+            .draw(at: origin)
+        NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: color]).draw(at: origin)
     }
 
     private static func drawText(_ note: SheetEdits.TextNote) {

@@ -32,6 +32,7 @@ struct PracticeView: View {
     /// flashing the annotated one first.
     @State private var overlayReady = false
     @State private var entitlements = EntitlementStore.shared
+    @State private var notationPreference = NotationPreference.shared
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -60,30 +61,18 @@ struct PracticeView: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            // Side by side, in the reading page's order: version, then
+            // letters or jianpu.
             if #available(iOS 26.0, *) {
-                // The segmented control is its own box; without this iOS 26
-                // also draws the toolbar's glass capsule around it.
-                ToolbarItem(placement: .topBarLeading) {
-                    Picker("Sheet version", selection: $displayedVersion) {
-                        ForEach(PDFVersion.allCases) { version in
-                            Text(version.title).tag(version)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 190)
-                    .accessibilityHint("Switches between the annotated sheet and the uploaded original")
+                // The segmented controls are their own boxes; without this
+                // iOS 26 also draws the toolbar's glass capsule around them.
+                ToolbarItem(placement: .topBarTrailing) {
+                    sheetChoices
                 }
                 .sharedBackgroundVisibility(.hidden)
             } else {
-                ToolbarItem(placement: .topBarLeading) {
-                    Picker("Sheet version", selection: $displayedVersion) {
-                        ForEach(PDFVersion.allCases) { version in
-                            Text(version.title).tag(version)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 190)
-                    .accessibilityHint("Switches between the annotated sheet and the uploaded original")
+                ToolbarItem(placement: .topBarTrailing) {
+                    sheetChoices
                 }
             }
         }
@@ -109,6 +98,33 @@ struct PracticeView: View {
         .onDisappear { player.stop() }
     }
 
+    private var sheetChoices: some View {
+        HStack(spacing: 6) {
+            versionPicker
+            if showsNotationToggle {
+                NotationToggle(fallback: labels?.notation)
+            }
+        }
+    }
+
+    private var versionPicker: some View {
+        BrandSegmentedControl(label: "Sheet version",
+                              options: PDFVersion.allCases.map { ($0, $0.title, $0.title) },
+                              selection: $displayedVersion)
+            .accessibilityHint("Switches between the annotated sheet and the uploaded original")
+    }
+
+    /// Letters or jianpu, for the names on the page, the keys and the
+    /// falling notes alike.
+    private var notation: Notation {
+        notationPreference.notation(fallback: labels?.notation)
+    }
+
+    /// Whenever something on screen shows names.
+    private var showsNotationToggle: Bool {
+        (labels != nil && displayedVersion == .annotated) || player.showKeyNames || player.showNoteNames
+    }
+
     @ViewBuilder
     private var content: some View {
         // A phone in portrait gets just the octaves the piece uses, so keys and
@@ -127,11 +143,12 @@ struct PracticeView: View {
             } controls: {
                 TransportBar(player: player)
             } roll: {
-                NoteRollView(player: player, notes: notes, range: keyRange)
+                NoteRollView(player: player, notes: notes, range: keyRange, notation: notation)
             } keyboard: {
                 KeyboardView(range: keyRange,
                              litKeys: player.litKeys,
-                             showNames: player.showKeyNames)
+                             showNames: player.showKeyNames,
+                             notation: notation)
             } loadingOverlay: {
                 soundLoadingOverlay
             }
@@ -170,7 +187,9 @@ struct PracticeView: View {
                          playhead: player.playhead,
                          overlay: SheetOverlayContent(labels: labels?.adoptingIDs(of: player.edits.labels.keys),
                                                       edits: player.edits,
-                                                      showsNames: namesLive && displayedVersion == .annotated)) { point, page in
+                                                      showsNames: namesLive && displayedVersion == .annotated,
+                                                      notation: notation,
+                                                      keyMarks: player.keyMarks)) { point, page in
                 player.handleTap(at: point, page: page)
             }
             .overlay {

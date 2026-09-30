@@ -201,6 +201,12 @@ struct TransportBar: View {
                label: player.showKeyNames ? "Hide key names" : "Show key names") {
             player.showKeyNames.toggle()
         }
+        toggle(on: player.showNoteNames,
+               label: player.showNoteNames ? "Hide names on falling notes" : "Show names on falling notes") {
+            player.showNoteNames.toggle()
+        } icon: {
+            NoteNamesIcon()
+        }
         toggle(player.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill", on: !player.isMuted,
                label: player.isMuted ? "Unmute" : "Mute") {
             player.setMuted(!player.isMuted)
@@ -227,9 +233,15 @@ struct TransportBar: View {
     /// a text label beside it.
     private func toggle(_ symbol: String, on: Bool, label: String,
                         action: @escaping () -> Void) -> some View {
+        toggle(on: on, label: label, action: action) {
+            Image(systemName: symbol).font(.system(size: 14, weight: .semibold))
+        }
+    }
+
+    private func toggle(on: Bool, label: String, action: @escaping () -> Void,
+                        @ViewBuilder icon: () -> some View) -> some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 14, weight: .semibold))
+            icon()
                 .foregroundStyle(on ? Color.white : Brand.inkSoft)
                 .frame(width: 40, height: 40)
                 .background(on ? Brand.accent : Color.clear, in: .rect(cornerRadius: 10))
@@ -271,5 +283,19 @@ struct TransportBar: View {
     private static func format(number: Double) -> String {
         let rounded = (number * 100).rounded() / 100
         return rounded == rounded.rounded() ? String(Int(rounded)) : String(rounded)
+    }
+}
+
+/// A falling bar with a name on it: the web app's icon for the names on the
+/// falling notes.
+private struct NoteNamesIcon: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 3)
+            .stroke(lineWidth: 1.4)
+            .frame(width: 9, height: 17)
+            .overlay {
+                Text("A").font(.system(size: 7.5, weight: .bold))
+            }
+            .accessibilityHidden(true)
     }
 }

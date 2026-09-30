@@ -34,13 +34,14 @@ nonisolated struct SheetUploader: Sendable {
         let contentType: String
         let style: String
         let octave: Bool
+        let notation: String
         let fontSize: Double
         let dpi: Int?
         let autoRetry: Bool
         let labelColor: String
 
         private enum CodingKeys: String, CodingKey {
-            case filename, size, style, octave, dpi
+            case filename, size, style, octave, notation, dpi
             case contentType = "content_type"
             case fontSize = "font_size"
             case autoRetry = "auto_retry"
@@ -65,7 +66,7 @@ nonisolated struct SheetUploader: Sendable {
         do {
             reservation = try await client.post("/api/uploads", body: ReservationRequest(
                 filename: filename, size: data.count, contentType: contentType,
-                style: options.style.rawValue, octave: options.octave,
+                style: options.style.rawValue, octave: options.octave, notation: options.notation.rawValue,
                 fontSize: options.fontSize, dpi: options.dpi, autoRetry: options.autoRetry,
                 labelColor: options.labelColor))
         } catch let error as APIError where error.isNotFound {
@@ -101,6 +102,7 @@ nonisolated struct SheetUploader: Sendable {
         form.addFile(name: "file", filename: filename, contentType: contentType, data: data)
         form.addField(name: "style", value: options.style.rawValue)
         form.addField(name: "octave", value: String(options.octave))
+        form.addField(name: "notation", value: options.notation.rawValue)
         form.addField(name: "font_size", value: String(options.fontSize))
         form.addField(name: "auto_retry", value: String(options.autoRetry))
         form.addField(name: "label_color", value: options.labelColor)

@@ -39,19 +39,83 @@ nonisolated struct NoteRollGeometry: Sendable {
         let flash: Double
     }
 
+    /// Where a note's name goes: the middle of the whole held note, tied
+    /// pieces and all, falling with it.
+    struct NameTag: Sendable, Hashable {
+        /// Into `notes`, and so into the name lists.
+        let index: Int
+        let midi: Int
+        let top: Double
+        let bottom: Double
+    }
+
     struct Frame: Sendable {
         var whiteKeyBars: [Bar] = []
         /// Kept apart because black-key lanes overlap their white neighbours,
         /// exactly as the keys do, so they are drawn in a second pass on top.
         var blackKeyBars: [Bar] = []
         var highlights: [Highlight] = []
+        /// Empty unless names were asked for.
+        var names: [NameTag] = []
+    }
+
+    /// Every note's name as letters and as jianpu, and where each name's
+    /// span ends (see `nameEnds`), in the order of the notes they were made
+    /// from.
+    struct Names: Sendable {
+        let letters: [String]
+        let numbers: [String]
+        let ends: [Double]
+
+        static let none = Names(letters: [], numbers: [], ends: [])
+
+        /// `notes` sorted by onset.
+        static func of(_ notes: [TimelineNote]) -> Names {
+            Names(letters: notes.map { Jianpu.name(of: $0, in: .letters) },
+                  numbers: notes.map { Jianpu.name(of: $0, in: .numbers) },
+                  ends: NoteRollGeometry.nameEnds(notes))
+        }
+
+        func list(_ notation: Notation) -> [String] {
+            notation == .numbers ? numbers : letters
+        }
     }
 
     /// Sorted by onset, which the search below relies on.
     let notes: [TimelineNote]
+    /// From `nameEnds`, when names are drawn.
+    let nameEnds: [Double]?
 
-    init(notes: [TimelineNote]) {
+    init(notes: [TimelineNote], nameEnds: [Double]? = nil) {
         self.notes = notes
+        self.nameEnds = nameEnds.flatMap { $0.count == notes.count ? $0 : nil }
+    }
+
+    /// Where each note's name ends, in beats, for notes sorted by onset: one
+    /// name per struck note, spanning its tied continuations — which get -1,
+    /// as does a second copy of a note two voices strike together.
+    static func nameEnds(_ notes: [TimelineNote]) -> [Double] {
+        var ends = [Double](repeating: 0, count: notes.count)
+        // Per key, the note whose name the next tied piece would extend.
+        var heads: [Int: (index: Int, start: Double, end: Double)] = [:]
+        for (i, note) in notes.enumerated() {
+            let written = note.isGrace || note.durationBeats <= 0 ? 0 : note.durationBeats
+            let end = note.startBeat + max(minimumBarBeats, written)
+            if var head = heads[note.midi],
+               abs(head.start - note.startBeat) < 1e-6
+                || (note.tieStop == true && abs(head.end - note.startBeat) < 1e-6) {
+                ends[i] = -1
+                if end > head.end {
+                    head.end = end
+                    ends[head.index] = end
+                    heads[note.midi] = head
+                }
+                continue
+            }
+            ends[i] = end
+            heads[note.midi] = (i, note.startBeat, end)
+        }
+        return ends
     }
 
     static func pointsPerBeat(height: Double) -> Double {
@@ -90,6 +154,14 @@ nonisolated struct NoteRollGeometry: Sendable {
         for index in firstVisibleIndex(windowStart: windowStart)..<notes.count {
             let note = notes[index]
             if note.startBeat > windowEnd { break }
+
+            if let nameEnds, nameEnds[index] >= 0, nameEnds[index] >= windowStart {
+                let bottom = hit + (beat - note.startBeat) * perBeat
+                let top = bottom - (nameEnds[index] - note.startBeat) * perBeat
+                if top <= height, bottom >= 0 {
+                    frame.names.append(NameTag(index: index, midi: note.midi, top: top, bottom: bottom))
+                }
+            }
 
             let written = note.isGrace || note.durationBeats <= 0 ? 0 : note.durationBeats
             let beats = max(Self.minimumBarBeats, written)

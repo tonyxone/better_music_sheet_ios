@@ -44,6 +44,14 @@ final class PlayerModel {
     private(set) var edits: SheetEdits = .empty
 
     var showKeyNames = false
+    /// Each falling note's name, in the middle of its bar. On by default, as
+    /// on the web app.
+    var showNoteNames = true
+    /// Every note's name both ways, in the timeline's (sorted) order, worked
+    /// out once so switching costs nothing and a frame never builds a string.
+    private(set) var rollNames = NoteRollGeometry.Names.none
+    /// The "1=C" marks for the page, when names read as numbers.
+    private(set) var keyMarks: [KeyMark] = []
     private(set) var isMuted = false
     /// The sound playback uses. Remembered across sheets, as the web app
     /// remembers it.
@@ -168,6 +176,8 @@ final class PlayerModel {
             // frame, and nothing else depends on the order they arrived in.
             loaded.notes.sort { $0.startBeat < $1.startBeat }
             timeline = loaded
+            rollNames = .of(loaded.notes)
+            keyMarks = Jianpu.keyMarks(loaded)
             geometry = SheetGeometry(timeline: loaded)
             onsetBeats = Array(Set(loaded.notes.map(\.startBeat))).sorted()
             pieceKeyRange = Self.keyboardLayout.range(covering: loaded.notes.map(\.midi))
