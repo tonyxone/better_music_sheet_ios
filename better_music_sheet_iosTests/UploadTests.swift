@@ -183,7 +183,8 @@ struct SheetUploaderTests {
         #expect(json["font_size"] as? Double == 8)
         #expect(json["dpi"] as? Int == 250)
         #expect(json["auto_retry"] as? Bool == false)
-        #expect(json["label_color"] as? String == "#2F6FB5")
+        #expect(json["color"] as? String == "#2F6FB5")
+        #expect(json["label_color"] == nil)
     }
 
     @Test func theLegacyEndpointGetsTheLabelColorToo() async throws {
@@ -198,7 +199,8 @@ struct SheetUploaderTests {
             .upload(filename: "a.pdf", data: Data("x".utf8), options: options)
 
         let form = String(decoding: channel.recorded[1].httpBodyData ?? Data(), as: UTF8.self)
-        #expect(form.contains(#"name="label_color""#))
+        #expect(form.contains(#"name="color""#))
+        #expect(!form.contains(#"name="label_color""#))
         #expect(form.contains("#A83C34"))
     }
 }
