@@ -2,7 +2,7 @@ import SwiftUI
 
 /// A segmented choice in the brand red: the chosen segment filled, the rest
 /// outlined. Used where one view offers a choice about itself — the sheet's
-/// version, and letters or jianpu — so those read as one family and stand
+/// version, and letters, jianpu or solfège — so those read as one family and stand
 /// out from the plain buttons beside them.
 struct BrandSegmentedControl<Value: Hashable>: View {
     let label: String

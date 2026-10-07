@@ -186,9 +186,11 @@ struct AddSheetView: View {
                                 .accessibilityLabel("Letter names, C D E")
                             Text("簡 1 2 3").tag(Notation.numbers)
                                 .accessibilityLabel("Jianpu, 1 2 3")
+                            Text("do re mi").tag(Notation.solfege)
+                                .accessibilityLabel("Solfège, do re mi")
                         }
                         .pickerStyle(.segmented)
-                        .frame(width: 150)
+                        .frame(width: 220)
                     }
                     divider
 
@@ -268,7 +270,11 @@ struct AddSheetView: View {
         let color = AnnotationOptions.labelColorPresets
             .first { $0.hex == options.labelColor.uppercased() }?.name ?? "Custom color"
         let size = options.fontSize.formatted(.number.precision(.fractionLength(1)))
-        let names = options.notation == .numbers ? "簡" : options.style == .unicode ? "B♭ C♯" : "Bb C#"
+        let names = switch options.notation {
+        case .numbers: "簡"
+        case .solfege: "do re mi"
+        case .letters: options.style == .unicode ? "B♭ C♯" : "Bb C#"
+        }
         return [names, "\(size) pt", color].joined(separator: " · ")
     }
 
@@ -377,7 +383,7 @@ private enum Option: Hashable {
     var help: String {
         switch self {
         case .notation:
-            "Letter names each note C, D, E… Jianpu (numbered notation, 簡譜) shows numbers instead. In the app 1 is always C (1=C), and you can switch between letters and jianpu at any time while viewing. This option sets the printed download, which counts 1 from the key signature's home note instead (1=G in G major, so F♯ prints as 7)."
+            "Letter names each note C, D, E… Jianpu (numbered notation, 簡譜) shows a number instead, and solfège shows a syllable: 1/do = C, 2/re = D, 3/mi = E, 4/fa = F, 5/so = G, 6/la = A, 7/si = B in every key, so a number or syllable always means the same piano key — F♯ reads ♯4/♯fa and B♭ reads ♭7/♭si. You can switch between all three at any time while viewing the sheet; this sets the printed download."
         case .style:
             "Unicode uses musical accidental symbols such as B♭ and C♯. ASCII uses plain-text Bb and C#, which can be easier to copy into older software."
         case .fontSize:
@@ -422,9 +428,9 @@ private struct LabelPreview: View {
 
     private var sample: String {
         let letters = options.style == .unicode ? ["B♭", "F♯"] : ["Bb", "F#"]
-        // Jianpu has no octave number; these are the same two notes in C.
-        if options.notation == .numbers {
-            return letters.map { Jianpu.numbered($0, fifths: 0) }.joined(separator: "   ")
+        // Jianpu and solfège have no octave number.
+        if options.notation != .letters {
+            return letters.map { Jianpu.display($0, in: options.notation) }.joined(separator: "   ")
         }
         let names = letters
         let octaves = options.octave ? ["4", "5"] : ["", ""]

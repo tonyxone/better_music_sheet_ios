@@ -34,11 +34,12 @@ nonisolated struct KeyboardLayout: Sendable {
     }
 
     /// What a key is labelled with: the white keys only, either by letter —
-    /// with the octave on each C (C4) — or by jianpu number, C being 1.
+    /// with the octave on each C (C4) — by jianpu number, C being 1, or by
+    /// solfège syllable, C being do.
     static func keyLabel(_ midi: Int, notation: Notation) -> String {
         if isBlack(midi) { return "" }
-        return notation == .numbers ? Jianpu.display(noteName(midi), in: .numbers)
-                                    : noteName(midi, withOctave: pitchClass(midi) == 0)
+        return notation == .letters ? noteName(midi, withOctave: pitchClass(midi) == 0)
+                                    : Jianpu.display(noteName(midi), in: notation)
     }
 
     private static let flatNames = [1: "D♭", 3: "E♭", 6: "G♭", 8: "A♭", 10: "B♭"]

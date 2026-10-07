@@ -330,6 +330,18 @@ struct SheetEditorModelTests {
         #expect(model.notice == "Playback now plays 2.")
     }
 
+    @Test func inSolfegeANameRetypesAsASyllableAndIsStoredAsItsLetter() async throws {
+        notation.choose(.solfege)
+        let model = try await editor(labels: [named])
+        model.openTextEditor(for: SelectedItem(kind: .label, id: "L1"))
+        #expect(model.textEditor?.initialText == "do")
+
+        model.closeTextEditor("Re")
+        #expect(model.doc.labels["L1"]?.text == "D")
+        #expect(model.doc.corrections["n1"]?.midi == 62)
+        #expect(model.notice == "Playback now plays Re.")
+    }
+
     @Test func draggingASelectedNameMovesItAsOneUndoStep() async throws {
         let model = try await editor(labels: [named])
         let start = CGPoint(x: 100, y: 97)

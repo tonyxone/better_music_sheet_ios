@@ -486,13 +486,10 @@ final class SheetEditorModel {
 
     func retypeLabel(_ id: String, _ raw: String) {
         guard let item = labelsByID[id], let now = store.doc else { return }
-        // A scale degree typed while names read as numbers is stored as the
-        // letter it means, like every other name.
+        // A number or solfège syllable typed while names read that way is
+        // stored as the letter it means, like every other name.
         let typed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        let numbered = notation == .numbers
-            ? Jianpu.letter(fromNumbered: typed, fifths: Jianpu.fixedFifths, original: item.text)
-            : nil
-        let text = numbered ?? typed
+        let text = Jianpu.letter(fromTyped: typed, in: notation, original: item.text) ?? typed
         var edit = now.labels[id] ?? SheetEdits.LabelEdit()
         if text.isEmpty {
             edit.hidden = true

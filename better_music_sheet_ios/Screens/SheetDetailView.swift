@@ -155,7 +155,7 @@ struct SheetDetailView: View {
     }
 
     /// The sheet's tools, in one row under its name: Edit on the left, then
-    /// on the right the version, letters or jianpu, Practice and Download.
+    /// on the right the version, letters, jianpu or solfège, Practice and Download.
     /// Editing opens its own tools under this row, and Edit becomes Done.
     private func toolRow(job: AnnotationJob, namesLive: Bool) -> some View {
         let row = HStack(spacing: 6) {
