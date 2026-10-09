@@ -55,6 +55,12 @@ struct PaywallView: View {
             await manager.loadProducts()
             if !previewOnly { await manager.syncCurrentEntitlement() }
         }
+        // A purchase button that is dimmed and dead until a plan is tapped reads
+        // as broken (App Review reported it unresponsive), so Monthly starts selected.
+        .onChange(of: manager.products.map(\.id), initial: true) { _, ids in
+            guard selectedProductID == nil || !ids.contains(selectedProductID ?? "") else { return }
+            selectedProductID = ids.contains(SubscriptionProduct.monthlyID) ? SubscriptionProduct.monthlyID : ids.first
+        }
         .sheet(isPresented: $showingAccount, onDismiss: { Task { await checkAccount() } }) {
             AccountView()
         }
