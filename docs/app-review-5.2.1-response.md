@@ -17,6 +17,8 @@ use it:
   placed it in the public domain. The footer of the attached PDF states:
   "This sheet music has been placed in the public domain by the typesetter" and
   links to http://creativecommons.org/licenses/publicdomain.
+- Mutopia describes its scores as "Free to download, with the freedom to
+  distribute, modify and perform."
 - The app contains no lyrics and no other third-party scores. Screenshots and
   previews show only this score and the user's own uploads.
 
