@@ -59,25 +59,31 @@ nonisolated struct NoteRollGeometry: Sendable {
         var names: [NameTag] = []
     }
 
-    /// Every note's name as letters and as jianpu, and where each name's
+    /// Every note's name as letters, jianpu and solfège, and where each name's
     /// span ends (see `nameEnds`), in the order of the notes they were made
     /// from.
     struct Names: Sendable {
         let letters: [String]
         let numbers: [String]
+        let solfege: [String]
         let ends: [Double]
 
-        static let none = Names(letters: [], numbers: [], ends: [])
+        static let none = Names(letters: [], numbers: [], solfege: [], ends: [])
 
         /// `notes` sorted by onset.
         static func of(_ notes: [TimelineNote]) -> Names {
             Names(letters: notes.map { Jianpu.name(of: $0, in: .letters) },
                   numbers: notes.map { Jianpu.name(of: $0, in: .numbers) },
+                  solfege: notes.map { Jianpu.name(of: $0, in: .solfege) },
                   ends: NoteRollGeometry.nameEnds(notes))
         }
 
         func list(_ notation: Notation) -> [String] {
-            notation == .numbers ? numbers : letters
+            switch notation {
+            case .letters: letters
+            case .numbers: numbers
+            case .solfege: solfege
+            }
         }
     }
 

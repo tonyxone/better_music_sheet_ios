@@ -15,8 +15,9 @@ nonisolated struct AnnotationOptions: Codable, Sendable, Hashable {
         }
     }
 
-    /// Letter names, or jianpu — scale degrees of the key — printed into
-    /// the annotated PDF. Either way the sheet can be switched while viewing.
+    /// Letter names, jianpu numbers or solfège syllables — the last two
+    /// counted from C — printed into the annotated PDF. Whichever it is, the
+    /// sheet can be switched while viewing.
     var notation: Notation = .letters
     var style: LabelStyle = .unicode
     /// Appends the scientific octave number, e.g. B♭4.

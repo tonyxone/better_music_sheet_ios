@@ -2,8 +2,8 @@ import Foundation
 import Testing
 @testable import better_music_sheet_ios
 
-/// The conversion is the web app's lib/notation.ts, so its cases are kept here
-/// for every key; the app itself always counts from C (1=C).
+/// The conversion is the web app's lib/notation.ts, so its cases (in
+/// tests/annotations.test.mjs) are kept here.
 private func timeline(measures: String = "[]", notes: String) throws -> Timeline {
     let decoder = JSONDecoder()
     decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -29,33 +29,42 @@ private func note(measure: Int = 0, midi: Int = 60, start: Double = 0, duration:
 }
 
 struct NotationTests {
-    @Test func numbersCountFromTheMajorTonicOfTheKeySignature() {
-        // No sharps or flats: 1 = C, and F sharp is the raised fourth.
-        #expect(["G", "A", "B", "C", "D", "E", "F♯"].map { Jianpu.numbered($0, fifths: 0) }
-                == ["5", "6", "7", "1", "2", "3", "♯4"])
-        // In G major F sharp belongs to the key and F natural is lowered.
-        #expect(Jianpu.numbered("F♯", fifths: 1) == "7")
-        #expect(Jianpu.numbered("F", fifths: 1) == "♭7")
-        #expect(Jianpu.numbered("G", fifths: 1) == "1")
-        // Flat keys, and a minor piece read from its relative major (A minor: 6).
-        #expect(Jianpu.numbered("E♭", fifths: -3) == "1")
-        #expect(Jianpu.numbered("B♭", fifths: -3) == "5")
-        #expect(Jianpu.numbered("B", fifths: -3) == "♯5")
-        #expect(Jianpu.numbered("A", fifths: 0) == "6")
-        #expect(Jianpu.numbered("G♯", fifths: 0) == "♯5")
-        // Spelling decides the degree: E sharp in C sharp major is 3, not 4.
-        #expect(Jianpu.numbered("E♯", fifths: 7) == "3")
-        // A double sharp or flat relative to the key reads as the degree it sounds.
-        #expect(Jianpu.numbered("C𝄪", fifths: 0) == "2")
-        #expect(Jianpu.numbered("D♯", fifths: -4) == "5")
-        #expect(Jianpu.numbered("A♯", fifths: -4) == "2")
-        #expect(Jianpu.numbered("A♭", fifths: 5) == "6")
-        #expect(Jianpu.numbered("F𝄫", fifths: 0) == "♭3")
+    @Test func numberedNotationIsFixedDoOneIsAlwaysC() {
+        #expect(["C", "D", "E", "F", "G", "A", "B"].map(Jianpu.numbered) == ["1", "2", "3", "4", "5", "6", "7"])
+        // Clair de Lune, in D flat major, reads by the keys played — not 1 = D♭.
+        #expect(["D♭", "E♭", "F", "G♭", "A♭", "B♭", "C"].map(Jianpu.numbered)
+                == ["♭2", "♭3", "4", "♭5", "♭6", "♭7", "1"])
+        // A black key keeps its printed sharp or flat.
+        #expect(Jianpu.numbered("F♯") == "♯4")
+        #expect(Jianpu.numbered("G♭") == "♭5")
+        // A white key reads as its own number however it is spelled.
+        #expect(Jianpu.numbered("E♯") == "4")
+        #expect(Jianpu.numbered("C♭") == "7")
+        #expect(Jianpu.numbered("B♯") == "1")
+        #expect(Jianpu.numbered("C𝄪") == "2")
+        // A double flat or sharp on a black key takes a single one.
+        #expect(Jianpu.numbered("F𝄫") == "♭3")
+        #expect(Jianpu.numbered("B𝄪") == "♯1")
         // ASCII labels stay ASCII; octaves drop; the uncertainty mark stays.
-        #expect(Jianpu.numbered("Bb4", fifths: 0) == "b7")
-        #expect(Jianpu.numbered("C#?", fifths: 0) == "#1?")
+        #expect(Jianpu.numbered("Bb4") == "b7")
+        #expect(Jianpu.numbered("C#?") == "#1?")
         // Anything that isn't a note name is left as it is.
-        #expect(Jianpu.numbered("rit.", fifths: 0) == "rit.")
+        #expect(Jianpu.numbered("rit.") == "rit.")
+    }
+
+    @Test func solfegeIsFixedDoTooDoIsAlwaysC() {
+        #expect(["C", "D", "E", "F", "G", "A", "B"].map(Jianpu.solfege)
+                == ["do", "re", "mi", "fa", "so", "la", "si"])
+        #expect(["D♭", "E♭", "F", "G♭", "A♭", "B♭", "C"].map(Jianpu.solfege)
+                == ["♭re", "♭mi", "fa", "♭so", "♭la", "♭si", "do"])
+        #expect(Jianpu.solfege("F♯") == "♯fa")
+        #expect(Jianpu.solfege("G♭") == "♭so")
+        #expect(Jianpu.solfege("E♯") == "fa")
+        #expect(Jianpu.solfege("C♭") == "si")
+        #expect(Jianpu.solfege("F𝄫") == "♭mi")
+        #expect(Jianpu.solfege("Bb4") == "bsi")
+        #expect(Jianpu.solfege("C#?") == "#do?")
+        #expect(Jianpu.solfege("rit.") == "rit.")
     }
 
     @Test func keyNamesCoverEveryKeySignature() {
@@ -64,42 +73,61 @@ struct NotationTests {
         #expect(Jianpu.keyName(-2, ascii: true) == "Bb")
     }
 
-    @Test func everyLetterRoundTripsThroughItsScaleDegreeInEveryKey() throws {
+    @Test func everyLetterRoundTripsThroughItsNumberAndSyllableToTheSamePianoKey() throws {
         func pitchClass(_ text: String) throws -> Int {
             let p = try #require(NoteNames.parse(text))
             return ((NoteNames.stepSemitones[p.step] + p.alter) % 12 + 12) % 12
         }
-        for fifths in -7...7 {
-            for letter in ["C", "D", "E", "F", "G", "A", "B"] {
-                for accidental in ["♭", "", "♯"] {
-                    let name = letter + accidental
-                    let number = Jianpu.numbered(name, fifths: fifths)
-                    let back = try #require(Jianpu.letter(fromNumbered: number, fifths: fifths, original: "X"),
-                                            "\(name) in \(fifths)")
-                    #expect(!number.contains("𝄪") && !number.contains("𝄫"), "\(name) in \(fifths)")
-                    #expect(Jianpu.numbered(back, fifths: fifths) == number, "\(name) in \(fifths)")
+        for letter in ["C", "D", "E", "F", "G", "A", "B"] {
+            for accidental in ["𝄫", "♭", "", "♯", "𝄪"] {
+                let name = letter + accidental
+                for notation in [Notation.numbers, .solfege] {
+                    let shown = Jianpu.display(name, in: notation)
+                    let back = try #require(Jianpu.letter(fromTyped: shown, in: notation, original: "X"),
+                                            "\(name) as \(notation)")
+                    #expect(!shown.contains("𝄪") && !shown.contains("𝄫"), "\(name) as \(notation)")
+                    #expect(Jianpu.display(back, in: notation) == shown, "\(name) as \(notation)")
                     // The same key on the piano, whether or not it was respelled.
-                    #expect(try pitchClass(back) == pitchClass(name), "\(name) in \(fifths)")
+                    #expect(try pitchClass(back) == pitchClass(name), "\(name) as \(notation)")
                 }
             }
         }
     }
 
-    @Test func aTypedScaleDegreeBecomesTheLetterItMeans() {
-        #expect(Jianpu.letter(fromNumbered: "#4", fifths: 0, original: "G") == "F♯")
-        #expect(Jianpu.letter(fromNumbered: "b7", fifths: 1, original: "G") == "F")
-        #expect(Jianpu.letter(fromNumbered: "7", fifths: 1, original: "Bb") == "F#")
-        // The printed note keeps its printed text, octave and all.
-        #expect(Jianpu.letter(fromNumbered: "5", fifths: 0, original: "G4") == "G4")
-        #expect(Jianpu.letter(fromNumbered: "F#", fifths: 0, original: "G") == nil)
+    @Test func aTypedNumberBecomesTheLetterItMeans() {
+        #expect(Jianpu.letter(fromTyped: "#4", in: .numbers, original: "G") == "F♯")
+        #expect(Jianpu.letter(fromTyped: "b7", in: .numbers, original: "G") == "B♭")
+        #expect(Jianpu.letter(fromTyped: "4", in: .numbers, original: "Bb") == "F")
+        // The printed note keeps its printed text, octave and all — also when
+        // it is spelled another way than the number (E♯ reads as 4).
+        #expect(Jianpu.letter(fromTyped: "5", in: .numbers, original: "G4") == "G4")
+        #expect(Jianpu.letter(fromTyped: "4", in: .numbers, original: "E♯") == "E♯")
+        #expect(Jianpu.letter(fromTyped: "F#", in: .numbers, original: "G") == nil)
+        // A letter with an octave is not a flat number.
+        #expect(Jianpu.letter(fromTyped: "B7", in: .numbers, original: "G") == nil)
+        #expect(Jianpu.letter(fromTyped: "5", in: .letters, original: "G") == nil)
     }
 
-    @Test func namesReadAsNumbersWithCAsOneWhateverTheKeyAndEditsStayLetters() {
+    @Test func aTypedSolfegeSyllableBecomesTheLetterItMeans() {
+        #expect(Jianpu.letter(fromTyped: "#fa", in: .solfege, original: "G") == "F♯")
+        #expect(Jianpu.letter(fromTyped: "bsi", in: .solfege, original: "G") == "B♭")
+        #expect(Jianpu.letter(fromTyped: "fa", in: .solfege, original: "Bb") == "F")
+        #expect(Jianpu.letter(fromTyped: "so", in: .solfege, original: "G4") == "G4")
+        #expect(Jianpu.letter(fromTyped: "fa", in: .solfege, original: "E♯") == "E♯")
+        #expect(Jianpu.letter(fromTyped: "Do", in: .solfege, original: "C") == "C")
+        #expect(Jianpu.letter(fromTyped: "♭ mi?", in: .solfege, original: "G") == "E♭?")
+        #expect(Jianpu.letter(fromTyped: "F#", in: .solfege, original: "G") == nil)
+        #expect(Jianpu.letter(fromTyped: "5", in: .solfege, original: "G") == nil)
+    }
+
+    @Test func namesReadAsNumbersOrSolfegeAndEditsStayLetters() {
         let item = LabelItem(id: "L1", group: "g", page: 1, x: 0, y: 0, size: 6, text: "F♯", notes: [])
         var doc = SheetEdits.empty
         doc.labels["L1"] = SheetEdits.LabelEdit(text: "B♭")
         #expect(SheetEdits.empty.resolve(item, notation: .numbers)?.text == "♯4")
         #expect(doc.resolve(item, notation: .numbers)?.text == "♭7")
+        #expect(SheetEdits.empty.resolve(item, notation: .solfege)?.text == "♯fa")
+        #expect(doc.resolve(item, notation: .solfege)?.text == "♭si")
         #expect(doc.resolve(item, notation: .letters)?.text == "B♭")
         #expect(["C", "D", "E", "F", "G", "A", "B", "C#4", "Eb?"].map { Jianpu.display($0, in: .numbers) }
                 == ["1", "2", "3", "4", "5", "6", "7", "#1", "b3?"])
@@ -117,9 +145,11 @@ struct NotationTests {
         #expect(Jianpu.keyMarks(nil).isEmpty)
     }
 
-    @Test func whiteKeysReadAsJianpuWithCAsOne() {
+    @Test func whiteKeysReadAsJianpuOrSolfegeWithCAsOneOrDo() {
         #expect((60...71).map { KeyboardLayout.keyLabel($0, notation: .numbers) }
                 == ["1", "", "2", "", "3", "4", "", "5", "", "6", "", "7"])
+        #expect((60...71).map { KeyboardLayout.keyLabel($0, notation: .solfege) }
+                == ["do", "", "re", "", "mi", "fa", "", "so", "", "la", "", "si"])
         #expect(KeyboardLayout.keyLabel(60, notation: .letters) == "C4")
         #expect(KeyboardLayout.keyLabel(62, notation: .letters) == "D")
     }
@@ -134,6 +164,7 @@ struct NotationTests {
             """).notes
         #expect(Jianpu.name(of: notes[0], in: .letters) == "F♯")
         #expect(Jianpu.name(of: notes[0], in: .numbers) == "♯4")
+        #expect(Jianpu.name(of: notes[0], in: .solfege) == "♯fa")
         // Spelled as written even where the pitch has another name.
         #expect(Jianpu.name(of: notes[1], in: .letters) == "D♯")
         #expect(Jianpu.name(of: notes[1], in: .numbers) == "♯2")
@@ -142,6 +173,8 @@ struct NotationTests {
         #expect(Jianpu.name(of: notes[2], in: .letters) == "A♭")
         #expect(Jianpu.name(of: notes[3], in: .letters) == "G♯")
         #expect(Jianpu.name(of: notes[4], in: .numbers) == "1")
+        #expect(Jianpu.name(of: notes[4], in: .solfege) == "do")
+        #expect(NoteRollGeometry.Names.of(notes).list(.solfege) == ["♯fa", "♯re", "♭la", "♯so", "do"])
     }
 
     @Test func aFallingNoteIsNamedOnceAcrossItsTiedPieces() throws {
@@ -182,6 +215,9 @@ struct NotationTests {
         #expect(set.items.count == 2)
         #expect(LabelSet.decode(Data(#"{"items": [{"id": "a", "page": 1, "x": 0, "y": 0, "size": 6, "text": "C"}]}"#.utf8))?
             .notation == .letters)
+        let one = #"[{"id": "a", "page": 1, "x": 0, "y": 0, "size": 6, "text": "C"}]"#
+        #expect(LabelSet.decode(Data(#"{"notation": "solfege", "items": \#(one)}"#.utf8))?.notation == .solfege)
+        #expect(LabelSet.decode(Data(#"{"notation": "runes", "items": \#(one)}"#.utf8))?.notation == .letters)
     }
 
     @Test @MainActor func theReadersChoiceWinsOverTheSheetsOwnAndIsRemembered() throws {
@@ -193,6 +229,8 @@ struct NotationTests {
         preference.choose(.letters)
         #expect(preference.notation(fallback: .numbers) == .letters)
         #expect(NotationPreference(defaults: defaults).chosen == .letters)
+        preference.choose(.solfege)
+        #expect(NotationPreference(defaults: defaults).notation(fallback: .numbers) == .solfege)
         defaults.removePersistentDomain(forName: "NotationTests")
     }
 }

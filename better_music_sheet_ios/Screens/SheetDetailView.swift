@@ -20,14 +20,23 @@ struct SheetDetailView: View {
     @State private var originalError: String?
     @State private var sharing: SharedFile?
     @State private var preparingShare = false
+    @State private var musicXMLError: String?
+    /// Scroll down through every page, or show one at a time and swipe across.
+    @AppStorage("sheet.pageMode") private var pageMode = SheetPageMode.scroll
+    @State private var pager = SheetPager()
+    /// The sheet alone, over the whole screen.
+    @State private var fullScreen = false
+    @State private var notationPreference = NotationPreference.shared
     @State private var entitlements = EntitlementStore.shared
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dismiss) private var dismiss
 
     init(route: SheetRoute, job: AnnotationJob? = nil) {
         _model = State(initialValue: SheetDetailModel(route: route, job: job))
     }
 
     private var isEditing: Bool { model.editor?.isEditing == true }
+    private var isSwiping: Bool { pageMode == .swipe && pager.count > 1 }
 
     var body: some View {
         ZStack {
@@ -48,8 +57,12 @@ struct SheetDetailView: View {
         }
         .navigationTitle(model.title)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(isEditing)
+        // Without the system's back button there is no swipe to go back
+        // either, which one page at a time would take for a page turn.
+        .navigationBarBackButtonHidden(isEditing || isSwiping)
         .toolbar { toolbar }
+        .toolbar(fullScreen ? .hidden : .visible, for: .navigationBar)
+        .statusBarHidden(fullScreen)
         // Restarted each time the app comes back to the foreground, so a
         // sheet that finished while the phone was locked shows up at once,
         // and a PDF download that failed then gets another try.
@@ -85,11 +98,18 @@ struct SheetDetailView: View {
         } message: {
             Text(originalError ?? "")
         }
+        .alert("Couldn't get the MusicXML", isPresented: Binding(
+            get: { musicXMLError != nil }, set: { if !$0 { musicXMLError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(musicXMLError ?? "")
+        }
         .sheet(item: $sharing) { file in
             ActivityView(url: file.url)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if AdConfig.isEnabled, !isEditing, !entitlements.isEntitled {
+            if AdConfig.isEnabled, !isEditing, !fullScreen, !entitlements.isEntitled {
                 AdBannerSlot()
             }
         }
@@ -102,10 +122,10 @@ struct SheetDetailView: View {
         let namesLive = model.editor?.namesLive == true && model.originalPDFData != nil
         let base = displayedVersion == .original || namesLive ? (model.originalPDFData ?? data) : data
         VStack(spacing: 0) {
-            if let job = model.job {
+            if let job = model.job, !fullScreen {
                 toolRow(job: job, namesLive: namesLive)
             }
-            if let editor = model.editor {
+            if let editor = model.editor, !fullScreen {
                 if editor.isEditing {
                     SheetEditToolbar(editor: editor)
                 }
@@ -122,9 +142,14 @@ struct SheetDetailView: View {
                          overlay: model.editor.map {
                              SheetOverlayContent(editor: $0, showsNames: displayedVersion == .annotated && namesLive)
                          },
-                         editor: model.editor)
+                         editor: model.editor,
+                         pageMode: pageMode,
+                         pager: pager)
                 // Under the ad banner, but never under the editing tools.
                 .ignoresSafeArea(edges: isEditing ? [] : .bottom)
+                .overlay(alignment: .topTrailing) {
+                    if fullScreen { closeFullScreen }
+                }
                 .overlay {
                     if displayedVersion == .original, model.isLoadingOriginal {
                         ProgressView("Loading original…")
@@ -132,6 +157,11 @@ struct SheetDetailView: View {
                             .background(Brand.card, in: .rect(cornerRadius: 12))
                     }
                 }
+        }
+        // On the stack rather than the page, which runs on under the ad
+        // banner: this stays clear of it.
+        .overlay(alignment: .bottom) {
+            if isSwiping { floatingPager }
         }
         .sheet(item: Binding(get: { model.editor?.textEditor },
                              set: { if $0 == nil, model.editor?.textEditor != nil { model.editor?.closeTextEditor(nil) } })) { target in
@@ -141,12 +171,24 @@ struct SheetDetailView: View {
         }
     }
 
-    /// While editing, the back button gives way to how saving is going.
+    /// While editing, the back button gives way to how saving is going. One
+    /// page at a time, it gives way to one of our own, which goes back on a
+    /// tap but not on a swipe.
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        if let editor = model.editor, editor.isEditing {
+        if isSwiping, !isEditing {
             ToolbarItem(placement: .topBarLeading) {
-                Text(editor.store.saveState.message)
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .accessibilityLabel("Back")
+            }
+        }
+        if let editor = model.editor, editor.isEditing, let message = editor.store.saveState.message {
+            ToolbarItem(placement: .topBarLeading) {
+                Text(message)
                     .font(.system(size: 12))
                     .foregroundStyle(Brand.inkSoft)
                     .lineLimit(1)
@@ -154,20 +196,68 @@ struct SheetDetailView: View {
         }
     }
 
-    /// The sheet's tools, in one row under its name: Edit on the left, then
-    /// on the right the version, letters or jianpu, Practice and Download.
-    /// Editing opens its own tools under this row, and Edit becomes Done.
+    /// The sheet's tools, in one row under its name: Edit on the left, then on
+    /// the right the version, letters,
+    /// jianpu or solfège, the page layout, full screen, Practice and Download.
+    /// An iPad shows them all; a narrower screen puts the page layout and full
+    /// screen behind the view options, and a phone too narrow even for that
+    /// folds the version and the note names in there too. Editing opens its
+    /// own tools under this row, and Edit becomes Done.
     private func toolRow(job: AnnotationJob, namesLive: Bool) -> some View {
-        let row = HStack(spacing: 6) {
+        let choosesNotation = displayedVersion == .annotated && namesLive
+        return ViewThatFits(in: .horizontal) {
+            toolRow(job: job, choosesNotation: choosesNotation, fold: .nothing)
+            toolRow(job: job, choosesNotation: choosesNotation, fold: .layout)
+            toolRow(job: job, choosesNotation: choosesNotation, fold: .everything)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Brand.card)
+        .overlay(alignment: .bottom) { Rectangle().fill(Brand.paperDeep).frame(height: 1) }
+    }
+
+    /// How much of the tool row sits behind the view options instead.
+    private enum Fold {
+        case nothing, layout, everything
+    }
+
+    private func toolRow(job: AnnotationJob, choosesNotation: Bool, fold: Fold) -> some View {
+        let folded = fold == .everything
+        return HStack(spacing: 6) {
             editButton
             Spacer(minLength: 6)
-            BrandSegmentedControl(
-                label: "Sheet version",
-                options: PDFVersion.allCases.map { ($0, $0.title, $0.title) },
-                selection: $displayedVersion)
-                .accessibilityHint("Switches between the annotated sheet and the uploaded original")
-            if displayedVersion == .annotated, namesLive, let editor = model.editor {
-                NotationToggle(fallback: editor.labels?.notation)
+            if !folded {
+                BrandSegmentedControl(
+                    label: "Sheet version",
+                    options: PDFVersion.allCases.map { ($0, $0.title, $0.title) },
+                    selection: $displayedVersion)
+                    .accessibilityHint("Switches between the annotated sheet and the uploaded original")
+                if choosesNotation {
+                    NotationToggle(fallback: model.editor?.labels?.notation)
+                }
+            }
+            if fold == .nothing {
+                // A one-page sheet has nothing to turn to.
+                if pager.count > 1 {
+                    BrandSegmentedControl(
+                        label: "Page layout",
+                        options: SheetPageMode.allCases.map { ($0, $0.title, $0.title) },
+                        selection: $pageMode)
+                        .accessibilityHint("Scrolls down through the pages, or shows one at a time to swipe across")
+                }
+                if !isEditing {
+                    Button {
+                        fullScreen = true
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .toolButton()
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Full screen")
+                }
+            } else {
+                viewOptions(choosesNotation: choosesNotation, folded: folded)
             }
             // Leaving for Practice or exporting mid-edit would strand the
             // edit, so those wait until Done.
@@ -187,15 +277,107 @@ struct SheetDetailView: View {
                 shareMenu
             }
         }
-        return ViewThatFits(in: .horizontal) {
-            row
-            // A phone too narrow for the row scrolls it sideways.
-            ScrollView(.horizontal, showsIndicators: false) { row }
+    }
+
+    /// Settings for what's on screen, behind sliders in the same solid red as
+    /// Edit: how the pages are laid out, full screen, and on a narrow phone
+    /// the version and the note names too.
+    private func viewOptions(choosesNotation: Bool, folded: Bool) -> some View {
+        Menu {
+            if folded {
+                Picker("Sheet version", selection: $displayedVersion) {
+                    ForEach(PDFVersion.allCases) { Text($0.title).tag($0) }
+                }
+                if choosesNotation {
+                    Picker("Note names", selection: Binding(
+                        get: { notationPreference.notation(fallback: model.editor?.labels?.notation) },
+                        set: { notationPreference.choose($0) })) {
+                        ForEach(Notation.allCases, id: \.self) { Text($0.spokenTitle).tag($0) }
+                    }
+                }
+            }
+            // A one-page sheet has nothing to turn to.
+            if pager.count > 1 {
+                Picker("Page layout", selection: $pageMode) {
+                    Label("Scroll", systemImage: "arrow.up.and.down").tag(SheetPageMode.scroll)
+                    Label("Swipe", systemImage: "arrow.left.and.right").tag(SheetPageMode.swipe)
+                }
+            }
+            if !isEditing {
+                Button {
+                    fullScreen = true
+                } label: {
+                    Label("Full screen", systemImage: "arrow.up.left.and.arrow.down.right")
+                }
+            }
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 36, height: 34)
+                .background(Brand.accent, in: .rect(cornerRadius: 9))
+                .contentShape(Rectangle())
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Brand.card)
-        .overlay(alignment: .bottom) { Rectangle().fill(Brand.paperDeep).frame(height: 1) }
+        .accessibilityLabel("View options")
+    }
+
+    /// One page at a time: which page this is, and a button each way for when
+    /// a swipe isn't to hand - while editing, when a drag draws instead.
+    private var pagerControl: some View {
+        HStack(spacing: 2) {
+            pagerButton("chevron.left", label: "Previous page", by: -1)
+                .disabled(pager.page <= 1)
+            Text("\(pager.page) / \(pager.count)")
+                .font(.system(size: 13, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(Brand.ink)
+                .accessibilityLabel("Page \(pager.page) of \(pager.count)")
+            pagerButton("chevron.right", label: "Next page", by: 1)
+                .disabled(pager.page >= pager.count)
+        }
+    }
+
+    private func pagerButton(_ symbol: String, label: String, by delta: Int) -> some View {
+        Button {
+            pager.turn(by: delta)
+        } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 14, weight: .semibold))
+                .frame(width: 30, height: 34)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Brand.ink)
+        .accessibilityLabel(label)
+    }
+
+    /// The way back out of full screen, in the same solid red as Edit.
+    private var closeFullScreen: some View {
+        Button {
+            fullScreen = false
+        } label: {
+            Label("Close", systemImage: "xmark")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .frame(height: 34)
+                .background(Brand.accent, in: .rect(cornerRadius: 9))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Close full screen")
+        .padding(10)
+    }
+
+    /// The pager floats over the sheet, bottom centre, full screen or not, and
+    /// see-through enough that the music under it still reads.
+    private var floatingPager: some View {
+        pagerControl
+            .padding(.horizontal, 6)
+            .background(Brand.card, in: .rect(cornerRadius: 9))
+            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Brand.paperDeep, lineWidth: 1))
+            .opacity(0.7)
+            .padding(.bottom, 12)
     }
 
     /// Red like the choices beside it, with the pencil in white on it.
@@ -262,6 +444,12 @@ struct SheetDetailView: View {
                 Label("Original", systemImage: "doc")
                 Text("The file as you uploaded it")
             }
+            Button {
+                shareMusicXML()
+            } label: {
+                Label("MusicXML", systemImage: "music.note.list")
+                Text("The notes as read, for MuseScore, Sibelius or Finale (.mxl)")
+            }
         } label: {
             Group {
                 if preparingShare {
@@ -275,6 +463,18 @@ struct SheetDetailView: View {
         }
         .disabled(preparingShare)
         .accessibilityLabel("Share")
+    }
+
+    private func shareMusicXML() {
+        preparingShare = true
+        Task {
+            do {
+                sharing = try await model.musicXMLExportURL().map(SharedFile.init)
+            } catch {
+                musicXMLError = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            }
+            preparingShare = false
+        }
     }
 
     private func shareCustomized() {

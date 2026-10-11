@@ -62,7 +62,7 @@ struct PracticeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // Side by side, in the reading page's order: version, then
-            // letters or jianpu.
+            // letters, jianpu or solfège.
             if #available(iOS 26.0, *) {
                 // The segmented controls are their own boxes; without this
                 // iOS 26 also draws the toolbar's glass capsule around them.

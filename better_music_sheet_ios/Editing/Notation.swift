@@ -1,28 +1,31 @@
 import Foundation
 import Observation
 
-/// Numbered notation (jianpu, 簡譜): the note names shown as numbers,
-/// 1 2 3 4 5 6 7, instead of letters. The labels stay letters underneath — in
-/// labels.json, in the reader's saved edits, in what retyping compares — and
-/// only what is drawn changes, so switching back and forth loses nothing.
+/// Numbered notation (jianpu, 簡譜) and solfège, both fixed-do: the note names
+/// shown as numbers (1 2 3 4 5 6 7) or as syllables (do re mi fa so la si)
+/// instead of letters. The labels stay letters underneath — in labels.json,
+/// in the reader's saved edits, in what retyping compares — and only what is
+/// drawn changes, so switching back and forth loses nothing.
 ///
-/// "1" is always C, whatever the key signature ("1=C"): C D E F G A B read
-/// 1 2 3 4 5 6 7, and a sharp or flat is written as the letter has it — F♯ is
-/// ♯4, B♭ is ♭7. A double sharp or flat reads as the number it sounds as
-/// (C𝄪 is 2).
+/// "1" and "do" are always C, whatever the key signature ("1=C"), so a degree
+/// always means the same piano key. A note on a white key reads as that key's
+/// degree, however it is spelled (E♯ is 4/fa, C♭ is 7/si, C𝄪 is 2/re). A note
+/// on a black key keeps its printed sharp or flat (D♯ is ♯2/♯re, E♭ is
+/// ♭3/♭mi); a double sharp or flat on one reads as the nearest spelling with
+/// a single one (F𝄫 is ♭3/♭mi).
 ///
-/// The conversion itself is ported from the web app's lib/notation.ts, which
-/// can count from any key; the app always counts from C.
+/// The conversion is ported from the web app's lib/notation.ts.
 nonisolated enum Notation: String, Codable, Sendable, CaseIterable, Identifiable {
-    case letters, numbers
+    case letters, numbers, solfege
 
     var id: Self { self }
 
     /// What the switch says.
     var title: String {
         switch self {
-        case .letters: "Letter"
-        case .numbers: "簡"
+        case .letters: "CDE"
+        case .numbers: "123"
+        case .solfege: "DoReMi"
         }
     }
 
@@ -30,6 +33,7 @@ nonisolated enum Notation: String, Codable, Sendable, CaseIterable, Identifiable
         switch self {
         case .letters: "Letter names"
         case .numbers: "Jianpu, numbered notation"
+        case .solfege: "Solfège, do re mi"
         }
     }
 }
@@ -47,6 +51,7 @@ nonisolated struct KeyMark: Sendable, Hashable {
 
 nonisolated enum Jianpu {
     private static let letters: [Character] = ["C", "D", "E", "F", "G", "A", "B"]
+    private static let syllables = ["do", "re", "mi", "fa", "so", "la", "si"]
     private static let stepSemitones = NoteNames.stepSemitones
     private static let unicodeAccidentals = [-2: "𝄫", -1: "♭", 0: "", 1: "♯", 2: "𝄪"]
     private static let asciiAccidentals = [-2: "bb", -1: "b", 0: "", 1: "#", 2: "##"]
@@ -82,63 +87,77 @@ nonisolated enum Jianpu {
         return String(letters[t.step]) + (accidental(alter, ascii: ascii) ?? "")
     }
 
-    /// A letter label ("F♯", "Bb4", "C?") as a scale degree of the key given by
-    /// `fifths` ("#4", "♭7", "1?"). Anything that isn't a note name comes back
-    /// unchanged. The octave, when the label has one, is dropped.
-    static func numbered(_ text: String, fifths: Int) -> String {
-        guard let p = NoteNames.parse(text) else { return text }
-        let t = tonic(fifths)
-        var degree = mod(p.step - t.step, 7)
-        let expected = mod(t.pc + stepSemitones[degree], 12)
-        let actual = mod(stepSemitones[p.step] + p.alter, 12)
-        var alter = mod(actual - expected + 6, 12) - 6
-        if abs(alter) > 1 {
-            // By sound instead: the degree itself, or the one a semitone away
-            // in the direction the note was altered.
-            let offset = mod(actual - t.pc, 12)
-            if let plain = stepSemitones.firstIndex(of: offset) {
-                degree = plain
-                alter = 0
-            } else {
-                alter = alter > 0 ? 1 : -1
-                degree = stepSemitones.firstIndex(of: mod(offset - alter, 12)) ?? degree
-            }
-        }
-        let doubtful = text.trimmingCharacters(in: .whitespaces).hasSuffix("?")
-        return (accidental(alter, ascii: usesASCII(text)) ?? "") + String(degree + 1) + (doubtful ? "?" : "")
+    /// A spelled pitch's fixed-do degree (0 = C/do) and alteration.
+    private static func fixedDo(_ p: SpelledPitch) -> (degree: Int, alter: Int) {
+        let pc = mod(stepSemitones[p.step] + p.alter, 12)
+        if let white = stepSemitones.firstIndex(of: pc) { return (white, 0) }
+        guard abs(p.alter) > 1 else { return (p.step, p.alter) }
+        let alter = p.alter > 0 ? 1 : -1
+        return (stepSemitones.firstIndex(of: mod(pc - alter, 12)) ?? p.step, alter)
     }
 
-    /// A scale degree typed by the reader ("#4", "b7", "5") back as the letter
-    /// it means in the key, spelled like `original` (the label's printed
-    /// text). When it names the printed note, the printed text itself comes
-    /// back, octave and all. Nil when `text` isn't a scale degree.
-    static func letter(fromNumbered text: String, fifths: Int, original: String) -> String? {
-        guard let typed = parseDegree(text) else { return nil }
-        let t = tonic(fifths)
-        let step = mod(t.step + typed.degree, 7)
-        let pc = mod(t.pc + stepSemitones[typed.degree] + typed.alter, 12)
-        let alter = mod(pc - stepSemitones[step] + 6, 12) - 6
-        if let printed = NoteNames.parse(original), printed.step == step, printed.alter == alter {
+    private static func fixedDoName(_ text: String, _ name: (Int) -> String) -> String {
+        guard let p = NoteNames.parse(text) else { return text }
+        let (degree, alter) = fixedDo(p)
+        let doubtful = text.trimmingCharacters(in: .whitespaces).hasSuffix("?")
+        return (accidental(alter, ascii: usesASCII(text)) ?? "") + name(degree) + (doubtful ? "?" : "")
+    }
+
+    /// A letter label ("F♯", "Bb4", "C?") as a number ("♯4", "b7", "1?").
+    /// Anything that isn't a note name comes back unchanged. The octave, when
+    /// the label has one, is dropped.
+    static func numbered(_ text: String) -> String {
+        fixedDoName(text) { String($0 + 1) }
+    }
+
+    /// A letter label ("F♯", "Bb4", "C?") as a solfège syllable ("♯fa",
+    /// "bsi", "do?"), with the same exceptions as `numbered`.
+    static func solfege(_ text: String) -> String {
+        fixedDoName(text) { syllables[$0] }
+    }
+
+    /// A number or solfège syllable typed by the reader while names read that
+    /// way ("#4", "b7", "so") back as the letter it means, spelled like
+    /// `original` (the label's printed text). When it names the note printed
+    /// — by sound, as the names are shown — the printed text itself comes
+    /// back, octave and all. Nil when `text` isn't one in `notation`.
+    static func letter(fromTyped text: String, in notation: Notation, original: String) -> String? {
+        guard let typed = parseTyped(text, in: notation) else { return nil }
+        let pc = mod(stepSemitones[typed.degree] + typed.alter, 12)
+        if let printed = NoteNames.parse(original), mod(stepSemitones[printed.step] + printed.alter, 12) == pc {
             return original.trimmingCharacters(in: .whitespacesAndNewlines)
         }
-        guard let acc = accidental(alter, ascii: usesASCII(original)) else { return nil }
-        return String(letters[step]) + acc + (typed.doubtful ? "?" : "")
+        guard let acc = accidental(typed.alter, ascii: usesASCII(original)) else { return nil }
+        return String(letters[typed.degree]) + acc + (typed.doubtful ? "?" : "")
     }
 
-    /// `^\s*(accidental)?([1-7])\s*(\?)?\s*$`
-    private static func parseDegree(_ text: String) -> (degree: Int, alter: Int, doubtful: Bool)? {
-        var rest = text.drop { $0.isWhitespace }
+    /// `^\s*(accidental)?([1-7])\s*(\?)?\s*$` for numbers, and the same with a
+    /// syllable in any case, optionally spaced from its accidental, for
+    /// solfège.
+    private static func parseTyped(_ text: String, in notation: Notation) -> (degree: Int, alter: Int, doubtful: Bool)? {
+        guard notation != .letters else { return nil }
+        var rest = Substring(notation == .solfege ? text.lowercased() : text).drop { $0.isWhitespace }
         var alter = 0
         if let (spelling, value) = typedAccidentals.first(where: { rest.hasPrefix($0.0) }) {
             alter = value
             rest = rest.dropFirst(spelling.count)
         }
-        guard let digit = rest.first, digit.isASCII, let value = digit.wholeNumberValue,
-              (1...7).contains(value) else { return nil }
-        rest = rest.dropFirst().drop { $0.isWhitespace }
+        let degree: Int
+        if notation == .solfege {
+            rest = rest.drop { $0.isWhitespace }
+            guard let index = syllables.firstIndex(where: { rest.hasPrefix($0) }) else { return nil }
+            degree = index
+            rest = rest.dropFirst(syllables[index].count)
+        } else {
+            guard let digit = rest.first, digit.isASCII, let value = digit.wholeNumberValue,
+                  (1...7).contains(value) else { return nil }
+            degree = value - 1
+            rest = rest.dropFirst()
+        }
+        rest = rest.drop { $0.isWhitespace }
         let doubtful = rest.first == "?"
         if doubtful { rest = rest.dropFirst().drop { $0.isWhitespace } }
-        return rest.isEmpty ? (value - 1, alter, doubtful) : nil
+        return rest.isEmpty ? (degree, alter, doubtful) : nil
     }
 
     private static let flatNames = ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"]
@@ -165,7 +184,11 @@ nonisolated enum Jianpu {
 
     /// What a label reads as in `notation`.
     static func display(_ text: String, in notation: Notation) -> String {
-        notation == .numbers ? numbered(text, fifths: fixedFifths) : text
+        switch notation {
+        case .letters: text
+        case .numbers: numbered(text)
+        case .solfege: solfege(text)
+        }
     }
 
     // MARK: - Key marks
@@ -192,7 +215,7 @@ nonisolated enum Jianpu {
     }
 }
 
-/// The reader's letters/numbers choice, remembered on this device and shared
+/// The reader's letters/numbers/solfège choice, remembered on this device and shared
 /// by every page that shows names, so switching on one switches them all.
 /// Until they choose, each sheet shows the notation it was made with.
 @MainActor

@@ -208,6 +208,29 @@ struct APIClientTests {
         #expect(s3.value(forHTTPHeaderField: "X-Guest-Id") == nil)
     }
 
+    @Test func fetchesTheMusicXMLFromItsOwnLink() async throws {
+        let channel = StubProtocol.Channel([
+            .init(body: Data(#"{"direct": false, "pdf": "/annotated.pdf", "original": null, "timeline": null, "musicxml": "/score.mxl"}"#.utf8)),
+            .init(body: Data("PK score".utf8)),
+        ])
+
+        let data = try await SheetFiles(client: client(channel)).data(jobID: "job123", artifact: .musicxml)
+
+        #expect(String(decoding: data, as: UTF8.self) == "PK score")
+        #expect(channel.recorded.last?.url?.path == "/score.mxl")
+    }
+
+    @Test func aSheetWithoutMusicXMLSaysSo() async throws {
+        // Null until the file is stored, and for sheets read before it was kept.
+        let channel = StubProtocol.Channel([
+            .init(body: Data(#"{"direct": false, "pdf": "/annotated.pdf", "original": null, "timeline": null, "musicxml": null}"#.utf8)),
+        ])
+
+        await #expect(throws: APIError.self) {
+            _ = try await SheetFiles(client: client(channel)).data(jobID: "job123", artifact: .musicxml)
+        }
+    }
+
     @Test func fetchesTheOriginalArtifact() async throws {
         let channel = StubProtocol.Channel([
             .init(body: Data(#"{"direct": false, "pdf": "/annotated.pdf", "original": "/original.pdf", "timeline": null}"#.utf8)),

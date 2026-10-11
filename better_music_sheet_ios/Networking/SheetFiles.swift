@@ -10,8 +10,9 @@ import Foundation
 nonisolated enum SheetArtifact: Sendable {
     /// `pdf` is the annotated result; `original` is the PDF the reader
     /// uploaded before annotation; `labels` is the placed note names as data
-    /// (see Editing/SheetLabels.swift).
-    case pdf, original, timeline, labels
+    /// (see Editing/SheetLabels.swift); `musicxml` is the score as recognized,
+    /// compressed MusicXML (.mxl), for notation software.
+    case pdf, original, timeline, labels, musicxml
 
     var legacyPath: String {
         switch self {
@@ -19,6 +20,7 @@ nonisolated enum SheetArtifact: Sendable {
         case .original: "original?inline=1"
         case .timeline: "timeline"
         case .labels: "labels"
+        case .musicxml: "musicxml"
         }
     }
 }
@@ -31,6 +33,9 @@ nonisolated struct SheetAssets: Codable, Sendable {
     /// Null for sheets annotated before label export, and absent from older
     /// backends.
     let labels: String?
+    /// Stored a little after the sheet is done, so null until then, and for
+    /// sheets read before it was kept; absent from older backends.
+    let musicxml: String?
     /// The upload's media type. Only a PDF can be drawn over; a photo upload
     /// can't stand in for the annotated copy.
     let originalType: String?
@@ -45,6 +50,7 @@ nonisolated struct SheetAssets: Codable, Sendable {
         case .original: original
         case .timeline: timeline
         case .labels: labels
+        case .musicxml: musicxml
         }
     }
 }

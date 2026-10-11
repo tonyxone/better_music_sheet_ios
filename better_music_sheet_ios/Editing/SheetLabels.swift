@@ -41,7 +41,7 @@ nonisolated struct LabelSet: Sendable, Equatable {
         guard !items.isEmpty else { return nil }
         let color = root["color"] as? String
         return LabelSet(color: color.flatMap(SheetEdits.isColor) == true ? color! : "#000000", items: items,
-                        notation: root["notation"] as? String == "numbers" ? .numbers : .letters)
+                        notation: (root["notation"] as? String).flatMap(Notation.init(rawValue:)) ?? .letters)
     }
 
     /// Names read out of an annotated PDF (see PDFLabelReader), for a sheet

@@ -55,6 +55,12 @@ struct PaywallView: View {
             await manager.loadProducts()
             if !previewOnly { await manager.syncCurrentEntitlement() }
         }
+        // A purchase button that is dimmed and dead until a plan is tapped reads
+        // as broken (App Review reported it unresponsive), so Monthly starts selected.
+        .onChange(of: manager.products.map(\.id), initial: true) { _, ids in
+            guard selectedProductID == nil || !ids.contains(selectedProductID ?? "") else { return }
+            selectedProductID = ids.contains(SubscriptionProduct.monthlyID) ? SubscriptionProduct.monthlyID : ids.first
+        }
         .sheet(isPresented: $showingAccount, onDismiss: { Task { await checkAccount() } }) {
             AccountView()
         }
@@ -311,6 +317,7 @@ private struct FreePlanCard: View {
         (true, "Every note labelled"),
         (true, "Practise on a keyboard"),
         (false, "1 music sheet at a time"),
+        (false, "Upload up to 5 sheets daily"),
         (false, "Shows ads"),
     ]
 
@@ -362,6 +369,9 @@ private struct PlanCard: View {
                     Text(title)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Brand.ink)
+                    Text("Upload up to \(dailySheets) sheets daily")
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Brand.inkSoft)
                     if hasFreeTrial && offersTrial {
                         Text("7-day free trial")
                             .font(.system(size: 12.5))
@@ -388,6 +398,11 @@ private struct PlanCard: View {
 
     private var title: String {
         product.id == SubscriptionProduct.yearlyID ? "Yearly" : "Monthly"
+    }
+
+    /// The daily upload limit the backend enforces for the plan (DAILY_SHEET_LIMITS).
+    private var dailySheets: Int {
+        product.id == SubscriptionProduct.yearlyID ? 30 : 20
     }
 
     private var hasFreeTrial: Bool {
