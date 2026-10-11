@@ -193,9 +193,17 @@ final class SheetDetailModel {
         return write(data, suffix: " (customized)")
     }
 
-    private func write(_ data: Data, suffix: String) -> URL? {
+    /// The score as recognized, for MuseScore, Sibelius or Finale. Asked for
+    /// afresh each time, since the file lands a few seconds after the sheet;
+    /// throws when this sheet has none.
+    func musicXMLExportURL() async throws -> URL? {
+        let data = try await files.data(jobID: route.jobID, artifact: .musicxml)
+        return write(data, suffix: "", fileExtension: "mxl")
+    }
+
+    private func write(_ data: Data, suffix: String, fileExtension: String = "pdf") -> URL? {
         let stem = (title as NSString).deletingPathExtension
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(stem)\(suffix).pdf")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(stem)\(suffix).\(fileExtension)")
         return (try? data.write(to: url, options: .atomic)) == nil ? nil : url
     }
 }

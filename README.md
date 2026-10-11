@@ -152,9 +152,11 @@ Which sample plays for each key and velocity follows
 | Sign-in with Google and Apple | Implemented, tested, not yet verified on device |
 | Subscription: App Store purchase, one subscription shared with the web, web-subscription cancel | Implemented, tested, not yet verified on device |
 | "Try a sample" demo sheet, hideable per viewer | Implemented, not yet verified on device |
+| Left/right hand balance for playback, kept per sheet | Implemented, tested, not yet verified on device |
+| Reading page: one page at a time turned by swiping, full screen, MusicXML export | Implemented, not yet verified on device |
 | Sheet editing: move, retype and hide names (retyping fixes playback), pen, highlighter, text notes, eraser, undo, reset, Customized PDF export; synced with the web app | Model and sync implemented and tested; editing UI not yet verified on device |
 
-206 tests across 29 suites; all pass except `everyInstrumentShipsWithTheApp`, which cannot find the instrument sample bundle when run under `swift test`.
+244 tests across 33 suites; all pass except `everyInstrumentShipsWithTheApp`, which cannot find the instrument sample bundle when run under `swift test`.
 
 ---
 

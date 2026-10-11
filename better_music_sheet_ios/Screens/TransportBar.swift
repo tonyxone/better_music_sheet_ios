@@ -64,10 +64,7 @@ struct TransportBar: View {
                     transport
                     HStack {
                         Spacer()
-                        toggle("slider.horizontal.3", on: showingOptions,
-                               label: showingOptions ? "Hide options" : "Show options") {
-                            withAnimation(.snappy(duration: 0.22)) { showingOptions.toggle() }
-                        }
+                        optionsButton
                     }
                 }
 
@@ -144,6 +141,23 @@ struct TransportBar: View {
         }
     }
 
+    /// Red and round like the play button beside it, since it too is about
+    /// what's playing; the darker red while its row is open.
+    private var optionsButton: some View {
+        Button {
+            withAnimation(.snappy(duration: 0.22)) { showingOptions.toggle() }
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color.white)
+                .frame(width: 40, height: 40)
+                .background(showingOptions ? Brand.accentDeep : Brand.accent, in: .circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(showingOptions ? "Hide playback options" : "Show playback options")
+        .accessibilityAddTraits(showingOptions ? .isSelected : [])
+    }
+
     @ViewBuilder
     private var options: some View {
         Menu {
@@ -211,6 +225,41 @@ struct TransportBar: View {
                label: player.isMuted ? "Unmute" : "Mute") {
             player.setMuted(!player.isMuted)
         }
+        handBalance
+    }
+
+    /// Dragging toward a hand plays the other one softer, down to silent at
+    /// the end; the middle plays both as written. L and R sit at its two ends
+    /// in the hands' own colours.
+    private var handBalance: some View {
+        HStack(spacing: 6) {
+            Text("L").foregroundStyle(Brand.leftHand)
+            Slider(value: Binding(get: { player.handBalance }, set: { player.setHandBalance($0) }),
+                   in: HandBalance.range, step: 0.05,
+                   onEditingChanged: { editing in
+                       if !editing { player.applyHandBalance() }
+                   })
+                .tint(Brand.inkSoft)
+                .frame(width: 120)
+                .simultaneousGesture(TapGesture(count: 2).onEnded {
+                    player.setHandBalance(0)
+                    player.applyHandBalance()
+                })
+                .accessibilityLabel("Hands")
+                .accessibilityValue(handBalanceValue)
+                .accessibilityHint("Drag toward a hand to make the other one quieter. Double-tap to even them out.")
+            Text("R").foregroundStyle(Brand.rightHand)
+        }
+        .font(.system(size: 13, weight: .bold))
+        .padding(.horizontal, 10)
+        .frame(height: 40)
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Brand.paperDeep, lineWidth: 1))
+    }
+
+    private var handBalanceValue: String {
+        guard player.handBalance != 0 else { return "Both hands at the same level" }
+        let levels = HandBalance.levels(player.handBalance)
+        return "Left hand \(levels.left)%, right hand \(levels.right)%"
     }
 
     // MARK: - Pieces

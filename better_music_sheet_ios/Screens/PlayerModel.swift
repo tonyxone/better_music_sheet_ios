@@ -53,6 +53,9 @@ final class PlayerModel {
     /// The "1=C" marks for the page, when names read as numbers.
     private(set) var keyMarks: [KeyMark] = []
     private(set) var isMuted = false
+    /// Which hand plays softer, and by how much (see HandBalance). Kept per
+    /// sheet.
+    private(set) var handBalance: Double
     /// The sound playback uses. Remembered across sheets, as the web app
     /// remembers it.
     private(set) var instrument: Instrument
@@ -98,6 +101,7 @@ final class PlayerModel {
         self.files = files
         self.instrument = UserDefaults.standard.string(forKey: Instrument.storageKey)
             .flatMap(Instrument.init(rawValue:)) ?? .standard
+        self.handBalance = HandBalance.load(jobID: jobID)
     }
 
     var totalBeats: Double { timeline?.totalBeats ?? 0 }
@@ -230,10 +234,14 @@ final class PlayerModel {
         let rate = engine.sampleRate
         let origin = engine.currentFrame + Int64((schedule.leadSeconds * rate).rounded())
 
-        engine.schedule(schedule.entries.map { entry in
-            SynthNote(midi: entry.midi, velocity: entry.velocity,
-                      startFrame: origin + Int64((entry.start * rate).rounded()),
-                      endFrame: origin + Int64((entry.end * rate).rounded()))
+        engine.schedule(schedule.entries.compactMap { entry in
+            // A silenced hand is left out rather than played at the softest
+            // velocity there is.
+            let velocity = entry.velocity * HandBalance.velocityScale(balance: handBalance, role: entry.role)
+            guard velocity > 0 else { return nil }
+            return SynthNote(midi: entry.midi, velocity: velocity,
+                             startFrame: origin + Int64((entry.start * rate).rounded()),
+                             endFrame: origin + Int64((entry.end * rate).rounded()))
         })
 
         self.clock = clock
@@ -336,6 +344,20 @@ final class PlayerModel {
         engine?.setMuted(muted)
     }
 
+    /// Moves the balance without touching what is already scheduled, so a
+    /// drag doesn't restart playback at every point; `applyHandBalance` does
+    /// that once, when the drag ends.
+    func setHandBalance(_ value: Double) {
+        let next = HandBalance.normalized(value)
+        guard next != handBalance else { return }
+        handBalance = next
+        HandBalance.save(next, jobID: jobID)
+    }
+
+    func applyHandBalance() {
+        if isPlaying { play(from: beat) }
+    }
+
     /// A tap on the page, in the page's own top-down point space.
     func handleTap(at point: CGPoint, page: Int) {
         guard let index = geometry?.measureIndex(at: point, page: page,
@@ -434,14 +456,16 @@ final class PlayerModel {
         let struck = timeline.notes.filter { $0.attack != false && abs($0.startBeat - position) < 1e-6 }
         // Replaces whatever was scheduled, so stepping quickly never piles
         // voices up.
-        engine.schedule(struck.map { note in
+        engine.schedule(struck.compactMap { note in
+            let velocity = (note.velocity ?? 80) * HandBalance.velocityScale(balance: handBalance, role: note.role)
+            guard velocity > 0 else { return nil }
             let beats = note.keyDurationBeats ?? note.durationBeats
             // Capped: a whole note held for its written length just drones
             // while you read the next one.
             let seconds = beats > 0
                 ? min(1.5, clock.seconds(atBeat: note.startBeat + beats) - clock.seconds(atBeat: note.startBeat))
                 : PlaybackSchedule.graceSeconds
-            return SynthNote(midi: note.midi, velocity: note.velocity ?? 80,
+            return SynthNote(midi: note.midi, velocity: velocity,
                              startFrame: at,
                              endFrame: at + Int64((max(0.02, seconds) * rate).rounded()))
         })

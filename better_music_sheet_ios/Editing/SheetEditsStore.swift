@@ -14,9 +14,11 @@ final class SheetEditsStore {
     enum SaveState: Sendable, Equatable {
         case saved, saving, unsaved, offline, error
 
-        var message: String {
+        /// Nothing for the usual state; only a save in progress, offline or
+        /// failing is worth a line.
+        var message: String? {
             switch self {
-            case .saved: "All changes saved"
+            case .saved: nil
             case .saving, .unsaved: "Saving…"
             case .offline: "Offline — changes will save when you reconnect"
             case .error: "Couldn't save yet — retrying"
