@@ -60,6 +60,34 @@
         }
       }
     },
+    "“%@” and its annotations will be removed from your library. This can't be undone." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%@」とその音名データがライブラリから削除されます。この操作は取り消せません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@'과(와) 음이름 데이터가 보관함에서 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@”及其标注将从您的乐谱库中删除。此操作无法撤销。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%@」及其標註將從您的樂譜庫中刪除。此操作無法復原。"
+          }
+        }
+      }
+    },
     "\"%@\" isn't a note name, so playback stays the same." : {
       "localizations" : {
         "ja" : {
@@ -84,164 +112,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "「%@」不是音名，播放維持不變。"
-          }
-        }
-      }
-    },
-    "%@ or %@%@" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ または %2$@%3$@"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ 또는 %2$@%3$@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ 或 %2$@%3$@"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ 或 %2$@%3$@"
-          }
-        }
-      }
-    },
-    "%@ pt" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ pt"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ pt"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ pt"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ pt"
-          }
-        }
-      }
-    },
-    "%lld DPI" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld DPI"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld DPI"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld DPI"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld DPI"
-          }
-        }
-      }
-    },
-    "%lld labels" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音名 %lld 個"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "음이름 %lld개"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 个标注"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 個標註"
-          }
-        },
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld label"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld labels"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld selected · drag one to move them all" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 個を選択中 · どれかをドラッグするとまとめて動かせます"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld개 선택됨 · 아무거나 끌면 함께 옮겨집니다"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择 %lld 项 · 拖动其中任意一项即可一起移动"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已選取 %lld 項 · 拖曳其中任一項即可一起移動"
           }
         }
       }
@@ -358,7 +228,166 @@
         }
       }
     },
+    "%@ or %@%@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ または %2$@%3$@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 또는 %2$@%3$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 或 %2$@%3$@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 或 %2$@%3$@"
+          }
+        }
+      }
+    },
+    "%@ pt" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pt"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pt"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pt"
+          }
+        }
+      }
+    },
+    "%lld DPI" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld DPI"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld DPI"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld DPI"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld DPI"
+          }
+        }
+      }
+    },
+    "%lld labels" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld label"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld labels"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音名 %lld 個"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "음이름 %lld개"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个标注"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個標註"
+          }
+        }
+      }
+    },
+    "%lld selected · drag one to move them all" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個を選択中 · どれかをドラッグするとまとめて動かせます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld개 선택됨 · 아무거나 끌면 함께 옮겨집니다"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选择 %lld 项 · 拖动其中任意一项即可一起移动"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選取 %lld 項 · 拖曳其中任一項即可一起移動"
+          }
+        }
+      }
+    },
     "1 music sheet at a time" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -550,34 +579,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 bettermusicsheet.com 購買的訂閱只能在該網站取消：請在網站上登入，然後在訂閱頁面取消。"
-          }
-        }
-      }
-    },
-    "ASCII (Bb, C#)" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ASCII (Bb, C#)"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ASCII (Bb, C#)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ASCII (Bb, C#)"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ASCII (Bb, C#)"
           }
         }
       }
@@ -1110,6 +1111,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple 無法驗證這筆購買，請再試一次。"
+          }
+        }
+      }
+    },
+    "ASCII (Bb, C#)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ASCII (Bb, C#)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ASCII (Bb, C#)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ASCII (Bb, C#)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ASCII (Bb, C#)"
           }
         }
       }
@@ -1674,34 +1703,6 @@
         }
       }
     },
-    "Cancel Subscription" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サブスクリプションを解約"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "구독 해지"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消订阅"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消訂閱"
-          }
-        }
-      }
-    },
     "Cancel on bettermusicsheet.com" : {
       "localizations" : {
         "ja" : {
@@ -1726,6 +1727,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請在 bettermusicsheet.com 取消"
+          }
+        }
+      }
+    },
+    "Cancel Subscription" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サブスクリプションを解約"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "구독 해지"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消订阅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消訂閱"
           }
         }
       }
@@ -1842,6 +1871,34 @@
         }
       }
     },
+    "Choose a new password" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいパスワードを設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 비밀번호 설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置新密码"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定新密碼"
+          }
+        }
+      }
+    },
     "Choose a PDF" : {
       "localizations" : {
         "ja" : {
@@ -1922,34 +1979,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "盡量選擇 PDF：從 PDF 讀取音名比從照片可靠得多，有些照片甚至完全無法辨識。如果是照片，請把樂譜平放在均勻的光線下，並讓它佔滿畫面。音名是自動辨識的，請對照原譜檢查；您可以用樂譜上的鉛筆按鈕更正音名。"
-          }
-        }
-      }
-    },
-    "Choose a new password" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新しいパスワードを設定"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "새 비밀번호 설정"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置新密码"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定新密碼"
           }
         }
       }
@@ -3242,6 +3271,35 @@
         }
       }
     },
+    "delete" : {
+      "comment" : "The word typed to confirm deleting an account. Lowercase.",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "削除"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "삭제"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除"
+          }
+        }
+      }
+    },
     "Delete" : {
       "localizations" : {
         "ja" : {
@@ -3522,6 +3580,118 @@
         }
       }
     },
+    "dotted eighth notes" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "付点8分音符"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "점8분음표"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附点八分音符"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附點八分音符"
+          }
+        }
+      }
+    },
+    "dotted half notes" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "付点2分音符"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "점2분음표"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附点二分音符"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附點二分音符"
+          }
+        }
+      }
+    },
+    "dotted quarter notes" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "付点4分音符"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "점4분음표"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附点四分音符"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附點四分音符"
+          }
+        }
+      }
+    },
+    "dotted whole notes" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "付点全音符"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "점온음표"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附点全音符"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附點全音符"
+          }
+        }
+      }
+    },
     "Drag toward a hand to make the other one quieter. Double-tap to even them out." : {
       "localizations" : {
         "ja" : {
@@ -3742,6 +3912,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "編輯樂譜"
+          }
+        }
+      }
+    },
+    "eighth notes" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8分音符"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8분음표"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "八分音符"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "八分音符"
           }
         }
       }
@@ -4526,6 +4724,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "綠色"
+          }
+        }
+      }
+    },
+    "half notes" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2分音符"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2분음표"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "二分音符"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "二分音符"
           }
         }
       }
@@ -6210,62 +6436,6 @@
         }
       }
     },
-    "OK" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "확인"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "好"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "好"
-          }
-        }
-      }
-    },
-    "OPTIONS" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "オプション"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "옵션"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选项"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選項"
-          }
-        }
-      }
-    },
     "Ode to Joy" : {
       "localizations" : {
         "ja" : {
@@ -6318,6 +6488,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "離線——重新連線後會儲存變更"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "확인"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好"
           }
         }
       }
@@ -6486,6 +6684,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選項"
+          }
+        }
+      }
+    },
+    "OPTIONS" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オプション"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "옵션"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選項"
+          }
+        }
+      }
+    },
+    "or" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "または"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "또는"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "或"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "或"
           }
         }
       }
@@ -7438,6 +7692,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "紫色"
+          }
+        }
+      }
+    },
+    "quarter notes" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4分音符"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4분음표"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "四分音符"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "四分音符"
           }
         }
       }
@@ -8786,34 +9068,6 @@
         }
       }
     },
-    "Sign Out" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ログアウト"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "로그아웃"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出登录"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登出"
-          }
-        }
-      }
-    },
     "Sign in" : {
       "localizations" : {
         "ja" : {
@@ -8922,6 +9176,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "購買或恢復之前，請先登入您的帳號。"
+          }
+        }
+      }
+    },
+    "Sign Out" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ログアウト"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그아웃"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出登录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登出"
           }
         }
       }
@@ -9146,6 +9428,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在登入…"
+          }
+        }
+      }
+    },
+    "sixteenth notes" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16分音符"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16분음표"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "十六分音符"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "十六分音符"
           }
         }
       }
@@ -10046,34 +10356,6 @@
         }
       }
     },
-    "The free plan keeps as many sheets as you like: your first is free, and each one after it takes two short ads. It adds up to 15 sheets a day and shows ads. Premium adds more each day and has no ads. One subscription covers this app and the website." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無料プランでは楽譜をいくつでも保存できます。最初の楽譜は無料で、2つ目以降は1つにつき短い広告を2本見ると追加できます。1日15件まで追加でき、広告が表示されます。プレミアムでは1日に追加できる数が増え、広告は表示されません。1つのサブスクリプションでこのアプリとウェブサイトの両方を使えます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "무료 요금제는 악보를 원하는 만큼 보관할 수 있습니다. 첫 악보는 무료이고, 그다음부터는 악보마다 짧은 광고 2개를 보면 추가할 수 있습니다. 하루 최대 15개까지 추가할 수 있으며 광고가 표시됩니다. 프리미엄은 하루에 더 많이 추가할 수 있고 광고가 없습니다. 구독 하나로 이 앱과 웹사이트를 모두 이용할 수 있습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免费版可以保留任意数量的乐谱：第一份免费，之后每添加一份需观看两段简短广告。每天最多添加 15 份，并会显示广告。高级版每天可添加更多，且没有广告。一份订阅同时适用于本 App 和网站。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免費方案可以保留任意數量的樂譜：第一份免費，之後每新增一份需觀看兩段簡短廣告。每天最多新增 15 份，並會顯示廣告。進階版每天可新增更多，且沒有廣告。一份訂閱同時適用於本 App 和網站。"
-          }
-        }
-      }
-    },
     "The free preview is the first %lld measures. Watch a short ad to practise this whole sheet for an hour, or go Premium to practise every sheet with no ads." : {
       "localizations" : {
         "ja" : {
@@ -10774,34 +11056,6 @@
         }
       }
     },
-    "Trying the built-in sample needs no account. Adding your own sheet music needs one, so your sheets are there wherever you sign in — on iPhone, iPad or the website. On the free plan your first sheet is free and each one after it takes two short ads, and you keep as many as you like; Premium has no ads. One Premium subscription covers the app and the website." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "内蔵のサンプルを試すのにアカウントは不要です。自分の楽譜を追加するにはアカウントが必要で、iPhone、iPad、ウェブサイトのどこでログインしても同じ楽譜を開けます。無料プランでは最初の楽譜は無料で、2つ目以降は1つにつき短い広告を2本見ると追加でき、楽譜はいくつでも保存できます。プレミアムでは広告は表示されません。1つのプレミアムのサブスクリプションでアプリとウェブサイトの両方を使えます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "내장 샘플을 써 보는 데는 계정이 필요 없습니다. 내 악보를 추가하려면 계정이 필요하며, iPhone, iPad, 웹사이트 어디서 로그인해도 같은 악보를 볼 수 있습니다. 무료 요금제에서는 첫 악보가 무료이고, 그다음부터는 악보마다 짧은 광고 2개를 보면 추가할 수 있으며, 원하는 만큼 보관할 수 있습니다. 프리미엄은 광고가 없습니다. 프리미엄 구독 하나로 앱과 웹사이트를 모두 이용할 수 있습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "试用内置示例无需账号。添加您自己的乐谱需要一个账号，这样无论在 iPhone、iPad 还是网站上登录，都能找到您的乐谱。免费版的第一份乐谱免费，之后每添加一份需观看两段简短广告，乐谱数量不限；高级版没有广告。一份高级版订阅同时适用于 App 和网站。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "試用內建範例不需要帳號。加入您自己的樂譜需要一個帳號，這樣無論在 iPhone、iPad 還是網站上登入，都能找到您的樂譜。免費方案的第一份樂譜免費，之後每新增一份需觀看兩段簡短廣告，樂譜數量不限；進階版沒有廣告。一份進階版訂閱同時適用於 App 和網站。"
-          }
-        }
-      }
-    },
     "Type \"%@\" to confirm" : {
       "localizations" : {
         "ja" : {
@@ -10970,6 +11224,34 @@
         }
       }
     },
+    "units of %@ quarter notes" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4分音符 %@ 個分"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4분음표 %@개"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 个四分音符"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 個四分音符"
+          }
+        }
+      }
+    },
     "Unlock this sheet" : {
       "localizations" : {
         "ja" : {
@@ -11083,6 +11365,7 @@
       }
     },
     "Upload up to 5 sheets daily" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -11334,62 +11617,7 @@
         }
       }
     },
-    "Watch %lld ads to upload a new sheet" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "広告を%lld本見ると新しい楽譜をアップロード"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "광고 %lld개를 보면 새 악보 업로드"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "观看 %lld 段广告即可上传新乐谱"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "觀看 %lld 段廣告即可上傳新樂譜"
-          }
-        }
-      }
-    },
-    "Watch Ads" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "広告を見る"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "광고 보기"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "观看广告"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "觀看廣告"
-          }
-        }
-      }
-    },
+    "Watch Ad" : {},
     "Watch an ad to unlock practice mode" : {
       "localizations" : {
         "ja" : {
@@ -11610,6 +11838,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "它能做什麼，又做不到什麼"
+          }
+        }
+      }
+    },
+    "whole notes" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全音符"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "온음표"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全音符"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全音符"
           }
         }
       }
@@ -11838,34 +12094,6 @@
         }
       }
     },
-    "Your first sheet is free. Watch %lld short ads in a row to add each one after it, and keep as many as you like — or go Premium for no ads." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最初の楽譜は無料です。2つ目以降は短い広告を%lld本続けて見ると1つずつ追加でき、いくつでも保存できます。プレミアムなら広告はありません。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "첫 악보는 무료입니다. 그다음부터는 짧은 광고 %lld개를 연속으로 보면 하나씩 추가할 수 있고, 원하는 만큼 보관할 수 있습니다. 프리미엄은 광고가 없습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第一份乐谱免费。之后每添加一份，连续观看 %lld 段简短广告即可，乐谱数量不限；或升级高级版，无广告。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第一份樂譜免費。之後每新增一份，連續觀看 %lld 段簡短廣告即可，樂譜數量不限；或升級進階版，無廣告。"
-          }
-        }
-      }
-    },
     "Your own sheet music, labelled" : {
       "localizations" : {
         "ja" : {
@@ -11978,367 +12206,114 @@
         }
       }
     },
-    "delete" : {
-      "comment" : "The word typed to confirm deleting an account. Lowercase.",
+    "Your first sheet is free. Watch a short ad to add each one after it, and keep as many as you like — or go Premium for no ads." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "削除"
+            "value" : "最初の楽譜は無料です。2つ目以降は短い広告を1本見ると1つずつ追加でき、いくつでも保存できます。プレミアムなら広告はありません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "삭제"
+            "value" : "첫 악보는 무료입니다. 그다음부터는 짧은 광고 하나를 보면 하나씩 추가할 수 있고, 원하는 만큼 보관할 수 있습니다. 프리미엄은 광고가 없습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "删除"
+            "value" : "第一份乐谱免费。之后每添加一份，观看一段简短广告即可，乐谱数量不限；或升级高级版，无广告。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "刪除"
+            "value" : "第一份樂譜免費。之後每新增一份，觀看一段簡短廣告即可，樂譜數量不限；或升級進階版，無廣告。"
           }
         }
       }
     },
-    "dotted eighth notes" : {
+    "Watch an ad to upload a new sheet" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "付点8分音符"
+            "value" : "広告を見ると新しい楽譜をアップロード"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "점8분음표"
+            "value" : "광고를 보면 새 악보 업로드"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "附点八分音符"
+            "value" : "观看广告即可上传新乐谱"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "附點八分音符"
+            "value" : "觀看廣告即可上傳新樂譜"
           }
         }
       }
     },
-    "dotted half notes" : {
+    "The free plan keeps as many sheets as you like: your first is free, and each one after it takes a short ad. It adds up to 15 sheets a day and shows ads. Premium adds more each day and has no ads. One subscription covers this app and the website." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "付点2分音符"
+            "value" : "無料プランでは楽譜をいくつでも保存できます。最初の楽譜は無料で、2つ目以降は1つにつき短い広告を1本見ると追加できます。1日15件まで追加でき、広告が表示されます。プレミアムでは1日に追加できる数が増え、広告は表示されません。1つのサブスクリプションでこのアプリとウェブサイトの両方を使えます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "점2분음표"
+            "value" : "무료 요금제는 악보를 원하는 만큼 보관할 수 있습니다. 첫 악보는 무료이고, 그다음부터는 악보마다 짧은 광고 하나를 보면 추가할 수 있습니다. 하루 최대 15개까지 추가할 수 있으며 광고가 표시됩니다. 프리미엄은 하루에 더 많이 추가할 수 있고 광고가 없습니다. 구독 하나로 이 앱과 웹사이트를 모두 이용할 수 있습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "附点二分音符"
+            "value" : "免费版可以保留任意数量的乐谱：第一份免费，之后每添加一份需观看一段简短广告。每天最多添加 15 份，并会显示广告。高级版每天可添加更多，且没有广告。一份订阅同时适用于本 App 和网站。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "附點二分音符"
+            "value" : "免費方案可以保留任意數量的樂譜：第一份免費，之後每新增一份需觀看一段簡短廣告。每天最多新增 15 份，並會顯示廣告。進階版每天可新增更多，且沒有廣告。一份訂閱同時適用於本 App 和網站。"
           }
         }
       }
     },
-    "dotted quarter notes" : {
+    "Trying the built-in sample needs no account. Adding your own sheet music needs one, so your sheets are there wherever you sign in — on iPhone, iPad or the website. On the free plan your first sheet is free and each one after it takes a short ad, and you keep as many as you like; Premium has no ads. One Premium subscription covers the app and the website." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "付点4分音符"
+            "value" : "内蔵のサンプルを試すのにアカウントは不要です。自分の楽譜を追加するにはアカウントが必要で、iPhone、iPad、ウェブサイトのどこでログインしても同じ楽譜を開けます。無料プランでは最初の楽譜は無料で、2つ目以降は1つにつき短い広告を1本見ると追加でき、楽譜はいくつでも保存できます。プレミアムでは広告は表示されません。1つのプレミアムのサブスクリプションでアプリとウェブサイトの両方を使えます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "점4분음표"
+            "value" : "내장 샘플을 써 보는 데는 계정이 필요 없습니다. 내 악보를 추가하려면 계정이 필요하며, iPhone, iPad, 웹사이트 어디서 로그인해도 같은 악보를 볼 수 있습니다. 무료 요금제에서는 첫 악보가 무료이고, 그다음부터는 악보마다 짧은 광고 하나를 보면 추가할 수 있으며, 원하는 만큼 보관할 수 있습니다. 프리미엄은 광고가 없습니다. 프리미엄 구독 하나로 앱과 웹사이트를 모두 이용할 수 있습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "附点四分音符"
+            "value" : "试用内置示例无需账号。添加您自己的乐谱需要一个账号，这样无论在 iPhone、iPad 还是网站上登录，都能找到您的乐谱。免费版的第一份乐谱免费，之后每添加一份需观看一段简短广告，乐谱数量不限；高级版没有广告。一份高级版订阅同时适用于 App 和网站。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "附點四分音符"
-          }
-        }
-      }
-    },
-    "dotted whole notes" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "付点全音符"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "점온음표"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "附点全音符"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "附點全音符"
-          }
-        }
-      }
-    },
-    "eighth notes" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "8分音符"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "8분음표"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "八分音符"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "八分音符"
-          }
-        }
-      }
-    },
-    "half notes" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2分音符"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2분음표"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "二分音符"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "二分音符"
-          }
-        }
-      }
-    },
-    "or" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "または"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "또는"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或"
-          }
-        }
-      }
-    },
-    "quarter notes" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4分音符"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4분음표"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "四分音符"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "四分音符"
-          }
-        }
-      }
-    },
-    "sixteenth notes" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "16分音符"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "16분음표"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "十六分音符"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "十六分音符"
-          }
-        }
-      }
-    },
-    "units of %@ quarter notes" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4分音符 %@ 個分"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4분음표 %@개"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ 个四分音符"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ 個四分音符"
-          }
-        }
-      }
-    },
-    "whole notes" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全音符"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "온음표"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全音符"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全音符"
-          }
-        }
-      }
-    },
-    "“%@” and its annotations will be removed from your library. This can't be undone." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「%@」とその音名データがライブラリから削除されます。この操作は取り消せません。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "'%@'과(와) 음이름 데이터가 보관함에서 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@”及其标注将从您的乐谱库中删除。此操作无法撤销。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「%@」及其標註將從您的樂譜庫中刪除。此操作無法復原。"
+            "value" : "試用內建範例不需要帳號。加入您自己的樂譜需要一個帳號，這樣無論在 iPhone、iPad 還是網站上登入，都能找到您的樂譜。免費方案的第一份樂譜免費，之後每新增一份需觀看一段簡短廣告，樂譜數量不限；進階版沒有廣告。一份進階版訂閱同時適用於 App 和網站。"
           }
         }
       }

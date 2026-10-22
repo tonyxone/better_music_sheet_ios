@@ -321,7 +321,7 @@ private struct FreePlanCard: View {
         (true, "Practise on a keyboard"),
         (true, "Keep as many sheets as you like"),
         (false, "Watch an ad to unlock practice mode"),
-        (false, "Watch \(UploadCredits.adsPerUpload) ads to upload a new sheet"),
+        (false, "Watch an ad to upload a new sheet"),
         (false, "Upload up to \(freeDailySheets) sheets daily"),
         (false, "Ads display"),
     ]

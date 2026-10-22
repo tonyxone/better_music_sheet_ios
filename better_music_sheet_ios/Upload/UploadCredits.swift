@@ -1,7 +1,8 @@
 import Foundation
 
 /// Rewarded ads a free user has finished toward uploading past the free sheet
-/// (see RewardedAdLoader.upload). Each such upload takes `adsPerUpload`;
+/// (see RewardedAdLoader.upload). Each such upload takes `adsPerUpload` —
+/// one, since a single rewarded ad from Google often plays two videos;
 /// the backend lets it through on the app's word (UploadRequest.ad_unlock).
 ///
 /// The ads for one upload are watched in one go: closing one early throws
@@ -13,7 +14,7 @@ import Foundation
 final class UploadCredits {
     static let shared = UploadCredits()
 
-    nonisolated static let adsPerUpload = 2
+    nonisolated static let adsPerUpload = 1
 
     private static let storageKey = "bms_upload_ad_credits"
     private(set) var adsWatched: Int

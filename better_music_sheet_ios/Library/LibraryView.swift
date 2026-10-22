@@ -92,11 +92,11 @@ struct LibraryView: View {
             PaywallView()
         }
         .alert("Add another sheet", isPresented: $showingUploadUnlock) {
-            Button("Watch Ads") { Task { await watchUploadAds() } }
+            Button("Watch Ad") { Task { await watchUploadAds() } }
             Button("See Premium Plans") { showingPaywall = true }
             Button("Not Now", role: .cancel) {}
         } message: {
-            Text("Your first sheet is free. Watch \(UploadCredits.adsPerUpload) short ads in a row to add each one after it, and keep as many as you like — or go Premium for no ads.")
+            Text("Your first sheet is free. Watch a short ad to add each one after it, and keep as many as you like — or go Premium for no ads.")
         }
         .alert("No ad available", isPresented: $noAdAvailable) {
             Button("See Premium Plans") { showingPaywall = true }
@@ -139,7 +139,7 @@ struct LibraryView: View {
 
     /// Uploading needs an account. Premium uploads freely. A free account
     /// keeps as many sheets as it likes, but each one past its first takes
-    /// UploadCredits.adsPerUpload rewarded ads (the backend lets those past
+    /// a rewarded ad (UploadCredits; the backend lets those past
     /// its one-sheet limit, which the web app still keeps). Entitlement is
     /// checked fresh rather than trusted from before signing in.
     private func startAdding() async {
@@ -168,8 +168,7 @@ struct LibraryView: View {
         AdConfig.isEnabled && model.currentUser != nil && !entitlements.isEntitled && model.hasKeptSheet
     }
 
-    /// All the ads an upload takes, back to back from one tap — the prompt
-    /// said how many. Closing one early starts the count over.
+    /// The ad an upload takes, from one tap. Closing it early earns nothing.
     private func watchUploadAds() async {
         checkingAccess = true
         defer { checkingAccess = false }

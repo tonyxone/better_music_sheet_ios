@@ -10,27 +10,25 @@ struct UploadCreditsTests {
         UserDefaults(suiteName: UUID().uuidString)!
     }
 
-    @Test func anUploadTakesTwoAds() {
+    @Test func anUploadTakesOneAd() {
+        #expect(UploadCredits.adsPerUpload == 1)
         let credits = UploadCredits(defaults: freshDefaults())
-        #expect(!credits.isReady)
-        credits.earn()
         #expect(!credits.isReady)
         credits.earn()
         #expect(credits.isReady)
     }
 
-    @Test func closingAnAdEarlyStartsTheCountOver() {
+    @Test func closingTheAdEarlyEarnsNothing() {
         let credits = UploadCredits(defaults: freshDefaults())
-        credits.earn()
         credits.abandon()
 
         #expect(credits.adsWatched == 0)
+        #expect(!credits.isReady)
     }
 
-    @Test func aFullSetSurvivesAnAbandonAndARelaunch() {
+    @Test func anEarnedAdSurvivesAnAbandonAndARelaunch() {
         let defaults = freshDefaults()
         let credits = UploadCredits(defaults: defaults)
-        credits.earn()
         credits.earn()
         credits.abandon()
 
@@ -38,21 +36,25 @@ struct UploadCreditsTests {
         #expect(UploadCredits(defaults: defaults).isReady)
     }
 
-    @Test func halfASetDoesntSurviveARelaunch() {
+    @Test func anAcceptedUploadSpendsTheAd() {
         let defaults = freshDefaults()
-        UploadCredits(defaults: defaults).earn()
+        let credits = UploadCredits(defaults: defaults)
+        credits.earn()
+        credits.spend()
 
-        #expect(UploadCredits(defaults: defaults).adsWatched == 0)
+        #expect(credits.adsWatched == 0)
+        #expect(!UploadCredits(defaults: defaults).isReady)
     }
 
-    @Test func anAcceptedUploadSpendsTheSet() {
+    @Test func aSecondAdFromAnOlderBuildStillOnlyCoversOneUpload() {
         let defaults = freshDefaults()
         let credits = UploadCredits(defaults: defaults)
         credits.earn()
         credits.earn()
         credits.spend()
 
-        #expect(credits.adsWatched == 0)
-        #expect(!UploadCredits(defaults: defaults).isReady)
+        #expect(credits.isReady)
+        credits.spend()
+        #expect(!credits.isReady)
     }
 }
