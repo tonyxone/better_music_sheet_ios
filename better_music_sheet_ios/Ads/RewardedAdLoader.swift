@@ -4,8 +4,8 @@ import OSLog
 
 /// The full-screen ads a free user watches to unlock practice on a sheet
 /// (see PracticeUnlocks) or to upload past the free sheet (see
-/// UploadCredits). Ads are kept loaded ahead, so Watch Ad plays at once —
-/// two for uploads, which take two in a row.
+/// UploadCredits). One ad is kept loaded ahead for each, so Watch Ad plays
+/// at once.
 ///
 /// Only a finished ad counts: Google calls the reward handler once the user
 /// has watched long enough, and closing it before then unlocks nothing.
@@ -13,7 +13,7 @@ import OSLog
 @Observable
 final class RewardedAdLoader: NSObject {
     static let practice = RewardedAdLoader(unitID: AdConfig.rewardedUnitID, keep: 1)
-    static let upload = RewardedAdLoader(unitID: AdConfig.uploadRewardedUnitID, keep: 2)
+    static let upload = RewardedAdLoader(unitID: AdConfig.uploadRewardedUnitID, keep: UploadCredits.adsPerUpload)
 
     private(set) var isLoading = false
     var isReady: Bool { !ads.isEmpty }
