@@ -119,4 +119,21 @@ nonisolated struct TempoControl: Sendable {
     }
 
     func toQuarterBPM(_ bpm: Double) -> Double { bpm * quarters }
+
+    /// The beat unit in the plural, in the app's language — "counted in
+    /// dotted quarter notes".
+    var unitPlural: String {
+        switch quarters {
+        case 0.25: String(localized: "sixteenth notes", bundle: .app)
+        case 0.5: String(localized: "eighth notes", bundle: .app)
+        case 0.75: String(localized: "dotted eighth notes", bundle: .app)
+        case 1: String(localized: "quarter notes", bundle: .app)
+        case 1.5: String(localized: "dotted quarter notes", bundle: .app)
+        case 2: String(localized: "half notes", bundle: .app)
+        case 3: String(localized: "dotted half notes", bundle: .app)
+        case 4: String(localized: "whole notes", bundle: .app)
+        case 6: String(localized: "dotted whole notes", bundle: .app)
+        default: String(localized: "units of \(quarters.formatted()) quarter notes", bundle: .app)
+        }
+    }
 }

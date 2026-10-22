@@ -50,7 +50,7 @@ nonisolated struct KeyboardLayout: Sendable {
     static func spokenName(_ midi: Int) -> String {
         let octave = String(midi / 12 - 1)
         guard let flat = flatNames[pitchClass(midi)] else { return noteName(midi) + octave }
-        return "\(noteName(midi)) or \(flat)\(octave)"
+        return String(localized: "\(noteName(midi)) or \(flat)\(octave)", bundle: .app)
     }
 
     /// A stretch of keyboard to draw, from the left edge of its lowest key to

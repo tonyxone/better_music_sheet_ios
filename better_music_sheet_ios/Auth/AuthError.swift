@@ -12,9 +12,9 @@ nonisolated enum AuthError: LocalizedError, Sendable {
 
     var errorDescription: String? {
         switch self {
-        case .notConfigured: "Sign-in isn't configured for this build."
-        case .cancelled: "Sign-in was cancelled."
-        case .invalidCallback: "Sign-in didn't return the expected response. Please try again."
+        case .notConfigured: String(localized: "Sign-in isn't configured for this build.", bundle: .app)
+        case .cancelled: String(localized: "Sign-in was cancelled.", bundle: .app)
+        case .invalidCallback: String(localized: "Sign-in didn't return the expected response. Please try again.", bundle: .app)
         case .transport(let message): message
         case .server(let message): message
         }

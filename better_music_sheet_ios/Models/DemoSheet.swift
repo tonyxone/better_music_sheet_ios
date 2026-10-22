@@ -6,8 +6,8 @@ import Foundation
 /// the web app's lib/api.ts.
 nonisolated enum DemoSheet {
     static let jobID = "demo-ode-to-joy"
-    static let title = "Ode to Joy"
-    static let detail = "Beethoven · free, no account needed"
+    static var title: String { String(localized: "Ode to Joy", bundle: .app) }
+    static var detail: String { String(localized: "Beethoven · free, no account needed", bundle: .app) }
 
     static func isDemo(_ jobID: String) -> Bool { jobID == self.jobID }
 }

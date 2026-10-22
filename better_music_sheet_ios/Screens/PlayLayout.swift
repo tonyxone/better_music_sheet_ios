@@ -113,7 +113,7 @@ struct PlayLayout<Sheet: View, Controls: View, Roll: View, Keyboard: View, Loadi
 
     // MARK: - Headers
 
-    private func header(_ title: String, open: Bool, dark: Bool,
+    private func header(_ title: LocalizedStringKey, open: Bool, dark: Bool,
                         toggle: @escaping () -> Void) -> some View {
         HStack(spacing: 7) {
             Image(systemName: "chevron.right")

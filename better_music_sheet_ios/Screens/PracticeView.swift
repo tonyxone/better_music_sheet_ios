@@ -10,7 +10,12 @@ struct PracticeView: View {
         case annotated, original
 
         var id: Self { self }
-        var title: String { rawValue.capitalized }
+        var title: String {
+            switch self {
+            case .annotated: String(localized: "Annotated", bundle: .app)
+            case .original: String(localized: "Original", bundle: .app)
+            }
+        }
     }
 
     let title: String
@@ -33,7 +38,7 @@ struct PracticeView: View {
     @State private var overlayReady = false
     @State private var entitlements = EntitlementStore.shared
     @State private var unlocks = PracticeUnlocks.shared
-    @State private var rewardedAd = RewardedAdLoader.shared
+    @State private var rewardedAd = RewardedAdLoader.practice
     @State private var showingPaywall = false
     @State private var watchingAd = false
     /// Bumped when this sheet's unlock runs out, so the page locks again

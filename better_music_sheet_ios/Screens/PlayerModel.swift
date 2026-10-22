@@ -138,7 +138,7 @@ final class PlayerModel {
     }
 
     var measureLabel: String? {
-        highlightedMeasure.map { "Measure \($0.label)" }
+        highlightedMeasure.map { String(localized: "Measure \($0.label)", bundle: .app) }
     }
 
     /// Measures that actually take time: the denominator of the position.
@@ -153,7 +153,7 @@ final class PlayerModel {
         let index = timeline.measureIndex(atBeat: beat) ?? first.index
         guard let measure = timeline.measure(withIndex: index) else { return nil }
         let count = playableMeasureCount
-        return "Measure \(measure.label) · \(min(index + 1, count)) / \(count)"
+        return String(localized: "Measure \(measure.label) · \(min(index + 1, count)) / \(count)", bundle: .app)
     }
 
     /// Whether the opening tempo was read from the score rather than assumed.
@@ -198,7 +198,7 @@ final class PlayerModel {
             onsetBeats = Array(Set(loaded.notes.map(\.startBeat))).sorted()
             pieceKeyRange = Self.keyboardLayout.range(covering: loaded.notes.map(\.midi))
             if loaded.notes.isEmpty {
-                availability = .unavailable("No notes were recognized for playback.")
+                availability = .unavailable(String(localized: "No notes were recognized for playback.", bundle: .app))
             } else {
                 availability = .ready
                 // Starts loading the piano now rather than waiting for the
@@ -208,7 +208,7 @@ final class PlayerModel {
                 prepareSound(thenPlayFrom: nil)
             }
         } catch {
-            availability = .unavailable("Playback isn't available for this sheet.")
+            availability = .unavailable(String(localized: "Playback isn't available for this sheet.", bundle: .app))
         }
     }
 
@@ -472,7 +472,7 @@ final class PlayerModel {
             engine = started
             return started
         } catch {
-            availability = .unavailable("Couldn't start audio. \(error.localizedDescription)")
+            availability = .unavailable(String(localized: "Couldn't start audio. \(error.localizedDescription)", bundle: .app))
             return nil
         }
     }

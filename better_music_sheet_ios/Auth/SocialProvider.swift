@@ -10,8 +10,8 @@ nonisolated enum SocialProvider: String, CaseIterable, Sendable, Hashable {
 
     var displayLabel: String {
         switch self {
-        case .google: "Continue with Google"
-        case .signInWithApple: "Continue with Apple"
+        case .google: String(localized: "Continue with Google", bundle: .app)
+        case .signInWithApple: String(localized: "Continue with Apple", bundle: .app)
         }
     }
 }

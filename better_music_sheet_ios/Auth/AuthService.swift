@@ -121,14 +121,14 @@ actor AuthService {
         do {
             (data, response) = try await urlSession.data(for: request)
         } catch {
-            throw AuthError.transport("Couldn't reach the app backend. \(error.localizedDescription)")
+            throw AuthError.transport(String(localized: "Couldn't reach the app backend. \(error.localizedDescription)", bundle: .app))
         }
         guard let http = response as? HTTPURLResponse else {
-            throw AuthError.transport("The server sent no response.")
+            throw AuthError.transport(String(localized: "The server sent no response.", bundle: .app))
         }
         guard (200..<300).contains(http.statusCode) else {
             let body = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
-            throw AuthError.server((body?["detail"] as? String) ?? "Sign-in failed (\(http.statusCode)).")
+            throw AuthError.server((body?["detail"] as? String) ?? String(localized: "Sign-in failed (\(http.statusCode)).", bundle: .app))
         }
         do {
             return try decoder.decode(T.self, from: data)
@@ -143,7 +143,7 @@ actor AuthService {
     private static func code(from callbackURL: URL) throws -> String {
         let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)
         if let error = components?.queryItems?.first(where: { $0.name == "error" })?.value {
-            throw AuthError.server(error == "access_denied" ? "Sign-in was cancelled." : "Sign-in failed (\(error)).")
+            throw AuthError.server(error == "access_denied" ? String(localized: "Sign-in was cancelled.", bundle: .app) : String(localized: "Sign-in failed (\(error)).", bundle: .app))
         }
         guard let code = components?.queryItems?.first(where: { $0.name == "code" })?.value else {
             throw AuthError.invalidCallback

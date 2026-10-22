@@ -1,6 +1,7 @@
 import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
+import VisionKit
 
 /// Getting music in, and choosing how its note names look. The options are the
 /// web app's upload options plus the names' colour. They are remembered, so
@@ -19,6 +20,8 @@ struct AddSheetView: View {
     /// Hidden by default: the remembered choices are usually right.
     @State private var showingOptions = false
 
+    /// Opened after a free account watched ads to upload past its free sheet.
+    var adUnlock = false
     /// Handed the new job id so the library can open it straight away.
     let onStarted: (String) -> Void
 
@@ -47,6 +50,7 @@ struct AddSheetView: View {
                 }
             }
         }
+        .onAppear { model.adUnlock = adUnlock }
         .fileImporter(isPresented: $showingFiles,
                       allowedContentTypes: [.pdf, .jpeg, .png]) { result in
             guard case .success(let url) = result else { return }
@@ -59,10 +63,10 @@ struct AddSheetView: View {
         }
         .photosPicker(isPresented: $showingPhotos, selection: $photo, matching: .images)
         .fullScreenCover(isPresented: $showingCamera) {
-            CameraPicker { image in
+            DocumentScanner { pages in
                 showingCamera = false
-                guard let image else { return }
-                uploadPhoto(image.jpegData(compressionQuality: 0.9))
+                guard !pages.isEmpty else { return }
+                start { await model.upload(scan: pages) }
             }
             .ignoresSafeArea()
         }
@@ -86,8 +90,10 @@ struct AddSheetView: View {
             Task {
                 let data = try? await item.loadTransferable(type: Data.self)
                 photo = nil
-                // Library photos are often HEIC, which the backend can't read.
-                uploadPhoto(data.flatMap(UIImage.init(data:))?.jpegData(compressionQuality: 0.9))
+                // Straightening also makes a HEIC photo, which the backend
+                // can't read, a JPEG.
+                guard let data else { return }
+                start { await model.upload(photo: data) }
             }
         }
         .onChange(of: model.options) { _, options in
@@ -95,10 +101,9 @@ struct AddSheetView: View {
         }
     }
 
-    private func uploadPhoto(_ jpeg: Data?) {
-        guard let jpeg else { return }
+    private func start(_ upload: @escaping () async -> String?) {
         Task {
-            if let jobID = await model.upload(filename: "Photo.jpg", data: jpeg) {
+            if let jobID = await upload() {
                 onStarted(jobID)
                 dismiss()
             }
@@ -119,7 +124,7 @@ struct AddSheetView: View {
                           detail: "From Files or iCloud Drive. Most accurate.",
                           recommended: true)
             }
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            if VNDocumentCameraViewController.isSupported {
                 Button { pendingPhotoSource = .camera } label: {
                     SourceRow(icon: "camera", title: "Take a photo",
                               detail: "Photograph a page with the camera")
@@ -136,9 +141,17 @@ struct AddSheetView: View {
     private var busy: some View {
         VStack(spacing: 14) {
             ProgressView().tint(Brand.accent)
-            Text(model.state == .reading ? "Reading the file…" : "Uploading…")
+            Text(busyMessage)
                 .font(.system(size: 15))
                 .foregroundStyle(Brand.inkSoft)
+        }
+    }
+
+    private var busyMessage: LocalizedStringKey {
+        switch model.state {
+        case .reading: "Reading the file…"
+        case .straightening: "Straightening…"
+        default: "Uploading…"
         }
     }
 
@@ -172,7 +185,7 @@ struct AddSheetView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Options")
-            .accessibilityValue(showingOptions ? "Expanded" : optionsSummary)
+            .accessibilityValue(showingOptions ? Text("Expanded") : Text(verbatim: optionsSummary))
             .accessibilityHint(showingOptions ? "Hides the options" : "Shows the options")
 
             if showingOptions {
@@ -182,11 +195,11 @@ struct AddSheetView: View {
 
                     row(.notation) {
                         Picker(Option.notation.title, selection: $model.options.notation) {
-                            Text("C D E").tag(Notation.letters)
+                            Text(verbatim: "C D E").tag(Notation.letters)
                                 .accessibilityLabel("Letter names, C D E")
-                            Text("簡 1 2 3").tag(Notation.numbers)
+                            Text(verbatim: "簡 1 2 3").tag(Notation.numbers)
                                 .accessibilityLabel("Jianpu, 1 2 3")
-                            Text("do re mi").tag(Notation.solfege)
+                            Text(verbatim: "do re mi").tag(Notation.solfege)
                                 .accessibilityLabel("Solfège, do re mi")
                         }
                         .pickerStyle(.segmented)
@@ -196,9 +209,9 @@ struct AddSheetView: View {
 
                     row(.style) {
                         Picker(Option.style.title, selection: $model.options.style) {
-                            Text("B♭ C♯").tag(AnnotationOptions.LabelStyle.unicode)
+                            Text(verbatim: "B♭ C♯").tag(AnnotationOptions.LabelStyle.unicode)
                                 .accessibilityLabel(AnnotationOptions.LabelStyle.unicode.title)
-                            Text("Bb C#").tag(AnnotationOptions.LabelStyle.ascii)
+                            Text(verbatim: "Bb C#").tag(AnnotationOptions.LabelStyle.ascii)
                                 .accessibilityLabel(AnnotationOptions.LabelStyle.ascii.title)
                         }
                         .pickerStyle(.segmented)
@@ -268,7 +281,7 @@ struct AddSheetView: View {
     private var optionsSummary: String {
         let options = model.options
         let color = AnnotationOptions.labelColorPresets
-            .first { $0.hex == options.labelColor.uppercased() }?.name ?? "Custom color"
+            .first { $0.hex == options.labelColor.uppercased() }?.name ?? String(localized: "Custom color", bundle: .app)
         let size = options.fontSize.formatted(.number.precision(.fractionLength(1)))
         let names = switch options.notation {
         case .numbers: "簡"
@@ -353,7 +366,7 @@ struct AddSheetView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("About \(option.title)")
+        .accessibilityLabel("About \(Text(option.title))")
     }
 
     private var divider: some View {
@@ -368,7 +381,7 @@ struct AddSheetView: View {
 private enum Option: Hashable {
     case notation, style, fontSize, labelColor, dpi, octave, autoRetry
 
-    var title: String {
+    var title: LocalizedStringKey {
         switch self {
         case .notation: "Note names"
         case .style: "Label style"
@@ -380,7 +393,7 @@ private enum Option: Hashable {
         }
     }
 
-    var help: String {
+    var help: LocalizedStringKey {
         switch self {
         case .notation:
             "Letter names each note C, D, E… Jianpu (numbered notation, 簡譜) shows a number instead, and solfège shows a syllable: 1/do = C, 2/re = D, 3/mi = E, 4/fa = F, 5/so = G, 6/la = A, 7/si = B in every key, so a number or syllable always means the same piano key — F♯ reads ♯4/♯fa and B♭ reads ♭7/♭si. You can switch between all three at any time while viewing the sheet; this sets the printed download."
@@ -442,42 +455,49 @@ private enum PhotoSource: Hashable {
     case camera, library
 }
 
-/// The system camera, for photographing a page. Hands back the photo, or nil
-/// when cancelled.
-private struct CameraPicker: UIViewControllerRepresentable {
-    let done: (UIImage?) -> Void
+/// The system document camera, for photographing pages: it finds each page's
+/// edges as it's taken, lets them be adjusted, and hands back the pages
+/// flattened, in order - none when cancelled.
+private struct DocumentScanner: UIViewControllerRepresentable {
+    let done: ([CGImage]) -> Void
 
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = .camera
-        picker.delegate = context.coordinator
-        return picker
+    func makeUIViewController(context: Context) -> VNDocumentCameraViewController {
+        let scanner = VNDocumentCameraViewController()
+        scanner.delegate = context.coordinator
+        return scanner
     }
 
-    func updateUIViewController(_ picker: UIImagePickerController, context: Context) {}
+    func updateUIViewController(_ scanner: VNDocumentCameraViewController, context: Context) {}
 
     func makeCoordinator() -> Coordinator { Coordinator(done: done) }
 
-    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let done: (UIImage?) -> Void
+    final class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {
+        let done: ([CGImage]) -> Void
 
-        init(done: @escaping (UIImage?) -> Void) { self.done = done }
+        init(done: @escaping ([CGImage]) -> Void) { self.done = done }
 
-        func imagePickerController(_ picker: UIImagePickerController,
-                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            done(info[.originalImage] as? UIImage)
+        func documentCameraViewController(_ controller: VNDocumentCameraViewController,
+                                          didFinishWith scan: VNDocumentCameraScan) {
+            // The backend reads at most PagePhoto.maxPages pages of a sheet.
+            let count = min(scan.pageCount, PagePhoto.maxPages)
+            done((0..<count).compactMap { scan.imageOfPage(at: $0).cgImage })
         }
 
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            done(nil)
+        func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
+            done([])
+        }
+
+        func documentCameraViewController(_ controller: VNDocumentCameraViewController,
+                                          didFailWithError error: Error) {
+            done([])
         }
     }
 }
 
 private struct SourceRow: View {
     let icon: String
-    let title: String
-    let detail: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
     var recommended = false
 
     var body: some View {

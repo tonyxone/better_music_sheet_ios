@@ -7,7 +7,12 @@ enum SheetPageMode: String, CaseIterable, Identifiable {
     case scroll, swipe
 
     var id: Self { self }
-    var title: String { rawValue.capitalized }
+    var title: String {
+        switch self {
+        case .scroll: String(localized: "Scroll", bundle: .app)
+        case .swipe: String(localized: "Swipe", bundle: .app)
+        }
+    }
 }
 
 /// Which page a sheet is showing, and a way to turn it from outside the page:

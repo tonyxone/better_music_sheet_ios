@@ -32,7 +32,7 @@ struct TransportBar: View {
                 Button("Use the score's tempo") { player.setTempo(nil) }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text(tempoMessage)
+                tempoMessage
             }
     }
 
@@ -256,15 +256,15 @@ struct TransportBar: View {
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Brand.paperDeep, lineWidth: 1))
     }
 
-    private var handBalanceValue: String {
-        guard player.handBalance != 0 else { return "Both hands at the same level" }
+    private var handBalanceValue: Text {
+        guard player.handBalance != 0 else { return Text("Both hands at the same level") }
         let levels = HandBalance.levels(player.handBalance)
-        return "Left hand \(levels.left)%, right hand \(levels.right)%"
+        return Text("Left hand \(levels.left)%, right hand \(levels.right)%")
     }
 
     // MARK: - Pieces
 
-    private func roundButton(_ symbol: String, size: CGFloat, filled: Bool, label: String,
+    private func roundButton(_ symbol: String, size: CGFloat, filled: Bool, label: LocalizedStringKey,
                              action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
@@ -280,14 +280,14 @@ struct TransportBar: View {
 
     /// Off reads as a plain outline; on fills, so the state is visible without
     /// a text label beside it.
-    private func toggle(_ symbol: String, on: Bool, label: String,
+    private func toggle(_ symbol: String, on: Bool, label: LocalizedStringKey,
                         action: @escaping () -> Void) -> some View {
         toggle(on: on, label: label, action: action) {
             Image(systemName: symbol).font(.system(size: 14, weight: .semibold))
         }
     }
 
-    private func toggle(on: Bool, label: String, action: @escaping () -> Void,
+    private func toggle(on: Bool, label: LocalizedStringKey, action: @escaping () -> Void,
                         @ViewBuilder icon: () -> some View) -> some View {
         Button(action: action) {
             icon()
@@ -311,12 +311,11 @@ struct TransportBar: View {
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Brand.paperDeep, lineWidth: 1))
     }
 
-    private var tempoMessage: String {
-        let unit = player.tempoControl?.unit ?? "quarter note"
-        let source = player.tempoFromScore
-            ? "Detected from the score."
-            : "No tempo marking was found on the sheet, so this is a default."
-        return "Beats per minute, counted in \(unit)s, from 20 to 300. \(source)"
+    private var tempoMessage: Text {
+        let unit = player.tempoControl?.unitPlural ?? String(localized: "quarter notes", bundle: .app)
+        return player.tempoFromScore
+            ? Text("Beats per minute, counted in \(unit), from 20 to 300. Detected from the score.")
+            : Text("Beats per minute, counted in \(unit), from 20 to 300. No tempo marking was found on the sheet, so this is a default.")
     }
 
     private func applyTempo() {
@@ -343,7 +342,7 @@ private struct NoteNamesIcon: View {
             .stroke(lineWidth: 1.4)
             .frame(width: 9, height: 17)
             .overlay {
-                Text("A").font(.system(size: 7.5, weight: .bold))
+                Text(verbatim: "A").font(.system(size: 7.5, weight: .bold))
             }
             .accessibilityHidden(true)
     }

@@ -14,11 +14,11 @@ nonisolated enum Instrument: String, CaseIterable, Identifiable, Sendable {
 
     var name: String {
         switch self {
-        case .grand: "Grand piano"
-        case .electric: "Electric piano · Wurlitzer"
-        case .cp80: "Electric grand · CP80"
-        case .organ: "Church organ"
-        case .basic: "Basic synth (offline)"
+        case .grand: String(localized: "Grand piano", bundle: .app)
+        case .electric: String(localized: "Electric piano · Wurlitzer", bundle: .app)
+        case .cp80: String(localized: "Electric grand · CP80", bundle: .app)
+        case .organ: String(localized: "Church organ", bundle: .app)
+        case .basic: String(localized: "Basic synth (offline)", bundle: .app)
         }
     }
 

@@ -18,9 +18,13 @@ nonisolated enum AdConfig {
 #if DEBUG
     static let bannerUnitID = "ca-app-pub-3940256099942544/2435281174"
     static let rewardedUnitID = "ca-app-pub-3940256099942544/1712485313"
+    static let uploadRewardedUnitID = "ca-app-pub-3940256099942544/1712485313"
 #else
     static let bannerUnitID = "ca-app-pub-3606656264491246/5951929085"
     static let rewardedUnitID = "ca-app-pub-3606656264491246/9276968566"
+    // TODO: a Rewarded unit of its own, so AdMob reports what uploads earn
+    // apart from practice. Until then they share the practice unit.
+    static let uploadRewardedUnitID = "ca-app-pub-3606656264491246/9276968566"
 #endif
 
     /// v1 skips the AppTrackingTransparency prompt entirely, which means it

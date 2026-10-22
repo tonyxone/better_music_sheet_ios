@@ -15,7 +15,7 @@ nonisolated struct InstrumentLoader: Sendable {
         case unreadable
 
         var errorDescription: String? {
-            "Could not load this instrument. Try again or choose Basic synth (offline)."
+            String(localized: "Could not load this instrument. Try again or choose Basic synth (offline).", bundle: .app)
         }
     }
 

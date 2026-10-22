@@ -2,40 +2,52 @@ import GoogleMobileAds
 import UIKit
 import OSLog
 
-/// The full-screen ad a free user watches to unlock practice on a sheet (see
-/// PracticeUnlocks). One is kept loaded ahead, so Watch Ad plays at once.
+/// The full-screen ads a free user watches to unlock practice on a sheet
+/// (see PracticeUnlocks) or to upload past the free sheet (see
+/// UploadCredits). Ads are kept loaded ahead, so Watch Ad plays at once —
+/// two for uploads, which take two in a row.
 ///
 /// Only a finished ad counts: Google calls the reward handler once the user
 /// has watched long enough, and closing it before then unlocks nothing.
 @MainActor
 @Observable
 final class RewardedAdLoader: NSObject {
-    static let shared = RewardedAdLoader()
+    static let practice = RewardedAdLoader(unitID: AdConfig.rewardedUnitID, keep: 1)
+    static let upload = RewardedAdLoader(unitID: AdConfig.uploadRewardedUnitID, keep: 2)
 
     private(set) var isLoading = false
-    var isReady: Bool { ad != nil }
+    var isReady: Bool { !ads.isEmpty }
 
-    private var ad: RewardedAd?
+    private let unitID: String
+    private let keep: Int
+    private var ads: [RewardedAd] = []
     /// Resumed when the ad showing is closed, with whether it was earned.
     private var finish: CheckedContinuation<Bool, Never>?
     private var earned = false
     private let logger = Logger(subsystem: "com.bettermusicsheet.app", category: "Ads")
 
+    private init(unitID: String, keep: Int) {
+        self.unitID = unitID
+        self.keep = keep
+    }
+
     /// Settles consent first, as banners do, so nothing is requested before
     /// Google says it may be. Safe to call often.
     func load() async {
-        guard AdConfig.isEnabled, ad == nil, !isLoading else { return }
+        guard AdConfig.isEnabled, ads.count < keep, !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
         await AdConsent.shared.gather()
         guard AdConsent.shared.canRequestAds else { return }
         do {
-            ad = try await RewardedAd.load(with: AdConfig.rewardedUnitID,
-                                           request: AdConfig.nonPersonalizedRequest())
-            logger.notice("Rewarded ad loaded")
+            while ads.count < keep {
+                ads.append(try await RewardedAd.load(with: unitID,
+                                                     request: AdConfig.nonPersonalizedRequest()))
+                logger.notice("Rewarded ad loaded")
 #if DEBUG
-            print("[Ads] Rewarded ad loaded")
+                print("[Ads] Rewarded ad loaded")
 #endif
+            }
         } catch {
             let failure = error as NSError
             logger.error("Rewarded ad failed: \(failure.domain, privacy: .public) code \(failure.code): \(failure.localizedDescription, privacy: .public)")
@@ -49,9 +61,9 @@ final class RewardedAdLoader: NSObject {
     /// user earned the reward; false when there was no ad to show, it
     /// couldn't be shown, or it was closed early.
     func present() async -> Bool {
-        if ad == nil { await load() }
-        guard let ad, finish == nil, let presenter = Self.presenter() else { return false }
-        self.ad = nil
+        if ads.isEmpty { await load() }
+        guard !ads.isEmpty, finish == nil, let presenter = Self.presenter() else { return false }
+        let ad = ads.removeFirst()
         earned = false
         ad.fullScreenContentDelegate = self
         let result = await withCheckedContinuation { continuation in

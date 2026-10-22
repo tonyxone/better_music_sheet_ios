@@ -39,6 +39,11 @@ nonisolated struct SheetUploader: Sendable {
         let dpi: Int?
         let autoRetry: Bool
         let labelColor: String
+        /// Ads watched for this upload (see UploadCredits); nil leaves it out.
+        let adUnlock: Bool?
+        /// Tells the backend this is the iOS app, whose free plan starts more
+        /// sheets a day than the web's.
+        let app = "ios"
 
         private enum CodingKeys: String, CodingKey {
             case filename, size, style, octave, notation, dpi
@@ -47,6 +52,8 @@ nonisolated struct SheetUploader: Sendable {
             case autoRetry = "auto_retry"
             // The backend's name for it, as the web app sends it.
             case labelColor = "color"
+            case adUnlock = "ad_unlock"
+            case app
         }
     }
 
@@ -56,10 +63,11 @@ nonisolated struct SheetUploader: Sendable {
         self.client = client
     }
 
-    /// Uploads a file and returns the new job's id.
-    func upload(filename: String, data: Data, options: AnnotationOptions) async throws -> String {
+    /// Uploads a file and returns the new job's id. `adUnlock` says a free
+    /// account watched its ads to upload past the free sheet.
+    func upload(filename: String, data: Data, options: AnnotationOptions, adUnlock: Bool = false) async throws -> String {
         guard data.count <= AppConfig.maxUploadBytes else {
-            throw APIError.http(status: 413, detail: "That file is larger than \(AppConfig.maxUploadBytes / 1024 / 1024) MB.")
+            throw APIError.http(status: 413, detail: String(localized: "That file is larger than \(AppConfig.maxUploadBytes / 1024 / 1024) MB.", bundle: .app))
         }
         let contentType = Self.contentType(for: filename)
 
@@ -69,10 +77,10 @@ nonisolated struct SheetUploader: Sendable {
                 filename: filename, size: data.count, contentType: contentType,
                 style: options.style.rawValue, octave: options.octave, notation: options.notation.rawValue,
                 fontSize: options.fontSize, dpi: options.dpi, autoRetry: options.autoRetry,
-                labelColor: options.labelColor))
+                labelColor: options.labelColor, adUnlock: adUnlock ? true : nil))
         } catch let error as APIError where error.isNotFound {
             return try await legacyUpload(filename: filename, data: data,
-                                          contentType: contentType, options: options)
+                                          contentType: contentType, options: options, adUnlock: adUnlock)
         }
 
         guard let url = URL(string: reservation.upload.url) else { throw APIError.invalidURL }
@@ -87,7 +95,7 @@ nonisolated struct SheetUploader: Sendable {
         do {
             try await client.postExternal(url, body: form.encoded(), contentType: form.contentType)
         } catch {
-            throw APIError.transport("The file upload failed. Please try again — an unfinished upload expires after 15 minutes.")
+            throw APIError.transport(String(localized: "The file upload failed. Please try again — an unfinished upload expires after 15 minutes.", bundle: .app))
         }
 
         // Completion only speeds up how quickly the job appears. S3's own
@@ -98,7 +106,7 @@ nonisolated struct SheetUploader: Sendable {
     }
 
     private func legacyUpload(filename: String, data: Data,
-                              contentType: String, options: AnnotationOptions) async throws -> String {
+                              contentType: String, options: AnnotationOptions, adUnlock: Bool) async throws -> String {
         var form = MultipartForm()
         form.addFile(name: "file", filename: filename, contentType: contentType, data: data)
         form.addField(name: "style", value: options.style.rawValue)
@@ -108,6 +116,8 @@ nonisolated struct SheetUploader: Sendable {
         form.addField(name: "auto_retry", value: String(options.autoRetry))
         form.addField(name: "color", value: options.labelColor)
         if let dpi = options.dpi { form.addField(name: "dpi", value: String(dpi)) }
+        form.addField(name: "app", value: "ios")
+        if adUnlock { form.addField(name: "ad_unlock", value: "true") }
 
         let (body, _) = try await client.call("/api/sheets", method: "POST",
                                               body: form.encoded(), contentType: form.contentType)

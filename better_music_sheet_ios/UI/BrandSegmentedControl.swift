@@ -5,7 +5,8 @@ import SwiftUI
 /// version, and letters, jianpu or solfège — so those read as one family and stand
 /// out from the plain buttons beside them.
 struct BrandSegmentedControl<Value: Hashable>: View {
-    let label: String
+    let label: LocalizedStringKey
+    /// Already in the app's language.
     let options: [(value: Value, title: String, spoken: String)]
     @Binding var selection: Value
 

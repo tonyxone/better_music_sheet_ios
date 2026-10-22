@@ -5,15 +5,13 @@ import SwiftUI
 /// app's /subscription page, reshaped as a card on the account screen.
 ///
 /// One subscription covers both apps, so it may have been bought on the web:
-/// an App Store subscription is managed in Apple's own sheet (no server can
-/// cancel one), and a web one is cancelled here through the backend.
+/// an App Store subscription is managed in Apple's own sheet, and a web
+/// (Stripe) one is cancelled on the website — the app only says where.
 struct SubscriptionSection: View {
     @State private var entitlements = EntitlementStore.shared
     @State private var showingPaywall = false
     @State private var managingWithApple = false
-    @State private var confirmingCancel = false
-    @State private var cancelling = false
-    @State private var error: String?
+    @State private var explainingWebCancel = false
 
     var body: some View {
         Group {
@@ -23,7 +21,7 @@ struct SubscriptionSection: View {
                 subscribed(status)
             } else {
                 VStack(spacing: 10) {
-                    Text("You're on the Free plan: 1 sheet at a time, with ads.")
+                    Text("You're on the Free plan, with ads.")
                         .font(.system(size: 12.5))
                         .foregroundStyle(Brand.inkSoft)
                         .multilineTextAlignment(.center)
@@ -45,8 +43,8 @@ struct SubscriptionSection: View {
     /// table): no plan, no renewal date, nothing to cancel — as on the web.
     private var masterAccount: some View {
         VStack(spacing: 6) {
-            row("Plan", "Master account")
-            row("Status", "Full access, no subscription needed")
+            row("Plan", Text("Master account"))
+            row("Status", Text("Full access, no subscription needed"))
         }
         .padding(14)
         .background(Brand.card, in: .rect(cornerRadius: 14))
@@ -57,11 +55,11 @@ struct SubscriptionSection: View {
     private func subscribed(_ status: SubscriptionStatus) -> some View {
         VStack(spacing: 12) {
             VStack(spacing: 6) {
-                row("Plan", status.plan == "yearly" ? "Yearly" : "Monthly")
-                row("Status", status.cancelAtPeriodEnd == true ? "Cancels at period end"
-                    : status.isTrialing ? "Trial active" : "Active")
-                row(status.cancelAtPeriodEnd == true ? "Access ends" : "Renews", date(status.currentPeriodEnd))
-                row("Billed through", status.isBilledByApple ? "App Store" : "Website")
+                row("Plan", Text(status.plan == "yearly" ? "Yearly" : "Monthly"))
+                row("Status", Text(status.cancelAtPeriodEnd == true ? "Cancels at period end"
+                    : status.isTrialing ? "Trial active" : "Active"))
+                row(status.cancelAtPeriodEnd == true ? "Access ends" : "Renews", Text(verbatim: date(status.currentPeriodEnd)))
+                row("Billed through", Text(status.isBilledByApple ? "App Store" : "Website"))
             }
             .padding(14)
             .background(Brand.card, in: .rect(cornerRadius: 14))
@@ -76,52 +74,30 @@ struct SubscriptionSection: View {
                 Button("Manage Subscription") { managingWithApple = true }
                     .buttonStyle(.account(.filled))
             } else {
-                Button(cancelling ? "Cancelling…" : "Cancel Subscription") { confirmingCancel = true }
+                Button("Cancel Subscription") { explainingWebCancel = true }
                     .buttonStyle(.account(tint: Brand.danger))
-                    .disabled(cancelling)
-            }
-
-            if let error {
-                Text(error)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Brand.danger)
-                    .multilineTextAlignment(.center)
             }
         }
         .padding(.horizontal, 32)
-        .alert(status.isTrialing ? "Cancel your free trial?" : "Cancel your subscription?",
-               isPresented: $confirmingCancel) {
-            Button("Keep Subscription", role: .cancel) {}
-            Button("Confirm Cancellation", role: .destructive) { Task { await cancel() } }
+        .alert("Cancel on bettermusicsheet.com", isPresented: $explainingWebCancel) {
+            Button("OK", role: .cancel) {}
         } message: {
-            Text(status.isTrialing
-                 ? "You keep Premium until \(date(status.currentPeriodEnd)), and you won't be charged."
-                 : "It stays active until \(date(status.currentPeriodEnd)), then ends. You won't be charged again, but no refund is issued for the time remaining.")
+            Text("This subscription was bought on bettermusicsheet.com, so it can only be cancelled there. Please go to bettermusicsheet.com, sign in with this account and cancel it from the Subscription page.")
         }
     }
 
-    private func row(_ label: String, _ value: String) -> some View {
+    private func row(_ label: LocalizedStringKey, _ value: Text) -> some View {
         HStack {
             Text(label).foregroundStyle(Brand.inkSoft)
             Spacer()
-            Text(value).foregroundStyle(Brand.ink)
+            value.foregroundStyle(Brand.ink)
         }
         .font(.system(size: 13.5))
     }
 
     private func date(_ seconds: Double?) -> String {
         guard let seconds else { return "—" }
-        return Date(timeIntervalSince1970: seconds).formatted(date: .long, time: .omitted)
-    }
-
-    private func cancel() async {
-        cancelling = true
-        error = nil
-        defer { cancelling = false }
-        do {
-            try await entitlements.cancelWebSubscription()
-        } catch {
-            self.error = (error as? APIError)?.errorDescription ?? error.localizedDescription
-        }
+        return Date(timeIntervalSince1970: seconds)
+            .formatted(Date.FormatStyle(date: .long, time: .omitted, locale: AppLanguage.current.locale))
     }
 }

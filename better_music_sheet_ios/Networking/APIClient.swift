@@ -137,10 +137,11 @@ actor APIClient {
         } catch let error as URLError {
             // "Could not connect to the server" tells the user nothing about
             // which server. Name it, the way the web app does.
-            throw APIError.transport("Couldn't reach \(request.url?.host() ?? "the server"). \(error.localizedDescription)")
+            throw APIError.transport(request.url?.host().map { String(localized: "Couldn't reach \($0). \(error.localizedDescription)", bundle: .app) }
+                ?? String(localized: "Couldn't reach the server. \(error.localizedDescription)", bundle: .app))
         }
         guard let http = response as? HTTPURLResponse else {
-            throw APIError.transport("The server sent no response.")
+            throw APIError.transport(String(localized: "The server sent no response.", bundle: .app))
         }
         return (data, http)
     }

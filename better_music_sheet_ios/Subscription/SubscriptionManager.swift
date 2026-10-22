@@ -69,7 +69,7 @@ final class SubscriptionManager {
             }
 #endif
             if products.count != SubscriptionProduct.allIDs.count {
-                loadError = "Some subscription plans are unavailable. Please try again later."
+                loadError = String(localized: "Some subscription plans are unavailable. Please try again later.", bundle: .app)
             }
             await refreshIntroductoryEligibility()
         } catch {
@@ -77,7 +77,7 @@ final class SubscriptionManager {
             let failure = error as NSError
             print("[StoreKit catalog] failed domain=\(failure.domain) code=\(failure.code) description=\(failure.localizedDescription)")
 #endif
-            loadError = "Couldn't load subscription options. \(error.localizedDescription)"
+            loadError = String(localized: "Couldn't load subscription options. \(error.localizedDescription)", bundle: .app)
         }
     }
 
