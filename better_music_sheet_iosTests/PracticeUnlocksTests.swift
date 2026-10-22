@@ -31,13 +31,47 @@ struct PracticeUnlocksTests {
         #expect(!reopened.isUnlocked("job-2"))
     }
 
-    @Test func sheetsUnlockOneAtATime() {
-        let unlocks = PracticeUnlocks(defaults: freshDefaults())
+    @Test func anUnlockLastsAnHour() {
+        var now = Date(timeIntervalSince1970: 1_000_000)
+        let unlocks = PracticeUnlocks(defaults: freshDefaults(), now: { now })
         unlocks.unlock("job-1")
-        unlocks.unlock("job-1")
-        unlocks.unlock("job-2")
 
-        #expect(unlocks.jobIDs == ["job-1", "job-2"])
+        #expect(unlocks.unlockedUntil("job-1") == now.addingTimeInterval(3600))
+        now += 3599
+        #expect(unlocks.isUnlocked("job-1"))
+        now += 1
+        #expect(!unlocks.isUnlocked("job-1"))
+        #expect(unlocks.unlockedUntil("job-1") == nil)
+    }
+
+    @Test func anotherAdStartsAFreshHour() {
+        var now = Date(timeIntervalSince1970: 1_000_000)
+        let unlocks = PracticeUnlocks(defaults: freshDefaults(), now: { now })
+        unlocks.unlock("job-1")
+        now += 4000
+        unlocks.unlock("job-1")
+
+        #expect(unlocks.unlockedUntil("job-1") == now.addingTimeInterval(3600))
+    }
+
+    @Test func expiredUnlocksAreForgotten() {
+        let defaults = freshDefaults()
+        var now = Date(timeIntervalSince1970: 1_000_000)
+        let unlocks = PracticeUnlocks(defaults: defaults, now: { now })
+        unlocks.unlock("job-1")
+        now += 1800
+        unlocks.unlock("job-2")
+        now += 2000
+
+        #expect(PracticeUnlocks(defaults: defaults, now: { now }).expiries.keys.sorted() == ["job-2"])
+    }
+
+    @Test func untimedUnlocksFromOlderBuildsDontCarryOver() {
+        let defaults = freshDefaults()
+        defaults.set(["job-1"], forKey: "bms_practice_unlocks")
+
+        #expect(!PracticeUnlocks(defaults: defaults).isUnlocked("job-1"))
+        #expect(defaults.object(forKey: "bms_practice_unlocks") == nil)
     }
 
     @Test func aPieceThatFitsThePreviewIsNeverLocked() {

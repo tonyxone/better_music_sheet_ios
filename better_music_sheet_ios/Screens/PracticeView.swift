@@ -36,6 +36,9 @@ struct PracticeView: View {
     @State private var rewardedAd = RewardedAdLoader.shared
     @State private var showingPaywall = false
     @State private var watchingAd = false
+    /// Bumped when this sheet's unlock runs out, so the page locks again
+    /// without waiting for something else to redraw it.
+    @State private var unlockExpired = 0
     @State private var noAdAvailable = false
     @State private var notationPreference = NotationPreference.shared
     @Environment(\.scenePhase) private var scenePhase
@@ -97,6 +100,12 @@ struct PracticeView: View {
             guard isLocked else { return }
             await rewardedAd.load()
         }
+        .task(id: unlockedUntil) {
+            guard let unlockedUntil else { return }
+            try? await Task.sleep(for: .seconds(max(0, unlockedUntil.timeIntervalSinceNow) + 0.5))
+            guard !Task.isCancelled else { return }
+            unlockExpired += 1
+        }
         .alert("Unlock this sheet", isPresented: Binding(
             get: { player.hitPreviewEnd && isLocked && !watchingAd },
             set: { if !$0 { player.hitPreviewEnd = false } }
@@ -105,7 +114,7 @@ struct PracticeView: View {
             Button("See Premium Plans") { showingPaywall = true }
             Button("Not Now", role: .cancel) {}
         } message: {
-            Text("The free preview is the first \(PracticeUnlocks.freeMeasures) measures. Watch a short ad to practise this whole sheet, or go Premium to practise every sheet with no ads.")
+            Text("The free preview is the first \(PracticeUnlocks.freeMeasures) measures. Watch a short ad to practise this whole sheet for an hour, or go Premium to practise every sheet with no ads.")
         }
         .alert("No ad available", isPresented: $noAdAvailable) {
             Button("See Premium Plans") { showingPaywall = true }
@@ -140,8 +149,16 @@ struct PracticeView: View {
     /// unlocked. The built-in demo stays whole, so practice can be tried
     /// without an ad.
     private var isLocked: Bool {
-        AdConfig.isEnabled && !entitlements.isEntitled
+        _ = unlockExpired
+        return AdConfig.isEnabled && !entitlements.isEntitled
             && !unlocks.isUnlocked(jobID) && !DemoSheet.isDemo(jobID)
+    }
+
+    /// When an ad's hour on this sheet runs out, for a free user.
+    private var unlockedUntil: Date? {
+        _ = unlockExpired
+        guard AdConfig.isEnabled, !entitlements.isEntitled else { return nil }
+        return unlocks.unlockedUntil(jobID)
     }
 
     private var previewEnd: Double? {
@@ -247,6 +264,8 @@ struct PracticeView: View {
         sheetPage.overlay(alignment: .bottomLeading) {
             if previewEnd != nil {
                 previewChip
+            } else if let unlockedUntil {
+                unlockedChip(until: unlockedUntil)
             }
         }
     }
@@ -268,6 +287,21 @@ struct PracticeView: View {
         .buttonStyle(.plain)
         .padding(10)
         .accessibilityHint("Shows how to unlock the whole sheet")
+    }
+
+    /// So the sheet locking again an hour later comes as no surprise.
+    private func unlockedChip(until date: Date) -> some View {
+        Label {
+            Text("Unlocked until \(date, style: .time)")
+        } icon: {
+            Image(systemName: "lock.open.fill")
+        }
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(Brand.ink)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial, in: .capsule)
+        .padding(10)
     }
 
     /// The page is a visual aid. Practice runs entirely from the timeline, so a
