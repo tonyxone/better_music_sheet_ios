@@ -3830,34 +3830,6 @@
         }
       }
     },
-    "Electric pianos: Greg Sullivan, CC BY 3.0" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "エレクトリックピアノ：Greg Sullivan、CC BY 3.0"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "일렉트릭 피아노: Greg Sullivan, CC BY 3.0"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "电钢琴：Greg Sullivan，CC BY 3.0"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "電鋼琴：Greg Sullivan，CC BY 3.0"
-          }
-        }
-      }
-    },
     "Email" : {
       "localizations" : {
         "ja" : {
@@ -4526,34 +4498,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "平台鋼琴"
-          }
-        }
-      }
-    },
-    "Grand piano: Akai Steinway, public domain" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "グランドピアノ：Akai Steinway、パブリックドメイン"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "그랜드 피아노: Akai Steinway, 퍼블릭 도메인"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "三角钢琴：Akai Steinway，公有领域"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "平台鋼琴：Akai Steinway，公眾領域"
           }
         }
       }
@@ -6546,34 +6490,6 @@
         }
       }
     },
-    "Organ: FluidR3 GM, CC BY 3.0" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "オルガン：FluidR3 GM、CC BY 3.0"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "오르간: FluidR3 GM, CC BY 3.0"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管风琴：FluidR3 GM，CC BY 3.0"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管風琴：FluidR3 GM，CC BY 3.0"
-          }
-        }
-      }
-    },
     "Original" : {
       "localizations" : {
         "ja" : {
@@ -8166,34 +8082,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新輸入音名"
-          }
-        }
-      }
-    },
-    "Sample credits" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サンプル音源のクレジット"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "샘플 음원 출처"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音色采样来源"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音色取樣來源"
           }
         }
       }

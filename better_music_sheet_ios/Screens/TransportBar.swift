@@ -167,12 +167,6 @@ struct TransportBar: View {
                     Text(instrument.name).tag(instrument)
                 }
             }
-            // The samples' licences ask for credit where they are used.
-            Section("Sample credits") {
-                Text("Grand piano: Akai Steinway, public domain")
-                Text("Electric pianos: Greg Sullivan, CC BY 3.0")
-                Text("Organ: FluidR3 GM, CC BY 3.0")
-            }
         } label: {
             Image(systemName: "pianokeys")
                 .font(.system(size: 14, weight: .semibold))
