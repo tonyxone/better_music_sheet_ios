@@ -9,8 +9,8 @@ nonisolated struct AnnotationOptions: Codable, Sendable, Hashable {
 
         var title: String {
             switch self {
-            case .unicode: "Unicode (B♭, C♯)"
-            case .ascii: "ASCII (Bb, C#)"
+            case .unicode: String(localized: "Unicode (B♭, C♯)", bundle: .app)
+            case .ascii: String(localized: "ASCII (Bb, C#)", bundle: .app)
             }
         }
     }
@@ -46,13 +46,16 @@ nonisolated struct AnnotationOptions: Codable, Sendable, Hashable {
     }
 
     /// Dark enough to read over white paper through the labels' white halo.
-    static let labelColorPresets = [
-        NamedColor(name: "Black", hex: "#000000"),
-        NamedColor(name: "Red", hex: "#A83C34"),
-        NamedColor(name: "Blue", hex: "#2F6FB5"),
-        NamedColor(name: "Green", hex: "#3E8E5A"),
-        NamedColor(name: "Purple", hex: "#6B3FA0"),
-    ]
+    /// Made when asked for, so the names are in the app's current language.
+    static var labelColorPresets: [NamedColor] {
+        [
+            NamedColor(name: String(localized: "Black", bundle: .app), hex: "#000000"),
+            NamedColor(name: String(localized: "Red", bundle: .app), hex: "#A83C34"),
+            NamedColor(name: String(localized: "Blue", bundle: .app), hex: "#2F6FB5"),
+            NamedColor(name: String(localized: "Green", bundle: .app), hex: "#3E8E5A"),
+            NamedColor(name: String(localized: "Purple", bundle: .app), hex: "#6B3FA0"),
+        ]
+    }
 
     /// The form the backend validates: `#` and six hex digits.
     static func isValidColor(_ hex: String) -> Bool {

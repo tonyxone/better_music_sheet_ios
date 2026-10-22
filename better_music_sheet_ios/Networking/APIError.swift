@@ -11,13 +11,15 @@ nonisolated enum APIError: Error, LocalizedError, Sendable {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            "The app built an invalid request."
+            String(localized: "The app built an invalid request.", bundle: .app)
         case .transport(let message):
             message
         case .http(let status, let detail):
-            detail ?? "The server returned an error (\(status))."
+            // The server explains itself in English; shown in the app's language
+            // when it's one of the messages ServerText knows.
+            detail.map(ServerText.translate) ?? String(localized: "The server returned an error (\(status)).", bundle: .app)
         case .decoding(let message):
-            "The server sent something unexpected. \(message)"
+            String(localized: "The server sent something unexpected. \(message)", bundle: .app)
         }
     }
 

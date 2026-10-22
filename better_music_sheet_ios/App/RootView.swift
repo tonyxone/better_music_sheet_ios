@@ -13,6 +13,7 @@ struct RootView: View {
     /// the splash never flashes on screen only to be dismissed a moment
     /// later once the async check would have resolved.
     @State private var welcomeSeen = SessionStore.hasStoredSession()
+    @State private var language = LanguageChoice.shared
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -22,12 +23,17 @@ struct RootView: View {
                     case .sheet:
                         SheetDetailView(route: route)
                     case .practice:
-                        // Open to every plan: the free plan limits how many
-                        // sheets you keep, not what you can do with them.
+                        // Open to every plan, but a free sheet plays its first
+                        // measures until a rewarded ad unlocks it (see
+                        // PracticeUnlocks).
                         PracticeView(jobID: route.jobID, title: route.provisionalName)
                     }
                 }
         }
+        // Rebuilt in a newly chosen language rather than updated: text made
+        // outside the views — model and error messages — is only read again
+        // when they are made again.
+        .id(language.current)
         .tint(Brand.accent)
         // Over the library rather than instead of it, so the library has
         // already loaded by the time Get Started reveals it.

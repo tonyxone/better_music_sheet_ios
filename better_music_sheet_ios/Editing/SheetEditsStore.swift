@@ -19,9 +19,9 @@ final class SheetEditsStore {
         var message: String? {
             switch self {
             case .saved: nil
-            case .saving, .unsaved: "Saving…"
-            case .offline: "Offline — changes will save when you reconnect"
-            case .error: "Couldn't save yet — retrying"
+            case .saving, .unsaved: String(localized: "Saving…", bundle: .app)
+            case .offline: String(localized: "Offline — changes will save when you reconnect", bundle: .app)
+            case .error: String(localized: "Couldn't save yet — retrying", bundle: .app)
             }
         }
     }
@@ -82,7 +82,8 @@ final class SheetEditsStore {
                 schedule()
             }
         } catch {
-            loadError = "Couldn't load your saved changes. \((error as? APIError)?.errorDescription ?? error.localizedDescription)"
+            let reason = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            loadError = String(localized: "Couldn't load your saved changes. \(reason)", bundle: .app)
         }
     }
 
@@ -205,7 +206,7 @@ final class SheetEditsStore {
                 canRedo = false
                 dirty = false
                 defaults.removeObject(forKey: draftKey)
-                notice = "These edits were changed on another device, so that version is shown now."
+                notice = String(localized: "These edits were changed on another device, so that version is shown now.", bundle: .app)
                 saveState = .saved
                 return
             }

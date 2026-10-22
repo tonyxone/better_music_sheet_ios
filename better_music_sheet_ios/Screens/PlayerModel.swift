@@ -68,6 +68,18 @@ final class PlayerModel {
     /// falling notes stay empty, rather than showing the opening bars already
     /// sitting motionless at the keys.
     private(set) var hasStarted = false
+    /// Where a locked sheet's free preview ends (see PracticeUnlocks), or nil
+    /// for no limit. Playback, seeking and stepping all stop here.
+    var previewEndBeat: Double? {
+        didSet {
+            guard previewEndBeat != oldValue else { return }
+            if previewEndBeat == nil { hitPreviewEnd = false }
+            if isPlaying { play(from: beat) }
+        }
+    }
+    /// Set when playback reaches the preview's end, or the user asks to go
+    /// past it — the cue to offer the unlock. Cleared by the page.
+    var hitPreviewEnd = false
 
     private var geometry: SheetGeometry?
     private var engine: SynthEngine?
@@ -126,7 +138,7 @@ final class PlayerModel {
     }
 
     var measureLabel: String? {
-        highlightedMeasure.map { "Measure \($0.label)" }
+        highlightedMeasure.map { String(localized: "Measure \($0.label)", bundle: .app) }
     }
 
     /// Measures that actually take time: the denominator of the position.
@@ -141,7 +153,7 @@ final class PlayerModel {
         let index = timeline.measureIndex(atBeat: beat) ?? first.index
         guard let measure = timeline.measure(withIndex: index) else { return nil }
         let count = playableMeasureCount
-        return "Measure \(measure.label) · \(min(index + 1, count)) / \(count)"
+        return String(localized: "Measure \(measure.label) · \(min(index + 1, count)) / \(count)", bundle: .app)
     }
 
     /// Whether the opening tempo was read from the score rather than assumed.
@@ -186,7 +198,7 @@ final class PlayerModel {
             onsetBeats = Array(Set(loaded.notes.map(\.startBeat))).sorted()
             pieceKeyRange = Self.keyboardLayout.range(covering: loaded.notes.map(\.midi))
             if loaded.notes.isEmpty {
-                availability = .unavailable("No notes were recognized for playback.")
+                availability = .unavailable(String(localized: "No notes were recognized for playback.", bundle: .app))
             } else {
                 availability = .ready
                 // Starts loading the piano now rather than waiting for the
@@ -196,7 +208,7 @@ final class PlayerModel {
                 prepareSound(thenPlayFrom: nil)
             }
         } catch {
-            availability = .unavailable("Playback isn't available for this sheet.")
+            availability = .unavailable(String(localized: "Playback isn't available for this sheet.", bundle: .app))
         }
     }
 
@@ -220,7 +232,15 @@ final class PlayerModel {
     }
 
     func play(from startBeat: Double) {
-        guard let timeline, let engine = startEngineIfNeeded() else { return }
+        guard let timeline else { return }
+        // Past the preview: offer the unlock rather than play. Exactly at its
+        // end restarts from the top, as the end of the piece does.
+        if let previewEndBeat, startBeat > previewEndBeat + 1e-6 {
+            if isPlaying { pause() }
+            hitPreviewEnd = true
+            return
+        }
+        guard let engine = startEngineIfNeeded() else { return }
         // Samples load before the clock starts, as on the web, so the opening
         // notes are never lost to a download.
         guard loadedInstrument == instrument else {
@@ -230,6 +250,7 @@ final class PlayerModel {
 
         let clock = TempoClock(timeline: timeline, speed: speed, baseBPM: baseBPM)
         let schedule = PlaybackSchedule(timeline: timeline, clock: clock, fromBeat: startBeat,
+                                        untilBeat: previewEndBeat,
                                         usesPianoPedal: instrument.usesPianoPedal)
         let rate = engine.sampleRate
         let origin = engine.currentFrame + Int64((schedule.leadSeconds * rate).rounded())
@@ -286,6 +307,15 @@ final class PlayerModel {
     func seek(to target: Double) {
         guard timeline != nil else { return }
         let clamped = min(totalBeats, max(0, target))
+        // Past the preview: stop at its end rather than play on (or, playing
+        // from exactly there, start over from the top).
+        if let previewEndBeat, clamped > previewEndBeat {
+            pause()
+            beat = previewEndBeat
+            show(beat: previewEndBeat)
+            hitPreviewEnd = true
+            return
+        }
         if isPlaying {
             play(from: clamped)
         } else {
@@ -316,6 +346,10 @@ final class PlayerModel {
             // the start rather than wrapping: back at the top is a mis-tap far
             // more often than a request for the last bar.
             next = onsetBeats.last { $0 < beat - 1e-6 } ?? first
+        }
+        if let previewEndBeat, next >= previewEndBeat - 1e-6 {
+            hitPreviewEnd = true
+            return
         }
         hasStepped = true
         hasStarted = true
@@ -438,7 +472,7 @@ final class PlayerModel {
             engine = started
             return started
         } catch {
-            availability = .unavailable("Couldn't start audio. \(error.localizedDescription)")
+            availability = .unavailable(String(localized: "Couldn't start audio. \(error.localizedDescription)", bundle: .app))
             return nil
         }
     }
@@ -515,6 +549,7 @@ final class PlayerModel {
             ticker = nil
             beat = windowEnd
             publish(measure: nil, playhead: nil, keys: [:])
+            if let previewEndBeat, windowEnd >= previewEndBeat - 1e-6 { hitPreviewEnd = true }
             return
         }
 

@@ -98,7 +98,9 @@ struct KeyboardView: View {
 
     private var accessibilityDescription: String {
         let names = litKeys.keys.sorted().map(KeyboardLayout.spokenName)
-        return names.isEmpty ? "Keyboard, nothing sounding" : "Keyboard, sounding " + names.joined(separator: ", ")
+        return names.isEmpty
+            ? String(localized: "Keyboard, nothing sounding", bundle: .app)
+            : String(localized: "Keyboard, sounding \(names.joined(separator: ", "))", bundle: .app)
     }
 
     private static func color(base: UInt32, role: Int?, mix: Double) -> Color {

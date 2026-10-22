@@ -154,6 +154,6 @@ nonisolated enum SynthEngineError: LocalizedError {
     case unsupportedFormat
 
     var errorDescription: String? {
-        "This device's audio output format isn't supported."
+        String(localized: "This device's audio output format isn't supported.", bundle: .app)
     }
 }

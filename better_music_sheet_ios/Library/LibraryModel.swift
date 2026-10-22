@@ -29,8 +29,9 @@ final class LibraryModel {
 
     var hasWorkInProgress: Bool { jobs.contains { $0.status.isInProgress } }
 
-    /// Whether a sheet is using the free plan's one slot. A failed upload
-    /// doesn't, matching the backend's count (server.py FREE_SHEET_LIMIT).
+    /// Whether a free account has had its free sheet, so the next one takes
+    /// ads. A failed upload doesn't count, matching the backend's count
+    /// (server.py FREE_SHEET_LIMIT).
     var hasKeptSheet: Bool { jobs.contains { $0.status != .failed } }
 
     // MARK: - Pagination

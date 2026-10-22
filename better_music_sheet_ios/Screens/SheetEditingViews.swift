@@ -70,7 +70,7 @@ struct SheetEditToolbar: View {
         }
     }
 
-    private func historyButton(_ symbol: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+    private func historyButton(_ symbol: String, label: LocalizedStringKey, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 17))
@@ -82,7 +82,7 @@ struct SheetEditToolbar: View {
         .accessibilityLabel(label)
     }
 
-    private func swatches(_ colors: [String], selection: Binding<String>, label: String) -> some View {
+    private func swatches(_ colors: [String], selection: Binding<String>, label: LocalizedStringKey) -> some View {
         ColorSwatches(colors: colors, selected: selection.wrappedValue, label: label) { selection.wrappedValue = $0 }
     }
 }
@@ -91,7 +91,7 @@ struct SheetEditToolbar: View {
 struct ColorSwatches: View {
     let colors: [String]
     let selected: String?
-    let label: String
+    let label: LocalizedStringKey
     let choose: (String) -> Void
 
     var body: some View {
@@ -110,7 +110,8 @@ struct ColorSwatches: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(label) \(color)")
+                .accessibilityLabel(label)
+                .accessibilityValue(Text(verbatim: color))
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
         }
@@ -200,7 +201,13 @@ struct SheetSelectionBar: View {
         case .label:
             let label = editor.label(item.id)
             let text = label.flatMap(editor.resolved)?.text ?? ""
-            Text("Note name \(Text(text).bold())\(label?.notes.isEmpty == false ? " · plays" : " · not linked to playback")")
+            Group {
+                if label?.notes.isEmpty == false {
+                    Text("Note name \(Text(text).bold()) · plays")
+                } else {
+                    Text("Note name \(Text(text).bold()) · not linked to playback")
+                }
+            }
             .foregroundStyle(Brand.ink)
             .frame(maxWidth: .infinity, alignment: .leading)
             Button("Retype") { editor.openTextEditor(for: item) }
@@ -222,7 +229,7 @@ struct SheetSelectionBar: View {
         }
     }
 
-    private var hint: String {
+    private var hint: LocalizedStringKey {
         switch editor.tool {
         case .select:
             editor.showsNames || !editor.namesLive

@@ -79,7 +79,7 @@ nonisolated struct SheetFiles: Sendable {
         }
 
         guard let location = assets.url(for: artifact) else {
-            throw APIError.http(status: 404, detail: "That file isn't available for this sheet.")
+            throw APIError.http(status: 404, detail: String(localized: "That file isn't available for this sheet.", bundle: .app))
         }
 
         if assets.direct {

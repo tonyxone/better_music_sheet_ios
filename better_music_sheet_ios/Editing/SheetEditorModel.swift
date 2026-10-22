@@ -22,11 +22,11 @@ final class SheetEditorModel {
 
         var title: String {
             switch self {
-            case .select: "Select"
-            case .pen: "Pen"
-            case .highlighter: "Highlight"
-            case .text: "Text"
-            case .eraser: "Erase"
+            case .select: String(localized: "Select", bundle: .app)
+            case .pen: String(localized: "Pen", bundle: .app)
+            case .highlighter: String(localized: "Highlight", bundle: .app)
+            case .text: String(localized: "Text", bundle: .app)
+            case .eraser: String(localized: "Erase", bundle: .app)
             }
         }
 
@@ -494,7 +494,7 @@ final class SheetEditorModel {
         if text.isEmpty {
             edit.hidden = true
             store.update { $0.settingLabel(id, edit) }
-            setNotice("Name hidden. Undo brings it back.")
+            setNotice(String(localized: "Name hidden. Undo brings it back.", bundle: .app))
             return
         }
         if text == (edit.text ?? item.text) { return }
@@ -504,18 +504,20 @@ final class SheetEditorModel {
         if let timeline {
             if let result = SheetEdits.correctionsForRetype(item, to: text, original: timeline, corrections: now.corrections) {
                 if !result.linked {
-                    message = "This name isn't linked to a note, so only the page changes."
+                    message = String(localized: "This name isn't linked to a note, so only the page changes.", bundle: .app)
                 } else {
                     corrections = result.corrections
                     message = text == item.text
-                        ? "Back to the printed name; playback restored."
-                        : "Playback now plays \(typed)\(result.changed > 1 ? " for \(result.changed) notes" : "")."
+                        ? String(localized: "Back to the printed name; playback restored.", bundle: .app)
+                        : result.changed > 1
+                        ? String(localized: "Playback now plays \(typed) for \(result.changed) notes.", bundle: .app)
+                        : String(localized: "Playback now plays \(typed).", bundle: .app)
                 }
             } else {
-                message = "\"\(typed)\" isn't a note name, so playback stays the same."
+                message = String(localized: "\"\(typed)\" isn't a note name, so playback stays the same.", bundle: .app)
             }
         } else {
-            message = "Playback isn't available for this sheet, so only the page changes."
+            message = String(localized: "Playback isn't available for this sheet, so only the page changes.", bundle: .app)
         }
         store.update { d in
             var next = d.settingLabel(id, edit)
@@ -592,8 +594,8 @@ final class SheetEditorModel {
         }
         selection = []
         let message = scope == .everything
-            ? "Reset to the annotated version: your names, playback fixes, drawings and notes are removed."
-            : "Note names and playback reset to the annotated version. Your drawings and notes are kept."
+            ? String(localized: "Reset to the annotated version: your names, playback fixes, drawings and notes are removed.", bundle: .app)
+            : String(localized: "Note names and playback reset to the annotated version. Your drawings and notes are kept.", bundle: .app)
         setNotice(message)
         resetNotice = message
     }

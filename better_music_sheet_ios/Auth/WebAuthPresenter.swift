@@ -29,7 +29,7 @@ final class WebAuthPresenter: NSObject, ASWebAuthenticationPresentationContextPr
                           nsError.code == ASWebAuthenticationSessionError.canceledLogin.rawValue {
                     continuation.resume(throwing: AuthError.cancelled)
                 } else {
-                    continuation.resume(throwing: AuthError.server(error?.localizedDescription ?? "Sign-in failed."))
+                    continuation.resume(throwing: AuthError.server(error?.localizedDescription ?? String(localized: "Sign-in failed.", bundle: .app)))
                 }
             }
             session.presentationContextProvider = self

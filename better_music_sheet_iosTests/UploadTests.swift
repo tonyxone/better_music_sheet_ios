@@ -187,6 +187,24 @@ struct SheetUploaderTests {
         #expect(json["label_color"] == nil)
     }
 
+    @Test func saysWhenAdsWereWatchedForTheUpload() async throws {
+        func reservation(adUnlock: Bool) async throws -> [String: Any] {
+            let channel = StubProtocol.Channel([
+                .init(status: 201, body: Data(#"{"job_id": "j", "upload": {"url": "https://s3.example.com/b", "fields": {}}}"#.utf8)),
+                .init(status: 204),
+                .init(status: 202, body: Data("{}".utf8)),
+            ])
+            _ = try await SheetUploader(client: client(channel))
+                .upload(filename: "a.pdf", data: Data("x".utf8), options: .standard, adUnlock: adUnlock)
+            let body = try #require(channel.recorded.first?.httpBodyData)
+            return try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        }
+        #expect(try await reservation(adUnlock: true)["ad_unlock"] as? Bool == true)
+        #expect(try await reservation(adUnlock: false)["app"] as? String == "ios")
+        // Left out otherwise, as the web app leaves it out.
+        #expect(try await reservation(adUnlock: false)["ad_unlock"] == nil)
+    }
+
     @Test func theLegacyEndpointGetsTheLabelColorToo() async throws {
         let channel = StubProtocol.Channel([
             .init(status: 404, body: Data(#"{"detail": "Direct uploads are not enabled"}"#.utf8)),

@@ -12,15 +12,15 @@ nonisolated enum SubscriptionError: Error, LocalizedError, Sendable {
     var errorDescription: String? {
         switch self {
         case .signInRequired:
-            "Sign in to your account before purchasing or restoring."
+            String(localized: "Sign in to your account before purchasing or restoring.", bundle: .app)
         case .alreadySubscribed:
-            "This account already has Premium. No additional purchase is needed."
+            String(localized: "This account already has Premium. No additional purchase is needed.", bundle: .app)
         case .accountChanged:
-            "Your account changed during the purchase. Sign in to the original account and restore purchases."
+            String(localized: "Your account changed during the purchase. Sign in to the original account and restore purchases.", bundle: .app)
         case .purchasePending:
-            "Your purchase is awaiting Apple's approval. Access will update when it is approved."
+            String(localized: "Your purchase is awaiting Apple's approval. Access will update when it is approved.", bundle: .app)
         case .failedVerification:
-            "Apple couldn't verify this purchase. Please try again."
+            String(localized: "Apple couldn't verify this purchase. Please try again.", bundle: .app)
         }
     }
 }

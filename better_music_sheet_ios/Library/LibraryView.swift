@@ -15,6 +15,14 @@ struct LibraryView: View {
     /// Set when Add was tapped signed out, so signing in carries on to it.
     @State private var addAfterSignIn = false
     @State private var checkingAccess = false
+    @State private var uploadCredits = UploadCredits.shared
+    @State private var uploadAd = RewardedAdLoader.upload
+    /// The add-sheet panel was opened with ads watched for it.
+    @State private var addWithAds = false
+    @State private var showingUploadUnlock = false
+    @State private var noAdAvailable = false
+    /// The sheet a swipe asked to delete, waiting on the confirmation alert.
+    @State private var pendingDeletion: AnnotationJob?
     @Binding var path: [SheetRoute]
     @Environment(\.scenePhase) private var scenePhase
 
@@ -54,7 +62,7 @@ struct LibraryView: View {
                             .foregroundStyle(Brand.inkSoft)
                     }
                 }
-                .accessibilityLabel(model.currentUser.map { "Account, signed in as \($0.displayName ?? $0.email ?? "")" } ?? "Account")
+                .accessibilityLabel(model.currentUser.map { Text("Account, signed in as \($0.displayName ?? $0.email ?? "")") } ?? Text("Account"))
             }
         }
         // Reloads on appearing, and again whenever the app returns to the
@@ -72,8 +80,8 @@ struct LibraryView: View {
             await demo.load()
         }
         .sheet(isPresented: $showingAddSheet, onDismiss: openPendingSheet) {
-            AddSheetView { jobID in
-                pendingRoute = SheetRoute(jobID: jobID, provisionalName: "New sheet")
+            AddSheetView(adUnlock: addWithAds) { jobID in
+                pendingRoute = SheetRoute(jobID: jobID, provisionalName: String(localized: "New sheet", bundle: .app))
                 Task { await model.load() }
             }
         }
@@ -83,11 +91,38 @@ struct LibraryView: View {
         .sheet(isPresented: $showingPaywall) {
             PaywallView()
         }
+        .alert("Add another sheet", isPresented: $showingUploadUnlock) {
+            Button("Watch Ads") { Task { await watchUploadAds() } }
+            Button("See Premium Plans") { showingPaywall = true }
+            Button("Not Now", role: .cancel) {}
+        } message: {
+            Text("Your first sheet is free. Watch \(UploadCredits.adsPerUpload) short ads in a row to add each one after it, and keep as many as you like — or go Premium for no ads.")
+        }
+        .alert("No ad available", isPresented: $noAdAvailable) {
+            Button("See Premium Plans") { showingPaywall = true }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("No ad is available right now. Try again in a moment.")
+        }
+        // Loaded ahead while a free account is at its free sheet, so both
+        // ads play without a wait.
+        .task(id: needsUploadAds) {
+            guard needsUploadAds else { return }
+            await uploadAd.load()
+        }
         .alert("Free plan: 1 sheet at a time", isPresented: $showingFreeLimit) {
             Button("See Premium Plans") { showingPaywall = true }
             Button("OK", role: .cancel) {}
         } message: {
             Text("Delete your current sheet to upload another, or go Premium for unlimited sheets and no ads.")
+        }
+        .alert("Delete this sheet?", isPresented: Binding(
+            get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }
+        ), presenting: pendingDeletion) { job in
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) { Task { await model.delete(job) } }
+        } message: { job in
+            Text("“\(job.displayName)” and its annotations will be removed from your library. This can't be undone.")
         }
     }
 
@@ -102,10 +137,11 @@ struct LibraryView: View {
         }
     }
 
-    /// Uploading needs an account. Premium uploads freely; the free plan keeps
-    /// one sheet at a time (the backend enforces it too), so a free account
-    /// that already has one is told to delete it or go Premium. Entitlement
-    /// is checked fresh rather than trusted from before signing in.
+    /// Uploading needs an account. Premium uploads freely. A free account
+    /// keeps as many sheets as it likes, but each one past its first takes
+    /// UploadCredits.adsPerUpload rewarded ads (the backend lets those past
+    /// its one-sheet limit, which the web app still keeps). Entitlement is
+    /// checked fresh rather than trusted from before signing in.
     private func startAdding() async {
         guard model.currentUser != nil else {
             addAfterSignIn = true
@@ -116,10 +152,39 @@ struct LibraryView: View {
         await entitlements.refresh()
         checkingAccess = false
         if entitlements.isEntitled || !model.hasKeptSheet {
+            addWithAds = false
+            showingAddSheet = true
+        } else if !AdConfig.isEnabled {
+            showingFreeLimit = true
+        } else if uploadCredits.isReady {
+            addWithAds = true
             showingAddSheet = true
         } else {
-            showingFreeLimit = true
+            showingUploadUnlock = true
         }
+    }
+
+    private var needsUploadAds: Bool {
+        AdConfig.isEnabled && model.currentUser != nil && !entitlements.isEntitled && model.hasKeptSheet
+    }
+
+    /// All the ads an upload takes, back to back from one tap — the prompt
+    /// said how many. Closing one early starts the count over.
+    private func watchUploadAds() async {
+        checkingAccess = true
+        defer { checkingAccess = false }
+        while !uploadCredits.isReady {
+            guard await uploadAd.present() else {
+                uploadCredits.abandon()
+                if !uploadAd.isReady { noAdAvailable = true }
+                return
+            }
+            uploadCredits.earn()
+            // Let the finished ad's screen finish closing before the next.
+            if !uploadCredits.isReady { try? await Task.sleep(for: .milliseconds(600)) }
+        }
+        addWithAds = true
+        showingAddSheet = true
     }
 
     /// Pushed only after the panel has gone. SwiftUI often drops a navigation
@@ -142,10 +207,21 @@ struct LibraryView: View {
 
         default:
             if model.jobs.isEmpty && demo.isHidden != false {
-                VStack(spacing: 18) {
-                    EmptyLibrary()
-                    if demo.isHidden == true {
-                        showSampleButton
+                // The footer at the bottom of the screen, below the message,
+                // and scrolled to where the screen is too short for both.
+                GeometryReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 18) {
+                            Spacer(minLength: 0)
+                            EmptyLibrary()
+                            if demo.isHidden == true {
+                                showSampleButton
+                            }
+                            Spacer(minLength: 0)
+                            AppFooter()
+                                .padding(.horizontal, 24)
+                        }
+                        .frame(minHeight: proxy.size.height)
                     }
                 }
             } else {
@@ -161,11 +237,15 @@ struct LibraryView: View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                         .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                Task { await model.delete(job) }
+                            // Tinted rather than `role: .destructive`: that role
+                            // slides the row out at once, before the reader has
+                            // confirmed anything.
+                            Button {
+                                pendingDeletion = job
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
+                            .tint(.red)
                         }
                     }
 
@@ -185,6 +265,11 @@ struct LibraryView: View {
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                     }
+
+                    AppFooter()
+                        .listRowInsets(EdgeInsets(top: 0, leading: 24, bottom: 0, trailing: 24))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
@@ -263,7 +348,7 @@ private struct DemoRow: View {
                         Text("Try a sample")
                             .font(Brand.title(17))
                             .foregroundStyle(Brand.ink)
-                        Text("\(DemoSheet.title) · \(DemoSheet.detail)")
+                        Text(verbatim: "\(DemoSheet.title) · \(DemoSheet.detail)")
                             .font(.system(size: 12.5))
                             .foregroundStyle(Brand.inkSoft)
                             .lineLimit(2)
@@ -423,12 +508,12 @@ private struct SheetRow: View {
             case .done:
                 Text(meta).font(.system(size: 12.5)).foregroundStyle(Brand.inkSoft)
             case .failed:
-                Text(job.error ?? "Couldn't read this sheet")
+                (job.error.map { Text(ServerText.translate($0)) } ?? Text("Couldn't read this sheet"))
                     .font(.system(size: 12.5))
                     .foregroundStyle(Brand.danger)
                     .lineLimit(2)
             default:
-                Text(job.stage ?? "Queued")
+                (job.stage.map { Text(ServerText.translate($0)) } ?? Text("Queued"))
                     .font(.system(size: 12.5))
                     .foregroundStyle(Brand.inkSoft)
                 JobProgressBar(range: job.progressRange)
@@ -457,8 +542,8 @@ private struct SheetRow: View {
     }
 
     private var meta: String {
-        var parts = [job.createdDate.formatted(.relative(presentation: .named))]
-        if let groups = job.labeledGroups { parts.append("\(groups) labels") }
+        var parts = [job.createdDate.formatted(.relative(presentation: .named).locale(AppLanguage.current.locale))]
+        if let groups = job.labeledGroups { parts.append(String(localized: "\(groups) labels", bundle: .app)) }
         return parts.joined(separator: " · ")
     }
 }

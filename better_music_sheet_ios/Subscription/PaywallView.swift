@@ -21,11 +21,11 @@ struct PaywallView: View {
     @State private var showingPrivacyPolicy = false
     @Environment(\.dismiss) private var dismiss
 
-    private static let benefits = [
+    private static let benefits: [LocalizedStringKey] = [
         "Upload your own sheets",
         "Every note labelled",
-        "Practise on a keyboard",
-        "Unlimited sheet storage",
+        "Practise every sheet in full",
+        "Upload without ads",
         "No ads",
         "Access anywhere — web, iPhone and iPad",
     ]
@@ -118,7 +118,7 @@ struct PaywallView: View {
             ProgressView().tint(Brand.accent)
         } else if manager.products.isEmpty {
             VStack(spacing: 16) {
-                RetryNotice(message: manager.loadError ?? "Couldn't load subscription options.") {
+                RetryNotice(message: manager.loadError ?? String(localized: "Couldn't load subscription options.", bundle: .app)) {
                     Task { await manager.loadProducts() }
                 }
                 if !previewOnly {
@@ -203,7 +203,9 @@ struct PaywallView: View {
             Text("Your own sheet music, labelled")
                 .font(Brand.title(22))
                 .foregroundStyle(Brand.ink)
-            Text("Upload your piano music and get it back with the letter name above every note, then practise it on a keyboard that lights up each note\(offersTrial ? ". Starts with a 7-day free trial." : ".")")
+            Text(offersTrial
+                 ? "Upload your piano music and get it back with the letter name above every note, then practise it on a keyboard that lights up each note. Starts with a 7-day free trial."
+                 : "Upload your piano music and get it back with the letter name above every note, then practise it on a keyboard that lights up each note.")
                 .font(.system(size: 14))
                 .foregroundStyle(Brand.inkSoft)
                 .multilineTextAlignment(.center)
@@ -213,9 +215,9 @@ struct PaywallView: View {
 
     private var benefits: some View {
         VStack(alignment: .leading, spacing: 7) {
-            ForEach(Self.benefits, id: \.self) { benefit in
+            ForEach(Self.benefits.indices, id: \.self) { index in
                 Label {
-                    Text(benefit).foregroundStyle(Brand.ink)
+                    Text(Self.benefits[index]).foregroundStyle(Brand.ink)
                 } icon: {
                     Image(systemName: "checkmark").foregroundStyle(Brand.success)
                 }
@@ -228,11 +230,10 @@ struct PaywallView: View {
 
     /// The cancellation and refund terms, stated before buying — as the web
     /// app's checkout asks the visitor to agree to them.
-    private var terms: String {
-        let start = offersTrial
-            ? "7-day free trial for new subscribers, then the plan you choose. Cancel during the trial and you won't be charged."
-            : "Billed from today for the plan you choose."
-        return "\(start) Payment is charged to your Apple Account. The subscription renews automatically unless cancelled at least 24 hours before the current period ends. Your account is charged for renewal within 24 hours before the period ends. Manage or cancel in Apple Account Settings. Refund requests are handled by Apple."
+    private var terms: LocalizedStringKey {
+        offersTrial
+            ? "7-day free trial for new subscribers, then the plan you choose. Cancel during the trial and you won't be charged. Payment is charged to your Apple Account. The subscription renews automatically unless cancelled at least 24 hours before the current period ends. Your account is charged for renewal within 24 hours before the period ends. Manage or cancel in Apple Account Settings. Refund requests are handled by Apple."
+            : "Billed from today for the plan you choose. Payment is charged to your Apple Account. The subscription renews automatically unless cancelled at least 24 hours before the current period ends. Your account is charged for renewal within 24 hours before the period ends. Manage or cancel in Apple Account Settings. Refund requests are handled by Apple."
     }
 
     private var signInButton: some View {
@@ -301,7 +302,7 @@ struct PaywallView: View {
                 if EntitlementStore.shared.isEntitled {
                     dismiss()
                 } else {
-                    errorMessage = "No active subscription found for this Apple ID."
+                    errorMessage = String(localized: "No active subscription found for this Apple ID.", bundle: .app)
                 }
             } catch {
                 errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -313,12 +314,16 @@ struct PaywallView: View {
 /// What the free plan includes, beside Premium's plans for comparison. Not a
 /// choice: it's what an account has without subscribing.
 private struct FreePlanCard: View {
-    private static let points: [(included: Bool, text: String)] = [
+    /// The backend's DAILY_SHEET_LIMITS["free"].
+    private static let freeDailySheets = 15
+    private static let points: [(included: Bool, text: LocalizedStringKey)] = [
         (true, "Every note labelled"),
         (true, "Practise on a keyboard"),
-        (false, "1 music sheet at a time"),
-        (false, "Upload up to 5 sheets daily"),
-        (false, "Shows ads"),
+        (true, "Keep as many sheets as you like"),
+        (false, "Watch an ad to unlock practice mode"),
+        (false, "Watch \(UploadCredits.adsPerUpload) ads to upload a new sheet"),
+        (false, "Upload up to \(freeDailySheets) sheets daily"),
+        (false, "Ads display"),
     ]
 
     var body: some View {
@@ -333,7 +338,8 @@ private struct FreePlanCard: View {
                     .foregroundStyle(Brand.inkSoft)
             }
             VStack(alignment: .leading, spacing: 7) {
-                ForEach(Self.points, id: \.text) { point in
+                ForEach(Self.points.indices, id: \.self) { index in
+                    let point = Self.points[index]
                     Label {
                         Text(point.text).foregroundStyle(Brand.ink)
                     } icon: {
@@ -396,7 +402,7 @@ private struct PlanCard: View {
         .allowsHitTesting(selectable)
     }
 
-    private var title: String {
+    private var title: LocalizedStringKey {
         product.id == SubscriptionProduct.yearlyID ? "Yearly" : "Monthly"
     }
 

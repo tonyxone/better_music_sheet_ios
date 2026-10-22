@@ -45,7 +45,7 @@ nonisolated enum CognitoAuth {
             // sign-in. The pool isn't configured for any of these today, so
             // rather than half-implement the flows, fail loudly.
             throw CognitoError(code: (result["ChallengeName"] as? String) ?? "ChallengeRequired",
-                              message: "This account needs an extra sign-in step that isn't supported yet.")
+                              message: String(localized: "This account needs an extra sign-in step that isn't supported yet.", bundle: .app))
         }
         return try tokens(from: authResult)
     }
@@ -58,7 +58,7 @@ nonisolated enum CognitoAuth {
             "AuthParameters": ["REFRESH_TOKEN": refreshToken],
         ], urlSession: urlSession)
         guard let authResult = result["AuthenticationResult"] as? [String: Any] else {
-            throw CognitoError(code: "NoResult", message: "Could not refresh session.")
+            throw CognitoError(code: "NoResult", message: String(localized: "Could not refresh session.", bundle: .app))
         }
         return try tokens(from: authResult)
     }
@@ -103,7 +103,7 @@ nonisolated enum CognitoAuth {
     private static func tokens(from authenticationResult: [String: Any]) throws -> Tokens {
         guard let idToken = authenticationResult["IdToken"] as? String,
               let accessToken = authenticationResult["AccessToken"] as? String else {
-            throw CognitoError(code: "NoResult", message: "Cognito completed the request without returning tokens.")
+            throw CognitoError(code: "NoResult", message: String(localized: "Cognito completed the request without returning tokens.", bundle: .app))
         }
         return Tokens(idToken: idToken, accessToken: accessToken,
                       refreshToken: authenticationResult["RefreshToken"] as? String)
@@ -112,7 +112,7 @@ nonisolated enum CognitoAuth {
     private static func call(_ target: String, body: [String: Any], urlSession: URLSession) async throws -> [String: Any] {
         guard AppConfig.isAuthConfigured, let region = AppConfig.cognitoRegion,
               let clientID = AppConfig.cognitoClientID else {
-            throw CognitoError(code: "NotConfigured", message: "Sign-in isn't configured for this build.")
+            throw CognitoError(code: "NotConfigured", message: String(localized: "Sign-in isn't configured for this build.", bundle: .app))
         }
         var payload = body
         payload["ClientId"] = clientID
@@ -132,10 +132,10 @@ nonisolated enum CognitoAuth {
             // the system hides the reason behind a generic description. Name
             // what we were trying to reach instead.
             throw CognitoError(code: "NetworkError",
-                              message: "Couldn't reach the sign-in service. Check your internet connection and try again.")
+                              message: String(localized: "Couldn't reach the sign-in service. Check your internet connection and try again.", bundle: .app))
         }
         guard let http = response as? HTTPURLResponse else {
-            throw CognitoError(code: "NetworkError", message: "The sign-in service sent no response.")
+            throw CognitoError(code: "NetworkError", message: String(localized: "The sign-in service sent no response.", bundle: .app))
         }
         let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
         guard (200..<300).contains(http.statusCode) else {
@@ -144,7 +144,7 @@ nonisolated enum CognitoAuth {
             let type = (json["__type"] as? String)?.split(separator: "#").last.map(String.init)
             throw CognitoError(code: type ?? "UnknownError",
                               message: (json["message"] as? String) ?? (json["Message"] as? String)
-                                ?? "Cognito request failed (\(http.statusCode)).")
+                                ?? String(localized: "Cognito request failed (\(http.statusCode)).", bundle: .app))
         }
         return json
     }

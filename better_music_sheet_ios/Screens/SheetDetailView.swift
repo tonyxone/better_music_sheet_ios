@@ -7,7 +7,12 @@ struct SheetDetailView: View {
         case annotated, original
 
         var id: Self { self }
-        var title: String { rawValue.capitalized }
+        var title: String {
+            switch self {
+            case .annotated: String(localized: "Annotated", bundle: .app)
+            case .original: String(localized: "Original", bundle: .app)
+            }
+        }
     }
 
     private struct SharedFile: Identifiable {
@@ -327,7 +332,7 @@ struct SheetDetailView: View {
         HStack(spacing: 2) {
             pagerButton("chevron.left", label: "Previous page", by: -1)
                 .disabled(pager.page <= 1)
-            Text("\(pager.page) / \(pager.count)")
+            Text(verbatim: "\(pager.page) / \(pager.count)")
                 .font(.system(size: 13, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(Brand.ink)
@@ -337,7 +342,7 @@ struct SheetDetailView: View {
         }
     }
 
-    private func pagerButton(_ symbol: String, label: String, by delta: Int) -> some View {
+    private func pagerButton(_ symbol: String, label: LocalizedStringKey, by delta: Int) -> some View {
         Button {
             pager.turn(by: delta)
         } label: {

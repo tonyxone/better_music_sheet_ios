@@ -107,8 +107,8 @@ final class SheetDetailModel {
     private func apply(_ job: AnnotationJob) {
         switch job.status {
         case .done: stage = pdfData == nil ? .loadingFile : .ready
-        case .failed: stage = .failed(job.error ?? "Recognition failed for this sheet.")
-        default: stage = .working(job.stage ?? "Queued")
+        case .failed: stage = .failed(job.error.map(ServerText.translate) ?? String(localized: "Recognition failed for this sheet.", bundle: .app))
+        default: stage = .working(job.stage.map(ServerText.translate) ?? String(localized: "Queued", bundle: .app))
         }
     }
 
@@ -168,7 +168,7 @@ final class SheetDetailModel {
     /// the way the user would expect rather than by job id.
     func exportURL() -> URL? {
         guard let pdfData else { return nil }
-        return write(pdfData, suffix: " (annotated)")
+        return write(pdfData, suffix: String(localized: " (annotated)", bundle: .app, comment: "Added to the name of a shared PDF"))
     }
 
     /// The uploaded file, under the name it was uploaded with.
@@ -190,7 +190,7 @@ final class SheetDetailModel {
         content.keyMarksByPage = editor.keyMarksByPage
         content.editing = false
         guard let data = SheetExport.customizedPDF(base: base, content: content) else { return nil }
-        return write(data, suffix: " (customized)")
+        return write(data, suffix: String(localized: " (customized)", bundle: .app, comment: "Added to the name of a shared PDF"))
     }
 
     /// The score as recognized, for MuseScore, Sibelius or Finale. Asked for

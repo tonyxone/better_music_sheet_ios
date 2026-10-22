@@ -66,7 +66,7 @@ private struct SignedInContent: View {
                 .foregroundStyle(Brand.accent)
 
             VStack(spacing: 4) {
-                Text(user.displayName ?? user.email ?? "Signed in")
+                ((user.displayName ?? user.email).map { Text(verbatim: $0) } ?? Text("Signed in"))
                     .font(Brand.title(20))
                     .foregroundStyle(Brand.ink)
                 if let email = user.email, user.displayName != nil {
@@ -149,17 +149,26 @@ private struct SignedInContent: View {
         // app's bespoke confirmation modal — same friction (typing "delete"
         // to enable the button), the platform's own idiom for it.
         .alert("Delete your account?", isPresented: $showingDeleteConfirmation) {
-            TextField("Type \"delete\" to confirm", text: $deleteConfirmationText)
+            TextField("Type \"\(confirmWord)\" to confirm", text: $deleteConfirmationText)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
             Button("Cancel", role: .cancel) {}
             Button("Delete Account", role: .destructive) {
                 Task { await confirmDelete() }
             }
-            .disabled(deleteConfirmationText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() != "delete")
+            .disabled(deleteConfirmationText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() != confirmWord)
         } message: {
-            Text("This permanently deletes your account\(user.email.map { " (\($0))" } ?? "") and your sheet history. This can't be undone.")
+            if let email = user.email {
+                Text("This permanently deletes your account (\(email)) and your sheet history. This can't be undone.")
+            } else {
+                Text("This permanently deletes your account and your sheet history. This can't be undone.")
+            }
         }
+    }
+
+    /// Typed to confirm, in the app's language, as on the web.
+    private var confirmWord: String {
+        String(localized: "delete", bundle: .app, comment: "The word typed to confirm deleting an account. Lowercase.")
     }
 
     private func confirmDelete() async {
@@ -179,7 +188,7 @@ private struct SignedInContent: View {
         do {
             try await SubscriptionManager.shared.restore()
             if !EntitlementStore.shared.isEntitled {
-                restoreError = "No active subscription found for this Apple ID."
+                restoreError = String(localized: "No active subscription found for this Apple ID.", bundle: .app)
             }
         } catch {
             restoreError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -223,7 +232,7 @@ private struct SignInForm: View {
     @State private var name = ""
     @State private var code = ""
     @State private var errorMessage: String?
-    @State private var notice: String?
+    @State private var notice: LocalizedStringKey?
     @State private var showingPlans = false
 
     var body: some View {
@@ -387,7 +396,7 @@ private struct SignInForm: View {
         }
     }
 
-    private var title: String {
+    private var title: LocalizedStringKey {
         switch step {
         case .signIn: "Sign in"
         case .signUp: "Create an account"
@@ -397,7 +406,7 @@ private struct SignInForm: View {
         }
     }
 
-    private var subtitle: String? {
+    private var subtitle: LocalizedStringKey? {
         switch step {
         case .confirm: "Enter the code we sent to \(email)."
         case .forgot: "We'll email you a code to set a new password."
@@ -405,7 +414,7 @@ private struct SignInForm: View {
         }
     }
 
-    private var submitLabel: String {
+    private var submitLabel: LocalizedStringKey {
         switch step {
         case .signIn: model.busy ? "Signing in…" : "Sign in"
         case .signUp: model.busy ? "Creating…" : "Create account"
@@ -415,7 +424,7 @@ private struct SignInForm: View {
         }
     }
 
-    private func go(_ next: AuthStep, notice: String? = nil) {
+    private func go(_ next: AuthStep, notice: LocalizedStringKey? = nil) {
         step = next
         errorMessage = nil
         self.notice = notice
@@ -454,7 +463,7 @@ private struct SignInForm: View {
 
         case .signUp:
             guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                errorMessage = "Please enter a display name."
+                errorMessage = String(localized: "Please enter a display name.", bundle: .app)
                 return
             }
             Task {
@@ -510,19 +519,19 @@ private struct SignInForm: View {
         }
         switch cognitoError.code {
         case "NotAuthorizedException", "UserNotFoundException":
-            return "Incorrect email or password."
+            return String(localized: "Incorrect email or password.", bundle: .app)
         case "UsernameExistsException":
-            return "An account with that email already exists."
+            return String(localized: "An account with that email already exists.", bundle: .app)
         case "CodeMismatchException":
-            return "That code doesn't match. Check it and try again."
+            return String(localized: "That code doesn't match. Check it and try again.", bundle: .app)
         case "ExpiredCodeException":
-            return "That code has expired — request a new one."
+            return String(localized: "That code has expired — request a new one.", bundle: .app)
         case "LimitExceededException":
-            return "Too many attempts. Wait a few minutes and try again."
+            return String(localized: "Too many attempts. Wait a few minutes and try again.", bundle: .app)
         case "InvalidPasswordException":
-            return "That password doesn't meet the requirements below."
+            return String(localized: "That password doesn't meet the requirements below.", bundle: .app)
         case "UserNotConfirmedException":
-            return "This account still needs the emailed confirmation code."
+            return String(localized: "This account still needs the emailed confirmation code.", bundle: .app)
         default:
             return cognitoError.message
         }
@@ -532,10 +541,10 @@ private struct SignInForm: View {
 /// A labelled text field in the app's paper/ink style — the first text input
 /// in the app, so this establishes the convention rather than following one.
 private struct FormField<Content: View>: View {
-    let label: String
+    let label: LocalizedStringKey
     let content: Content
 
-    init(label: String, @ViewBuilder content: () -> Content) {
+    init(label: LocalizedStringKey, @ViewBuilder content: () -> Content) {
         self.label = label
         self.content = content()
     }
@@ -587,7 +596,7 @@ private struct SocialSignInButton: View {
     private var icon: some View {
         switch provider {
         case .google:
-            Text("G")
+            Text(verbatim: "G")
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(Color(red: 0.259, green: 0.522, blue: 0.957))
                 .frame(width: 20, height: 20)

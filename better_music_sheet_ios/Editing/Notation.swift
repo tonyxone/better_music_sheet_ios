@@ -31,9 +31,9 @@ nonisolated enum Notation: String, Codable, Sendable, CaseIterable, Identifiable
 
     var spokenTitle: String {
         switch self {
-        case .letters: "Letter names"
-        case .numbers: "Jianpu, numbered notation"
-        case .solfege: "Solfège, do re mi"
+        case .letters: String(localized: "Letter names", bundle: .app)
+        case .numbers: String(localized: "Jianpu, numbered notation", bundle: .app)
+        case .solfege: String(localized: "Solfège, do re mi", bundle: .app)
         }
     }
 }
