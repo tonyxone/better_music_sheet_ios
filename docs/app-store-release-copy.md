@@ -52,9 +52,11 @@ keyboard that lights up as each note sounds.
 • Export your customized sheet as a PDF.
 • Try the sample score without creating an account.
 
-The Free plan lets a signed-in account keep one sheet at a time and includes ads.
-Premium adds unlimited sheet storage and removes ads. Premium access is shared
-across the website, iPhone and iPad when you sign in to the same account.
+The Free plan lets a signed-in account keep as many sheets as it likes: the first
+is free, and each one after it is added by watching two short ads. Practice mode
+plays the first 8 measures of a sheet, and a short ad unlocks the whole sheet for
+an hour. The Free plan includes ads. Premium removes ads and these limits, and is
+shared across the website, iPhone and iPad when you sign in to the same account.
 
 Premium is available as a monthly or yearly auto-renewable subscription. Eligible
 new subscribers receive a 7-day free trial. Prices and eligibility are shown in
@@ -70,6 +72,14 @@ against your original score. Upload and recognition require an internet connecti
 
 Privacy Policy: https://bettermusicsheet.com/privacy/
 Terms of Use: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+## What's New in 1.1
+
+• Practise the first 8 measures of any sheet for free, or watch a short ad to unlock the whole sheet for an hour.
+• Keep as many sheets as you like on the Free plan: your first is free, and each one after it takes two short ads.
+• Now in Simplified Chinese, Traditional Chinese, Japanese and Korean, as well as English.
+• New About and Support pages.
+• Photos of a page are straightened before they're read.
 
 ## Other listing fields
 
@@ -95,8 +105,13 @@ and synchronized piano playback. From the Library, open the sample score to
 review reading and practice without signing in. For your own uploads and Premium
 purchases, open Account and sign in using the supplied review account.
 
-Free accounts can keep one sheet at a time and show banner ads. Premium offers
-unlimited sheet storage and no ads. Monthly and yearly plans offer the same
+Free accounts can keep any number of sheets. The first upload is free; each later
+upload is unlocked by watching two rewarded ads in a row (Library → Add sheet).
+Practice mode plays a sheet's first 8 measures; a rewarded ad, offered by the
+prompt at measure 8 or the "Free preview" chip, unlocks that sheet for one hour.
+Rewarded ads are always opt-in, the reward is stated before the ad, and closing an
+ad early grants nothing. Free accounts also show banner ads. Premium removes all
+ads and limits. Monthly and yearly plans offer the same
 Premium features and are alternatives in the same subscription group. Eligible
 new subscribers receive a seven-day introductory trial; the paywall uses Apple's
 eligibility result and localized prices. Premium is linked to the signed-in app
