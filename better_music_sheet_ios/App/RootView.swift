@@ -22,8 +22,9 @@ struct RootView: View {
                     case .sheet:
                         SheetDetailView(route: route)
                     case .practice:
-                        // Open to every plan: the free plan limits how many
-                        // sheets you keep, not what you can do with them.
+                        // Open to every plan, but a free sheet plays its first
+                        // measures until a rewarded ad unlocks it (see
+                        // PracticeUnlocks).
                         PracticeView(jobID: route.jobID, title: route.provisionalName)
                     }
                 }

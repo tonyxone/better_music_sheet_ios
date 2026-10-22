@@ -24,7 +24,7 @@ struct PaywallView: View {
     private static let benefits = [
         "Upload your own sheets",
         "Every note labelled",
-        "Practise on a keyboard",
+        "Practise every sheet in full",
         "Unlimited sheet storage",
         "No ads",
         "Access anywhere — web, iPhone and iPad",
@@ -316,6 +316,7 @@ private struct FreePlanCard: View {
     private static let points: [(included: Bool, text: String)] = [
         (true, "Every note labelled"),
         (true, "Practise on a keyboard"),
+        (false, "Watch an ad to practise past measure \(PracticeUnlocks.freeMeasures)"),
         (false, "1 music sheet at a time"),
         (false, "Upload up to 5 sheets daily"),
         (false, "Shows ads"),

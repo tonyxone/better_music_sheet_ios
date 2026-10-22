@@ -68,6 +68,18 @@ final class PlayerModel {
     /// falling notes stay empty, rather than showing the opening bars already
     /// sitting motionless at the keys.
     private(set) var hasStarted = false
+    /// Where a locked sheet's free preview ends (see PracticeUnlocks), or nil
+    /// for no limit. Playback, seeking and stepping all stop here.
+    var previewEndBeat: Double? {
+        didSet {
+            guard previewEndBeat != oldValue else { return }
+            if previewEndBeat == nil { hitPreviewEnd = false }
+            if isPlaying { play(from: beat) }
+        }
+    }
+    /// Set when playback reaches the preview's end, or the user asks to go
+    /// past it — the cue to offer the unlock. Cleared by the page.
+    var hitPreviewEnd = false
 
     private var geometry: SheetGeometry?
     private var engine: SynthEngine?
@@ -220,7 +232,15 @@ final class PlayerModel {
     }
 
     func play(from startBeat: Double) {
-        guard let timeline, let engine = startEngineIfNeeded() else { return }
+        guard let timeline else { return }
+        // Past the preview: offer the unlock rather than play. Exactly at its
+        // end restarts from the top, as the end of the piece does.
+        if let previewEndBeat, startBeat > previewEndBeat + 1e-6 {
+            if isPlaying { pause() }
+            hitPreviewEnd = true
+            return
+        }
+        guard let engine = startEngineIfNeeded() else { return }
         // Samples load before the clock starts, as on the web, so the opening
         // notes are never lost to a download.
         guard loadedInstrument == instrument else {
@@ -230,6 +250,7 @@ final class PlayerModel {
 
         let clock = TempoClock(timeline: timeline, speed: speed, baseBPM: baseBPM)
         let schedule = PlaybackSchedule(timeline: timeline, clock: clock, fromBeat: startBeat,
+                                        untilBeat: previewEndBeat,
                                         usesPianoPedal: instrument.usesPianoPedal)
         let rate = engine.sampleRate
         let origin = engine.currentFrame + Int64((schedule.leadSeconds * rate).rounded())
@@ -286,6 +307,15 @@ final class PlayerModel {
     func seek(to target: Double) {
         guard timeline != nil else { return }
         let clamped = min(totalBeats, max(0, target))
+        // Past the preview: stop at its end rather than play on (or, playing
+        // from exactly there, start over from the top).
+        if let previewEndBeat, clamped > previewEndBeat {
+            pause()
+            beat = previewEndBeat
+            show(beat: previewEndBeat)
+            hitPreviewEnd = true
+            return
+        }
         if isPlaying {
             play(from: clamped)
         } else {
@@ -316,6 +346,10 @@ final class PlayerModel {
             // the start rather than wrapping: back at the top is a mis-tap far
             // more often than a request for the last bar.
             next = onsetBeats.last { $0 < beat - 1e-6 } ?? first
+        }
+        if let previewEndBeat, next >= previewEndBeat - 1e-6 {
+            hitPreviewEnd = true
+            return
         }
         hasStepped = true
         hasStarted = true
@@ -515,6 +549,7 @@ final class PlayerModel {
             ticker = nil
             beat = windowEnd
             publish(measure: nil, playhead: nil, keys: [:])
+            if let previewEndBeat, windowEnd >= previewEndBeat - 1e-6 { hitPreviewEnd = true }
             return
         }
 
