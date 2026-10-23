@@ -9,7 +9,7 @@ struct PrivacyPolicyView: View {
         InfoPageLayout(title: "Privacy Policy", englishOnly: true) {
             InfoText.note(verbatim: "Last updated 29 September 2026")
 
-            paragraph("BetterMusicSheet for iPhone and iPad lets you upload sheet music, add note labels, edit sheets, and practise playing them. This policy explains the information the app uses to provide those features.")
+            paragraph("Better Sheet Music for iPhone and iPad lets you upload sheet music, add note labels, edit sheets, and practise playing them. This policy explains the information the app uses to provide those features.")
 
             heading("Information we collect")
             subheading("Account and sign-in")

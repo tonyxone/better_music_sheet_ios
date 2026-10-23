@@ -1479,58 +1479,58 @@
         }
       }
     },
-    "Better Music Sheet. Upload, annotate, and practice your sheet music." : {
+    "Better Sheet Music. Upload, annotate, and practice your sheet music." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Better Music Sheet。楽譜をアップロードして音名を付け、練習しましょう。"
+            "value" : "Better Sheet Music。楽譜をアップロードして音名を付け、練習しましょう。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Better Music Sheet. 악보를 업로드하고, 음이름을 붙이고, 연습하세요."
+            "value" : "Better Sheet Music. 악보를 업로드하고, 음이름을 붙이고, 연습하세요."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Better Music Sheet。上传乐谱、标注音名并练习。"
+            "value" : "Better Sheet Music。上传乐谱、标注音名并练习。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Better Music Sheet。上傳樂譜、標註音名並練習。"
+            "value" : "Better Sheet Music。上傳樂譜、標註音名並練習。"
           }
         }
       }
     },
-    "BetterMusicSheet does that step for you. Add a PDF or a photo of piano music and you get the same score back with every note labelled, plus a practice mode that lights the notes up on a keyboard as they sound." : {
+    "Better Sheet Music does that step for you. Add a PDF or a photo of piano music and you get the same score back with every note labelled, plus a practice mode that lights the notes up on a keyboard as they sound." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "BetterMusicSheet はその手順を代わりに行います。ピアノ譜の PDF や写真を追加すると、すべての音符に音名が付いた同じ楽譜が戻ってきます。さらに、音が鳴るのに合わせて鍵盤上の音を光らせる練習モードも使えます。"
+            "value" : "Better Sheet Music はその手順を代わりに行います。ピアノ譜の PDF や写真を追加すると、すべての音符に音名が付いた同じ楽譜が戻ってきます。さらに、音が鳴るのに合わせて鍵盤上の音を光らせる練習モードも使えます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "BetterMusicSheet가 그 단계를 대신해 드립니다. 피아노 악보의 PDF나 사진을 추가하면 모든 음표에 음이름이 붙은 같은 악보를 돌려받고, 소리가 날 때 건반 위의 음을 밝혀 주는 연습 모드도 쓸 수 있습니다."
+            "value" : "Better Sheet Music가 그 단계를 대신해 드립니다. 피아노 악보의 PDF나 사진을 추가하면 모든 음표에 음이름이 붙은 같은 악보를 돌려받고, 소리가 날 때 건반 위의 음을 밝혀 주는 연습 모드도 쓸 수 있습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "BetterMusicSheet 替您完成这一步。添加钢琴谱的 PDF 或照片，您会拿回同一份乐谱，每个音符都标好了音名，还有一个练习模式，在音符响起时于键盘上点亮它们。"
+            "value" : "Better Sheet Music 替您完成这一步。添加钢琴谱的 PDF 或照片，您会拿回同一份乐谱，每个音符都标好了音名，还有一个练习模式，在音符响起时于键盘上点亮它们。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "BetterMusicSheet 替您完成這一步。加入鋼琴譜的 PDF 或照片，您會拿回同一份樂譜，每個音符都標好了音名，還有一個練習模式，在音符響起時於鍵盤上點亮它們。"
+            "value" : "Better Sheet Music 替您完成這一步。加入鋼琴譜的 PDF 或照片，您會拿回同一份樂譜，每個音符都標好了音名，還有一個練習模式，在音符響起時於鍵盤上點亮它們。"
           }
         }
       }
@@ -7948,30 +7948,30 @@
         }
       }
     },
-    "Recognition uses [Audiveris](https://github.com/Audiveris/audiveris), an open-source optical music recognition engine. It finds staves, clefs, key signatures and noteheads, and works out each note's pitch. BetterMusicSheet then draws the labels onto a copy of your sheet and builds a timeline for playback. Your file is processed on BetterMusicSheet's own servers; it is not sent to a third-party service." : {
+    "Recognition uses [Audiveris](https://github.com/Audiveris/audiveris), an open-source optical music recognition engine. It finds staves, clefs, key signatures and noteheads, and works out each note's pitch. Better Sheet Music then draws the labels onto a copy of your sheet and builds a timeline for playback. Your file is processed on Better Sheet Music's own servers; it is not sent to a third-party service." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "認識には、オープンソースの光学楽譜認識（OMR）エンジン [Audiveris](https://github.com/Audiveris/audiveris) を使っています。五線、音部記号、調号、符頭を見つけ出し、それぞれの音の高さを割り出します。その後、BetterMusicSheet が楽譜のコピーにラベルを描き込み、再生用のタイムラインを作ります。ファイルは BetterMusicSheet 自身のサーバーで処理され、外部のサービスには送られません。"
+            "value" : "認識には、オープンソースの光学楽譜認識（OMR）エンジン [Audiveris](https://github.com/Audiveris/audiveris) を使っています。五線、音部記号、調号、符頭を見つけ出し、それぞれの音の高さを割り出します。その後、Better Sheet Music が楽譜のコピーにラベルを描き込み、再生用のタイムラインを作ります。ファイルは Better Sheet Music 自身のサーバーで処理され、外部のサービスには送られません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "인식에는 오픈 소스 광학 악보 인식(OMR) 엔진인 [Audiveris](https://github.com/Audiveris/audiveris)를 사용합니다. 오선, 음자리표, 조표, 음표 머리를 찾아 각 음의 높이를 알아냅니다. 그다음 BetterMusicSheet가 악보 사본에 라벨을 그려 넣고 재생용 타임라인을 만듭니다. 파일은 BetterMusicSheet의 자체 서버에서 처리되며 외부 서비스로 보내지지 않습니다."
+            "value" : "인식에는 오픈 소스 광학 악보 인식(OMR) 엔진인 [Audiveris](https://github.com/Audiveris/audiveris)를 사용합니다. 오선, 음자리표, 조표, 음표 머리를 찾아 각 음의 높이를 알아냅니다. 그다음 Better Sheet Music가 악보 사본에 라벨을 그려 넣고 재생용 타임라인을 만듭니다. 파일은 Better Sheet Music의 자체 서버에서 처리되며 외부 서비스로 보내지지 않습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "识别使用开源光学乐谱识别（OMR）引擎 [Audiveris](https://github.com/Audiveris/audiveris)。它会找出谱表、谱号、调号和符头，并推算出每个音符的音高。随后 BetterMusicSheet 把标注画到您乐谱的副本上，并生成用于回放的时间轴。您的文件在 BetterMusicSheet 自己的服务器上处理，不会发送给第三方服务。"
+            "value" : "识别使用开源光学乐谱识别（OMR）引擎 [Audiveris](https://github.com/Audiveris/audiveris)。它会找出谱表、谱号、调号和符头，并推算出每个音符的音高。随后 Better Sheet Music 把标注画到您乐谱的副本上，并生成用于回放的时间轴。您的文件在 Better Sheet Music 自己的服务器上处理，不会发送给第三方服务。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "辨識使用開源光學樂譜辨識（OMR）引擎 [Audiveris](https://github.com/Audiveris/audiveris)。它會找出譜表、譜號、調號和符頭，並推算出每個音符的音高。隨後 BetterMusicSheet 把標註畫到您樂譜的副本上，並產生用於播放的時間軸。您的檔案在 BetterMusicSheet 自己的伺服器上處理，不會傳送給第三方服務。"
+            "value" : "辨識使用開源光學樂譜辨識（OMR）引擎 [Audiveris](https://github.com/Audiveris/audiveris)。它會找出譜表、譜號、調號和符頭，並推算出每個音符的音高。隨後 Better Sheet Music 把標註畫到您樂譜的副本上，並產生用於播放的時間軸。您的檔案在 Better Sheet Music 自己的伺服器上處理，不會傳送給第三方服務。"
           }
         }
       }
