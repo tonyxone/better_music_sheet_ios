@@ -19,8 +19,12 @@ struct LibraryView: View {
     @State private var uploadAd = RewardedAdLoader.upload
     /// The add-sheet panel was opened with ads watched for it.
     @State private var addWithAds = false
-    /// The sheets that upload replaces, deleted once the backend accepts it.
+    /// The sheet that upload replaces, deleted once the backend accepts it.
     @State private var replacing: [AnnotationJob] = []
+    /// That upload goes among several sheets kept (a lapsed subscriber's),
+    /// replacing the one chosen, and opens with the ad already watched.
+    @State private var addingToSeveral = false
+    @State private var choosingReplacement = false
     @State private var readingUnlocks = PracticeUnlocks.reading
     @State private var sheetAd = RewardedAdLoader.practice
     /// A locked sheet tapped, waiting on its unlock prompt.
@@ -33,6 +37,88 @@ struct LibraryView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
+        // Split in two so the compiler can type-check it: the page, then the
+        // prompts it raises.
+        page
+        .alert(model.hasKeptSheet ? "Replace your sheet?" : "Upload a sheet?", isPresented: $showingUploadUnlock) {
+            // An ad already watched (an upload that then failed) isn't asked again.
+            Button(uploadCredits.isReady ? (model.hasKeptSheet ? "Replace" : "Upload") : "Watch Ad") {
+                Task { await watchUploadAds() }
+            }
+            Button("See Premium Plans") { showingPaywall = true }
+            Button("Not Now", role: .cancel) {}
+        } message: {
+            if !model.hasKeptSheet {
+                Text("Watch a short ad to upload a sheet — or go Premium for unlimited sheets and no ads.")
+            } else if let only = model.keptSheets.first {
+                Text("The free plan keeps 1 sheet at a time. Watch a short ad to upload a new sheet in place of “\(only.displayName)”, which will be deleted — or go Premium for unlimited sheets and no ads.")
+            }
+        }
+        // Several sheets: the reader picks the one the new upload replaces.
+        .confirmationDialog("Replace which sheet?", isPresented: $choosingReplacement, titleVisibility: .visible) {
+            ForEach(model.keptSheets) { job in
+                Button(job.displayName, role: .destructive) {
+                    Task { await watchUploadAds(replacing: job) }
+                }
+            }
+            Button("See Premium Plans") { showingPaywall = true }
+            Button("Not Now", role: .cancel) {}
+        } message: {
+            Text("Each new upload takes a short ad and replaces one of your sheets, which will be deleted. Choose which — or go Premium for unlimited sheets and no ads.")
+        }
+        .alert("Unlock this sheet", isPresented: Binding(
+            get: { pendingUnlock != nil }, set: { if !$0 { pendingUnlock = nil } }
+        ), presenting: pendingUnlock) { route in
+            Button("Watch Ad") { Task { await watchSheetAd(for: route) } }
+            Button("See Premium Plans") { showingPaywall = true }
+            Button("Not Now", role: .cancel) {}
+        } message: { route in
+            Text("The free plan opens your first sheet without ads. Watch a short ad to read and practise “\(route.provisionalName)” for an hour — or go Premium to open every sheet.")
+        }
+        // The hour is clock time, so it runs out while a sheet is open or the
+        // app is closed: checked on coming back, when the hour ends, and when
+        // Premium ends (often learned just after coming back).
+        .task(id: "\(scenePhase == .active) \(entitlements.isEntitled) \(openUnlockExpiry?.timeIntervalSince1970 ?? 0)") {
+            guard scenePhase == .active else { return }
+            closeExpiredSheets()
+            guard let expiry = openUnlockExpiry else { return }
+            try? await Task.sleep(for: .seconds(max(0, expiry.timeIntervalSinceNow) + 0.5))
+            guard !Task.isCancelled else { return }
+            closeExpiredSheets()
+        }
+        .task(id: model.keptSheets.contains(where: isLocked)) {
+            guard model.keptSheets.contains(where: isLocked) else { return }
+            await sheetAd.load()
+        }
+        .alert("No ad available", isPresented: $noAdAvailable) {
+            Button("See Premium Plans") { showingPaywall = true }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("No ad is available right now. Try again in a moment.")
+        }
+        // Loaded ahead while a free account is at its free sheet, so the ad
+        // plays without a wait.
+        .task(id: needsUploadAds) {
+            guard needsUploadAds else { return }
+            await uploadAd.load()
+        }
+        .alert("Free plan: 1 sheet at a time", isPresented: $showingFreeLimit) {
+            Button("See Premium Plans") { showingPaywall = true }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Delete your current sheet to upload another, or go Premium for unlimited sheets and no ads.")
+        }
+        .alert("Delete this sheet?", isPresented: Binding(
+            get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }
+        ), presenting: pendingDeletion) { job in
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) { Task { await model.delete(job) } }
+        } message: { job in
+            Text("“\(job.displayName)” and its annotations will be removed from your library. This can't be undone.")
+        }
+    }
+
+    private var page: some View {
         ZStack(alignment: .bottom) {
             Brand.paper.ignoresSafeArea()
 
@@ -90,6 +176,12 @@ struct LibraryView: View {
                 pendingRoute = SheetRoute(jobID: jobID, provisionalName: String(localized: "New sheet", bundle: .app))
                 let replaced = replacing
                 replacing = []
+                if addWithAds, addingToSeveral {
+                    // Locked like the other extras, but its ad is already watched.
+                    readingUnlocks.unlock(jobID)
+                    PracticeUnlocks.shared.unlock(jobID)
+                }
+                addingToSeveral = false
                 Task {
                     for job in replaced where job.jobID != jobID { await model.delete(job) }
                     await model.load()
@@ -101,72 +193,6 @@ struct LibraryView: View {
         }
         .sheet(isPresented: $showingPaywall) {
             PaywallView()
-        }
-        .alert(model.hasKeptSheet ? "Replace your sheet?" : "Upload a sheet?", isPresented: $showingUploadUnlock) {
-            // An ad already watched (an upload that then failed) isn't asked again.
-            Button(uploadCredits.isReady ? (model.hasKeptSheet ? "Replace" : "Upload") : "Watch Ad") {
-                Task { await watchUploadAds() }
-            }
-            Button("See Premium Plans") { showingPaywall = true }
-            Button("Not Now", role: .cancel) {}
-        } message: {
-            if !model.hasKeptSheet {
-                Text("Watch a short ad to upload a sheet — or go Premium for unlimited sheets and no ads.")
-            } else if let only = model.keptSheets.first, model.keptSheets.count == 1 {
-                Text("The free plan keeps 1 sheet at a time. Watch a short ad to upload a new sheet in place of “\(only.displayName)”, which will be deleted — or go Premium for unlimited sheets and no ads.")
-            } else {
-                Text("The free plan keeps 1 sheet at a time. Watch a short ad to upload a new sheet in place of your \(model.keptSheets.count) sheets, which will be deleted — or go Premium for unlimited sheets and no ads.")
-            }
-        }
-        .alert("Unlock this sheet", isPresented: Binding(
-            get: { pendingUnlock != nil }, set: { if !$0 { pendingUnlock = nil } }
-        ), presenting: pendingUnlock) { route in
-            Button("Watch Ad") { Task { await watchSheetAd(for: route) } }
-            Button("See Premium Plans") { showingPaywall = true }
-            Button("Not Now", role: .cancel) {}
-        } message: { route in
-            Text("The free plan opens your first sheet without ads. Watch a short ad to read and practise “\(route.provisionalName)” for an hour — or go Premium to open every sheet.")
-        }
-        // The hour is clock time, so it runs out while a sheet is open or the
-        // app is closed: checked on coming back, when the hour ends, and when
-        // Premium ends (often learned just after coming back).
-        .task(id: "\(scenePhase == .active) \(entitlements.isEntitled) \(openUnlockExpiry?.timeIntervalSince1970 ?? 0)") {
-            guard scenePhase == .active else { return }
-            closeExpiredSheets()
-            guard let expiry = openUnlockExpiry else { return }
-            try? await Task.sleep(for: .seconds(max(0, expiry.timeIntervalSinceNow) + 0.5))
-            guard !Task.isCancelled else { return }
-            closeExpiredSheets()
-        }
-        .task(id: model.keptSheets.contains(where: isLocked)) {
-            guard model.keptSheets.contains(where: isLocked) else { return }
-            await sheetAd.load()
-        }
-        .alert("No ad available", isPresented: $noAdAvailable) {
-            Button("See Premium Plans") { showingPaywall = true }
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("No ad is available right now. Try again in a moment.")
-        }
-        // Loaded ahead while a free account is at its free sheet, so the ad
-        // plays without a wait.
-        .task(id: needsUploadAds) {
-            guard needsUploadAds else { return }
-            await uploadAd.load()
-        }
-        .alert("Free plan: 1 sheet at a time", isPresented: $showingFreeLimit) {
-            Button("See Premium Plans") { showingPaywall = true }
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Delete your current sheet to upload another, or go Premium for unlimited sheets and no ads.")
-        }
-        .alert("Delete this sheet?", isPresented: Binding(
-            get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }
-        ), presenting: pendingDeletion) { job in
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) { Task { await model.delete(job) } }
-        } message: { job in
-            Text("“\(job.displayName)” and its annotations will be removed from your library. This can't be undone.")
         }
     }
 
@@ -186,8 +212,10 @@ struct LibraryView: View {
     /// It keeps one sheet at a time, so with one already the new sheet goes
     /// in its place, and the old one is deleted once the backend accepts the
     /// upload (the ad lets it past the backend's one-sheet check for that
-    /// moment). Entitlement is checked fresh rather than trusted from before
-    /// signing in.
+    /// moment). An account already holding several — a lapsed subscriber's —
+    /// keeps them, opening them with ads (see isLocked), but each upload
+    /// replaces the one it picks. Entitlement is checked fresh rather than
+    /// trusted from before signing in.
     private func startAdding() async {
         guard model.currentUser != nil else {
             addAfterSignIn = true
@@ -203,6 +231,8 @@ struct LibraryView: View {
             showingAddSheet = true
         } else if !AdConfig.isEnabled {
             showingFreeLimit = true
+        } else if model.keptSheets.count > 1 {
+            choosingReplacement = true
         } else {
             // Always asked, even with an ad already watched: it may delete a sheet.
             showingUploadUnlock = true
@@ -214,8 +244,9 @@ struct LibraryView: View {
     }
 
     /// The ad an upload takes, from one tap. Closing it early earns nothing.
-    /// The sheets to replace are fixed here, as the prompt named them.
-    private func watchUploadAds() async {
+    /// What it replaces is fixed here, as the prompt named it: the sheet
+    /// chosen among several, or the one sheet kept.
+    private func watchUploadAds(replacing chosen: AnnotationJob? = nil) async {
         checkingAccess = true
         defer { checkingAccess = false }
         while !uploadCredits.isReady {
@@ -228,7 +259,9 @@ struct LibraryView: View {
             // Let the finished ad's screen finish closing before the next.
             if !uploadCredits.isReady { try? await Task.sleep(for: .milliseconds(600)) }
         }
-        replacing = model.keptSheets
+        let kept = model.keptSheets
+        replacing = chosen.map { [$0] } ?? kept
+        addingToSeveral = kept.count > 1
         addWithAds = true
         showingAddSheet = true
     }

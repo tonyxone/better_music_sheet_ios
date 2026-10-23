@@ -1,9 +1,7 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
+    "" : {},
     " (annotated)" : {
       "comment" : "Added to the name of a shared PDF",
       "localizations" : {
@@ -10499,34 +10497,6 @@
         }
       }
     },
-    "The free plan keeps 1 sheet at a time. Watch a short ad to upload a new sheet in place of your %lld sheets, which will be deleted — or go Premium for unlimited sheets and no ads." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無料プランで保存できる楽譜は一度に1つです。短い広告を見ると、今ある%lld件の楽譜の代わりに新しい楽譜をアップロードできます（今の楽譜は削除されます）。プレミアムなら楽譜は無制限で広告もありません。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "무료 요금제는 한 번에 악보 1개만 보관합니다. 짧은 광고를 보면 지금 있는 악보 %lld개 대신 새 악보를 업로드할 수 있으며, 기존 악보는 삭제됩니다. 프리미엄은 악보 무제한에 광고도 없습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免费版一次只能保留 1 份乐谱。观看一段简短广告，即可上传新乐谱替换您现有的 %lld 份乐谱（原乐谱将被删除）；或升级高级版，乐谱无限且无广告。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免費方案一次只能保留 1 份樂譜。觀看一段簡短廣告，即可上傳新樂譜替換您現有的 %lld 份樂譜（原樂譜將被刪除）；或升級進階版，樂譜無限且無廣告。"
-          }
-        }
-      }
-    },
     "The free plan keeps one sheet at a time. Each upload takes a short ad, and a new sheet replaces the one you have. It adds up to 15 sheets a day and shows ads. Premium keeps as many sheets as you like, adds more each day, and has no ads. One subscription covers this app and the website." : {
       "localizations" : {
         "ja" : {
@@ -11956,9 +11926,7 @@
         }
       }
     },
-    "Watch Ad" : {
-
-    },
+    "Watch Ad" : {},
     "Watch an ad for each upload" : {
       "localizations" : {
         "ja" : {
@@ -12571,6 +12539,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "訂閱屬於您的帳號，在網頁上同樣可用。"
+          }
+        }
+      }
+    },
+    "Replace which sheet?" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "どの楽譜を置き換えますか？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "어떤 악보를 바꿀까요?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要替换哪份乐谱？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要替換哪份樂譜？"
+          }
+        }
+      }
+    },
+    "Each new upload takes a short ad and replaces one of your sheets, which will be deleted. Choose which — or go Premium for unlimited sheets and no ads." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいアップロードには短い広告の視聴が必要で、今ある楽譜のうち1つと置き換わります（その楽譜は削除されます）。どれにするか選んでください。プレミアムなら楽譜は無制限で広告もありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 업로드는 짧은 광고를 봐야 하며, 지금 있는 악보 중 하나를 대신합니다(그 악보는 삭제됩니다). 어떤 악보를 바꿀지 고르세요. 프리미엄은 악보 무제한에 광고도 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每次上传新乐谱需观看一段简短广告，并会替换您的一份乐谱（该乐谱将被删除）。请选择要替换的乐谱；或升级高级版，乐谱无限且无广告。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每次上傳新樂譜需觀看一段簡短廣告，並會替換您的一份樂譜（該樂譜將被刪除）。請選擇要替換的樂譜；或升級進階版，樂譜無限且無廣告。"
           }
         }
       }
