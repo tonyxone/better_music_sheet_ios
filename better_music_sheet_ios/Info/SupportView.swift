@@ -11,7 +11,7 @@ struct SupportView: View {
             InfoText.paragraph("Questions, bug reports, and sheets that came out wrong are all welcome at [bettermusicsheet@gmail.com](mailto:bettermusicsheet@gmail.com). Please say which iPhone or iPad and which version of iOS you use, and attach the sheet if it was read badly.")
 
             InfoText.heading("Free and Premium")
-            InfoText.paragraph("The free plan keeps as many sheets as you like: your first is free, and each one after it takes a short ad. It adds up to 15 sheets a day and shows ads. Premium adds more each day and has no ads. One subscription covers this app and the website.")
+            InfoText.paragraph("The free plan keeps one sheet at a time. Each upload takes a short ad, and a new sheet replaces the one you have. It adds up to 15 sheets a day and shows ads. Premium keeps as many sheets as you like, adds more each day, and has no ads. One subscription covers this app and the website.")
 
             InfoText.heading("Managing or cancelling a subscription")
             InfoText.paragraph("A subscription bought in this app is billed by Apple: manage or cancel it with Manage Subscription on the Account screen, or in Settings under your name, then Subscriptions.")

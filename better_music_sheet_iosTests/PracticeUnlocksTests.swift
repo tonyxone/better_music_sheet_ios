@@ -74,6 +74,28 @@ struct PracticeUnlocksTests {
         #expect(defaults.object(forKey: "bms_practice_unlocks") == nil)
     }
 
+    @Test func readingUnlocksLastAnHourAndAreKeptApart() {
+        let defaults = freshDefaults()
+        var now = Date(timeIntervalSince1970: 1_000_000)
+        let reading = PracticeUnlocks(defaults: defaults, now: { now },
+                                      storageKey: "reading", duration: PracticeUnlocks.readingDuration)
+        reading.unlock("job-1")
+
+        #expect(!PracticeUnlocks(defaults: defaults, now: { now }).isUnlocked("job-1"))
+        now += 60 * 60 - 1
+        #expect(reading.isUnlocked("job-1"))
+        now += 1
+        #expect(!reading.isUnlocked("job-1"))
+    }
+
+    @Test func theFirstUploadIsTheFreeSheet() {
+        let sheets = [(id: "newer", createdAt: 300.0), (id: "first", createdAt: 100.0), (id: "middle", createdAt: 200.0)]
+        #expect(PracticeUnlocks.freeSheetID(among: sheets) == "first")
+        // Down to one, that one is free, whichever it was.
+        #expect(PracticeUnlocks.freeSheetID(among: [(id: "newer", createdAt: 300)]) == "newer")
+        #expect(PracticeUnlocks.freeSheetID(among: []) == nil)
+    }
+
     @Test func aPieceThatFitsThePreviewIsNeverLocked() {
         #expect(PracticeUnlocks.previewEndBeat(in: timeline(measures: 8)) == nil)
         #expect(PracticeUnlocks.previewEndBeat(in: timeline(measures: 3)) == nil)

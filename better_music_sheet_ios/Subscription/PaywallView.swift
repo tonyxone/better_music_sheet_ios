@@ -25,7 +25,7 @@ struct PaywallView: View {
         "Upload your own sheets",
         "Every note labelled",
         "Practise every sheet in full",
-        "Upload without ads",
+        "Unlimited sheet storage",
         "No ads",
         "Access anywhere — web, iPhone and iPad",
     ]
@@ -319,9 +319,9 @@ private struct FreePlanCard: View {
     private static let points: [(included: Bool, text: LocalizedStringKey)] = [
         (true, "Every note labelled"),
         (true, "Practise on a keyboard"),
-        (true, "Keep as many sheets as you like"),
+        (false, "1 sheet at a time"),
         (false, "Watch an ad to unlock practice mode"),
-        (false, "Watch an ad to upload a new sheet"),
+        (false, "Watch an ad for each upload"),
         (false, "Upload up to \(freeDailySheets) sheets daily"),
         (false, "Ads display"),
     ]

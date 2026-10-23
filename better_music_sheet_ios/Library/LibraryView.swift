@@ -19,6 +19,12 @@ struct LibraryView: View {
     @State private var uploadAd = RewardedAdLoader.upload
     /// The add-sheet panel was opened with ads watched for it.
     @State private var addWithAds = false
+    /// The sheets that upload replaces, deleted once the backend accepts it.
+    @State private var replacing: [AnnotationJob] = []
+    @State private var readingUnlocks = PracticeUnlocks.reading
+    @State private var sheetAd = RewardedAdLoader.practice
+    /// A locked sheet tapped, waiting on its unlock prompt.
+    @State private var pendingUnlock: SheetRoute?
     @State private var showingUploadUnlock = false
     @State private var noAdAvailable = false
     /// The sheet a swipe asked to delete, waiting on the confirmation alert.
@@ -82,7 +88,12 @@ struct LibraryView: View {
         .sheet(isPresented: $showingAddSheet, onDismiss: openPendingSheet) {
             AddSheetView(adUnlock: addWithAds) { jobID in
                 pendingRoute = SheetRoute(jobID: jobID, provisionalName: String(localized: "New sheet", bundle: .app))
-                Task { await model.load() }
+                let replaced = replacing
+                replacing = []
+                Task {
+                    for job in replaced where job.jobID != jobID { await model.delete(job) }
+                    await model.load()
+                }
             }
         }
         .sheet(isPresented: $showingAccount, onDismiss: afterAccount) {
@@ -91,12 +102,45 @@ struct LibraryView: View {
         .sheet(isPresented: $showingPaywall) {
             PaywallView()
         }
-        .alert("Add another sheet", isPresented: $showingUploadUnlock) {
-            Button("Watch Ad") { Task { await watchUploadAds() } }
+        .alert(model.hasKeptSheet ? "Replace your sheet?" : "Upload a sheet?", isPresented: $showingUploadUnlock) {
+            // An ad already watched (an upload that then failed) isn't asked again.
+            Button(uploadCredits.isReady ? (model.hasKeptSheet ? "Replace" : "Upload") : "Watch Ad") {
+                Task { await watchUploadAds() }
+            }
             Button("See Premium Plans") { showingPaywall = true }
             Button("Not Now", role: .cancel) {}
         } message: {
-            Text("Your first sheet is free. Watch a short ad to add each one after it, and keep as many as you like — or go Premium for no ads.")
+            if !model.hasKeptSheet {
+                Text("Watch a short ad to upload a sheet — or go Premium for unlimited sheets and no ads.")
+            } else if let only = model.keptSheets.first, model.keptSheets.count == 1 {
+                Text("The free plan keeps 1 sheet at a time. Watch a short ad to upload a new sheet in place of “\(only.displayName)”, which will be deleted — or go Premium for unlimited sheets and no ads.")
+            } else {
+                Text("The free plan keeps 1 sheet at a time. Watch a short ad to upload a new sheet in place of your \(model.keptSheets.count) sheets, which will be deleted — or go Premium for unlimited sheets and no ads.")
+            }
+        }
+        .alert("Unlock this sheet", isPresented: Binding(
+            get: { pendingUnlock != nil }, set: { if !$0 { pendingUnlock = nil } }
+        ), presenting: pendingUnlock) { route in
+            Button("Watch Ad") { Task { await watchSheetAd(for: route) } }
+            Button("See Premium Plans") { showingPaywall = true }
+            Button("Not Now", role: .cancel) {}
+        } message: { route in
+            Text("The free plan opens your first sheet without ads. Watch a short ad to read and practise “\(route.provisionalName)” for an hour — or go Premium to open every sheet.")
+        }
+        // The hour is clock time, so it runs out while a sheet is open or the
+        // app is closed: checked on coming back, when the hour ends, and when
+        // Premium ends (often learned just after coming back).
+        .task(id: "\(scenePhase == .active) \(entitlements.isEntitled) \(openUnlockExpiry?.timeIntervalSince1970 ?? 0)") {
+            guard scenePhase == .active else { return }
+            closeExpiredSheets()
+            guard let expiry = openUnlockExpiry else { return }
+            try? await Task.sleep(for: .seconds(max(0, expiry.timeIntervalSinceNow) + 0.5))
+            guard !Task.isCancelled else { return }
+            closeExpiredSheets()
+        }
+        .task(id: model.keptSheets.contains(where: isLocked)) {
+            guard model.keptSheets.contains(where: isLocked) else { return }
+            await sheetAd.load()
         }
         .alert("No ad available", isPresented: $noAdAvailable) {
             Button("See Premium Plans") { showingPaywall = true }
@@ -104,8 +148,8 @@ struct LibraryView: View {
         } message: {
             Text("No ad is available right now. Try again in a moment.")
         }
-        // Loaded ahead while a free account is at its free sheet, so both
-        // ads play without a wait.
+        // Loaded ahead while a free account is at its free sheet, so the ad
+        // plays without a wait.
         .task(id: needsUploadAds) {
             guard needsUploadAds else { return }
             await uploadAd.load()
@@ -137,11 +181,13 @@ struct LibraryView: View {
         }
     }
 
-    /// Uploading needs an account. Premium uploads freely. A free account
-    /// keeps as many sheets as it likes, but each one past its first takes
-    /// a rewarded ad (UploadCredits; the backend lets those past
-    /// its one-sheet limit, which the web app still keeps). Entitlement is
-    /// checked fresh rather than trusted from before signing in.
+    /// Uploading needs an account. Premium uploads freely. Every upload from a
+    /// free account takes a rewarded ad (UploadCredits), the first included.
+    /// It keeps one sheet at a time, so with one already the new sheet goes
+    /// in its place, and the old one is deleted once the backend accepts the
+    /// upload (the ad lets it past the backend's one-sheet check for that
+    /// moment). Entitlement is checked fresh rather than trusted from before
+    /// signing in.
     private func startAdding() async {
         guard model.currentUser != nil else {
             addAfterSignIn = true
@@ -151,24 +197,24 @@ struct LibraryView: View {
         checkingAccess = true
         await entitlements.refresh()
         checkingAccess = false
-        if entitlements.isEntitled || !model.hasKeptSheet {
+        if entitlements.isEntitled || (!AdConfig.isEnabled && !model.hasKeptSheet) {
             addWithAds = false
+            replacing = []
             showingAddSheet = true
         } else if !AdConfig.isEnabled {
             showingFreeLimit = true
-        } else if uploadCredits.isReady {
-            addWithAds = true
-            showingAddSheet = true
         } else {
+            // Always asked, even with an ad already watched: it may delete a sheet.
             showingUploadUnlock = true
         }
     }
 
     private var needsUploadAds: Bool {
-        AdConfig.isEnabled && model.currentUser != nil && !entitlements.isEntitled && model.hasKeptSheet
+        AdConfig.isEnabled && model.currentUser != nil && !entitlements.isEntitled
     }
 
     /// The ad an upload takes, from one tap. Closing it early earns nothing.
+    /// The sheets to replace are fixed here, as the prompt named them.
     private func watchUploadAds() async {
         checkingAccess = true
         defer { checkingAccess = false }
@@ -182,8 +228,63 @@ struct LibraryView: View {
             // Let the finished ad's screen finish closing before the next.
             if !uploadCredits.isReady { try? await Task.sleep(for: .milliseconds(600)) }
         }
+        replacing = model.keptSheets
         addWithAds = true
         showingAddSheet = true
+    }
+
+    /// A free account holding more than its one sheet — most often a lapsed
+    /// subscriber's — opens its first for free and every other with an ad,
+    /// for PracticeUnlocks.readingDuration. Down to one sheet, it's free.
+    private func needsAd(_ job: AnnotationJob) -> Bool {
+        PracticeUnlocks.needsReadingAd(job.jobID, isDone: job.status == .done,
+                                       kept: model.keptSheets.map { ($0.jobID, $0.createdAt) },
+                                       isPremium: entitlements.isEntitled, adsEnabled: AdConfig.isEnabled)
+    }
+
+    private func isLocked(_ job: AnnotationJob) -> Bool {
+        needsAd(job) && !readingUnlocks.isUnlocked(job.jobID)
+    }
+
+    private func job(for route: SheetRoute) -> AnnotationJob? {
+        model.jobs.first { $0.jobID == route.jobID }
+    }
+
+    /// When the soonest unlock among the sheets open now runs out.
+    private var openUnlockExpiry: Date? {
+        path.compactMap { route in
+            job(for: route).flatMap { needsAd($0) ? readingUnlocks.unlockedUntil($0.jobID) : nil }
+        }.min()
+    }
+
+    /// Back to the library from a sheet whose hour is up, asking for an ad.
+    private func closeExpiredSheets() {
+        guard let index = path.firstIndex(where: { job(for: $0).map(isLocked) ?? false }) else { return }
+        let route = path[index]
+        path.removeSubrange(index...)
+        pendingUnlock = route
+    }
+
+    private func open(_ route: SheetRoute) {
+        if let job = job(for: route), isLocked(job) {
+            pendingUnlock = route
+        } else {
+            path.append(route)
+        }
+    }
+
+    /// One ad opens the sheet, reading and practice, for an hour.
+    private func watchSheetAd(for route: SheetRoute) async {
+        checkingAccess = true
+        let earned = await sheetAd.present()
+        checkingAccess = false
+        guard earned else {
+            if !sheetAd.isReady { noAdAvailable = true }
+            return
+        }
+        readingUnlocks.unlock(route.jobID)
+        PracticeUnlocks.shared.unlock(route.jobID)
+        path.append(route)
     }
 
     /// Pushed only after the panel has gone. SwiftUI often drops a navigation
@@ -226,26 +327,17 @@ struct LibraryView: View {
             } else {
                 List {
                     ForEach(model.visibleJobs) { job in
-                        SheetRow(job: job) {
-                            path.append(SheetRoute(jobID: job.jobID, provisionalName: job.displayName))
+                        SheetRow(job: job, locked: isLocked(job)) {
+                            open(SheetRoute(jobID: job.jobID, provisionalName: job.displayName))
                         } practice: {
-                            path.append(SheetRoute(jobID: job.jobID, provisionalName: job.displayName,
-                                                   page: .practice))
+                            open(SheetRoute(jobID: job.jobID, provisionalName: job.displayName,
+                                            page: .practice))
+                        } delete: {
+                            pendingDeletion = job
                         }
                         .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
-                        .swipeActions(edge: .trailing) {
-                            // Tinted rather than `role: .destructive`: that role
-                            // slides the row out at once, before the reader has
-                            // confirmed anything.
-                            Button {
-                                pendingDeletion = job
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                            .tint(.red)
-                        }
                     }
 
                     // Built-in sample, not the reader's own music — always
@@ -284,17 +376,12 @@ struct LibraryView: View {
                 path.append(SheetRoute(jobID: DemoSheet.jobID, provisionalName: DemoSheet.title))
             } practice: {
                 path.append(SheetRoute(jobID: DemoSheet.jobID, provisionalName: DemoSheet.title, page: .practice))
+            } remove: {
+                Task { await demo.setHidden(true) }
             }
             .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
-            .swipeActions(edge: .trailing) {
-                Button(role: .destructive) {
-                    Task { await demo.setHidden(true) }
-                } label: {
-                    Label("Remove", systemImage: "eye.slash")
-                }
-            }
         case true?:
             showSampleButton
                 .frame(maxWidth: .infinity)
@@ -337,6 +424,8 @@ struct LibraryView: View {
 private struct DemoRow: View {
     let open: () -> Void
     let practice: () -> Void
+    /// Hides the sample; Show sample brings it back, so nothing asks first.
+    let remove: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
@@ -379,6 +468,20 @@ private struct DemoRow: View {
             .buttonStyle(.plain)
             .frame(width: 64)
             .accessibilityLabel("Practice the sample")
+
+            // In the delete button's place on a sheet's row, so the cards line up.
+            Button(action: remove) {
+                Image(systemName: "eye.slash")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Brand.inkSoft)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Brand.card, in: .rect(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Brand.paperDeep, lineWidth: 1))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .frame(width: 48)
+            .accessibilityLabel("Remove the sample")
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -427,12 +530,18 @@ private struct JobProgressBar: View {
     }
 }
 
+/// A sheet's card, then its practice and delete buttons. Delete is a button
+/// of its own rather than a swipe, which readers didn't find.
 private struct SheetRow: View {
     let job: AnnotationJob
+    /// Takes an ad to open (see LibraryView.isLocked).
+    let locked: Bool
     let open: () -> Void
     let practice: () -> Void
+    let delete: () -> Void
 
     private static let practiceWidth: CGFloat = 64
+    private static let deleteWidth: CGFloat = 48
 
     var body: some View {
         HStack(spacing: 8) {
@@ -472,6 +581,21 @@ private struct SheetRow: View {
                     .frame(width: Self.practiceWidth)
                     .accessibilityHidden(true)
             }
+
+            // Asks first (the library's confirmation alert), so a stray tap
+            // deletes nothing.
+            Button(action: delete) {
+                Image(systemName: "trash")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Brand.danger)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Brand.card, in: .rect(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Brand.paperDeep, lineWidth: 1))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .frame(width: Self.deleteWidth)
+            .accessibilityLabel("Delete \(job.displayName)")
         }
         // Lets both cards stretch to the taller one's height.
         .fixedSize(horizontal: false, vertical: true)
@@ -481,9 +605,11 @@ private struct SheetRow: View {
     private var trailing: some View {
         switch job.status {
         case .done:
-            Image(systemName: "chevron.right")
+            Image(systemName: locked ? "lock.fill" : "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Brand.hairline)
+                .foregroundStyle(locked ? Brand.inkSoft : Brand.hairline)
+                .accessibilityLabel(Text("Locked"))
+                .accessibilityHidden(!locked)
         case .failed:
             Text("Retry")
                 .font(.system(size: 13, weight: .semibold))

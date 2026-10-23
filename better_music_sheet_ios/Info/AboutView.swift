@@ -27,7 +27,7 @@ struct AboutView: View {
             InfoText.paragraph("Check the output against the original before you rely on it. It is a reading aid, not a proofreader.")
 
             InfoText.heading("Cost and accounts")
-            InfoText.paragraph("Trying the built-in sample needs no account. Adding your own sheet music needs one, so your sheets are there wherever you sign in — on iPhone, iPad or the website. On the free plan your first sheet is free and each one after it takes a short ad, and you keep as many as you like; Premium has no ads. One Premium subscription covers the app and the website.")
+            InfoText.paragraph("Trying the built-in sample needs no account. Adding your own sheet music needs one, so your sheets are there wherever you sign in — on iPhone, iPad or the website. The free plan keeps one sheet at a time, each upload takes a short ad, and it shows ads; Premium keeps as many sheets as you like, with no ads. One Premium subscription covers the app and the website.")
 
             InfoText.heading("Getting in touch")
             InfoText.paragraph("Corrections, bug reports, and sheets it read badly are all welcome at [bettermusicsheet@gmail.com](mailto:bettermusicsheet@gmail.com). A sheet that comes out wrong is genuinely useful to see.")

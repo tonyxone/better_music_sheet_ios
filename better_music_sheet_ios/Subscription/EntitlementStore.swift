@@ -13,6 +13,14 @@ final class EntitlementStore {
     static let shared = EntitlementStore()
 
     private(set) var isEntitled: Bool
+
+#if DEBUG
+    /// Launch with `--act-as-free` to try the free plan — ads, locked sheets,
+    /// the practice preview — on an account that has Premium.
+    private static let actsAsFree = ProcessInfo.processInfo.arguments.contains("--act-as-free")
+#else
+    private static let actsAsFree = false
+#endif
     private(set) var status: SubscriptionStatus?
 
     private static let cacheKey = "bms_entitled"
@@ -54,7 +62,7 @@ final class EntitlementStore {
                let cached = try? JSONDecoder().decode(SubscriptionStatus.self, from: data),
                cached.master == true || cached.currentPeriodEnd == nil || cached.currentPeriodEnd! > now().timeIntervalSince1970 {
                 status = cached
-                isEntitled = cached.isPremium
+                isEntitled = cached.isPremium && !Self.actsAsFree
             }
         }
         // A previously valid snapshot may expire while this account stays
@@ -79,7 +87,7 @@ final class EntitlementStore {
     }
 
     private func apply(entitled: Bool, status: SubscriptionStatus?) {
-        isEntitled = entitled
+        isEntitled = entitled && !Self.actsAsFree
         self.status = status
         defaults.set(entitled, forKey: Self.cacheKey)
         defaults.set(accountID, forKey: Self.ownerKey)
