@@ -160,11 +160,6 @@ struct PaywallView: View {
                                 .font(.system(size: 12.5))
                                 .foregroundStyle(Brand.inkSoft)
                                 .multilineTextAlignment(.center)
-                        } else if signedIn == true {
-                            purchaseButton
-                            restoreButton
-                        } else {
-                            signInButton
                         }
 
                         FreePlanCard()
@@ -178,11 +173,28 @@ struct PaywallView: View {
                     .padding(.vertical, 20)
                 }
 
-                legalLinks
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 14)
-                    .background(Brand.paper)
+                // Fixed below the scrolling plans, so the purchase button is on
+                // screen however short the window: an iPad's page sheet is
+                // shorter than the plans, benefits and terms together.
+                VStack(spacing: 12) {
+                    if !previewOnly {
+                        if signedIn == true {
+                            purchaseButton
+                            restoreButton
+                        } else {
+                            signInButton
+                        }
+                    }
+                    legalLinks
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 28)
+                .padding(.top, previewOnly ? 14 : 12)
+                .padding(.bottom, 14)
+                .background(Brand.paper)
+                .overlay(alignment: .top) {
+                    if !previewOnly { Rectangle().fill(Brand.paperDeep).frame(height: 1) }
+                }
             }
         }
     }
