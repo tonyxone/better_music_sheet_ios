@@ -95,7 +95,7 @@ App Review notes, point 8 (App Store Connect caps the notes at 4,000 characters)
 
 ## Other listing fields
 
-- Suggested subtitle: Note names & piano practice
+- Subtitle (live from 1.2): Sheet music with note names. It replaced "Make your practice easier"; "sheet music" is the term people search for.
 - Suggested keywords: piano,sheet music,note names,sight reading,practice,keyboard,score,playback,pdf,music learning
 - Suggested primary category: Music
 - Suggested secondary category: Education
