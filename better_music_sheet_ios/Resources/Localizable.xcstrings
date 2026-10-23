@@ -386,35 +386,6 @@
         }
       }
     },
-    "1 music sheet at a time" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "楽譜は一度に1つまで"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "한 번에 악보 1개"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一次只能保留一份乐谱"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一次只能保留一份樂譜"
-          }
-        }
-      }
-    },
     "1 sheet at a time" : {
       "localizations" : {
         "ja" : {
