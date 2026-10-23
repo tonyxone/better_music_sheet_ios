@@ -102,6 +102,9 @@ struct AuthServiceTests {
         #expect(channel.recorded.count == 2)
         #expect(channel.recorded[0].url?.host == "cognito-idp.us-west-1.amazonaws.com")
         #expect(channel.recorded[1].url?.path == "/api/auth/token")
+        let body = try #require(channel.recorded[1].httpBodyData)
+        let json = try #require(JSONSerialization.jsonObject(with: body) as? [String: String])
+        #expect(json["platform"] == "ios")
     }
 
     @Test func aFailedRefreshClearsTheSessionRatherThanTrappingTheVisitor() async throws {
@@ -137,6 +140,10 @@ struct AuthServiceTests {
         #expect(session.refreshToken == "rt")
         let stored = await sessions.current()
         #expect(stored?.user.email == "a@example.com")
+        // The backend records where an account was created from this field.
+        let body = try #require(channel.recorded[1].httpBodyData)
+        let json = try #require(JSONSerialization.jsonObject(with: body) as? [String: String])
+        #expect(json == ["id_token": "id", "platform": "ios"])
     }
 
     @Test func signOutClearsTheSession() async throws {
