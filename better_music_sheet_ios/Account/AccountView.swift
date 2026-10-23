@@ -236,12 +236,14 @@ private struct SignInForm: View {
     @State private var showingPlans = false
 
     var body: some View {
-        ViewThatFits(in: .vertical) {
-            formContent
-            ScrollView { formContent }
-                .scrollDismissesKeyboard(.interactively)
-        }
-        .sheet(isPresented: $showingPlans) { PaywallView(previewOnly: true) }
+        // One scroll view throughout, still when the form fits. Choosing
+        // between a plain and a scrolling copy (ViewThatFits) swapped copies
+        // the moment the keyboard took the space on an iPhone, and the
+        // swapped-in field lost focus, so the keyboard closed as it opened.
+        ScrollView { formContent }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollDismissesKeyboard(.interactively)
+            .sheet(isPresented: $showingPlans) { PaywallView(previewOnly: true) }
     }
 
     private var formContent: some View {
