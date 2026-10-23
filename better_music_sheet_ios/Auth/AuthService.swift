@@ -38,6 +38,7 @@ actor AuthService {
         let response: SocialResponse = try await postForSession("/api/auth/social", body: [
             "code": code,
             "redirect_uri": redirectURI,
+            "platform": Self.platform,
         ])
         let session = Session(token: response.accessToken,
                               expiresAt: Date().timeIntervalSince1970 + (response.expiresIn ?? 3600),
@@ -53,7 +54,7 @@ actor AuthService {
     /// token is traded in here, at POST /api/auth/token.
     func signIn(email: String, password: String) async throws -> Session {
         let tokens = try await CognitoAuth.signInWithPassword(email: email, password: password, urlSession: urlSession)
-        let response: TokenResponse = try await postForSession("/api/auth/token", body: ["id_token": tokens.idToken])
+        let response: TokenResponse = try await postForSession("/api/auth/token", body: ["id_token": tokens.idToken, "platform": Self.platform])
         let session = Session(token: response.accessToken,
                               expiresAt: Date().timeIntervalSince1970 + (response.expiresIn ?? 3600),
                               refreshToken: tokens.refreshToken,
@@ -74,7 +75,7 @@ actor AuthService {
         }
         do {
             let tokens = try await CognitoAuth.refreshTokens(refreshToken, urlSession: urlSession)
-            let response: TokenResponse = try await postForSession("/api/auth/token", body: ["id_token": tokens.idToken])
+            let response: TokenResponse = try await postForSession("/api/auth/token", body: ["id_token": tokens.idToken, "platform": Self.platform])
             // Cognito doesn't return a new refresh token on this grant — keep ours.
             let refreshed = Session(token: response.accessToken,
                                     expiresAt: Date().timeIntervalSince1970 + (response.expiresIn ?? 3600),
@@ -95,6 +96,11 @@ actor AuthService {
     }
 
     // MARK: - Internals
+
+    /// Sent on every sign-in so the backend records "ios" as where a new
+    /// account was created (the admin new-users chart). It only takes
+    /// effect on the sign-in that creates the account.
+    static let platform = "ios"
 
     private struct TokenResponse: Decodable {
         let accessToken: String
