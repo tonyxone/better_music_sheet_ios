@@ -1,7 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {},
+    "" : {
+
+    },
     " (annotated)" : {
       "comment" : "Added to the name of a shared PDF",
       "localizations" : {
@@ -411,6 +413,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "一次只能保留一份樂譜"
+          }
+        }
+      }
+    },
+    "1 sheet at a time" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一度に1つの楽譜"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "한 번에 악보 1개"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一次 1 份乐谱"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一次 1 份樂譜"
           }
         }
       }
@@ -859,34 +889,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新增批註"
-          }
-        }
-      }
-    },
-    "Add another sheet" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "別の楽譜を追加"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "다른 악보 추가"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加另一份乐谱"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新增另一份樂譜"
           }
         }
       }
@@ -3328,6 +3330,34 @@
         }
       }
     },
+    "Delete %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%@」を削除"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 삭제"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除“%@”"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除「%@」"
+          }
+        }
+      }
+    },
     "Delete Account" : {
       "localizations" : {
         "ja" : {
@@ -5148,34 +5178,6 @@
         }
       }
     },
-    "Keep as many sheets as you like" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "楽譜をいくつでも保存"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "악보를 원하는 만큼 보관"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可保留任意数量的乐谱"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可保留任意數量的樂譜"
-          }
-        }
-      }
-    },
     "Keyboard, nothing sounding" : {
       "localizations" : {
         "ja" : {
@@ -5564,6 +5566,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在載入播放…"
+          }
+        }
+      }
+    },
+    "Locked" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ロック中"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "잠김"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已锁定"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已鎖定"
           }
         }
       }
@@ -8033,6 +8063,7 @@
       }
     },
     "Remove" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -8056,6 +8087,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移除"
+          }
+        }
+      }
+    },
+    "Remove the sample" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルを非表示"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "샘플 숨기기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除示例"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除範例"
           }
         }
       }
@@ -8084,6 +8143,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "續訂時間"
+          }
+        }
+      }
+    },
+    "Replace" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "置き換える"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "바꾸기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替換"
+          }
+        }
+      }
+    },
+    "Replace your sheet?" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "楽譜を置き換えますか？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "악보를 바꿀까요?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要替换您的乐谱吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要替換您的樂譜嗎？"
           }
         }
       }
@@ -10356,6 +10471,118 @@
         }
       }
     },
+    "The free plan keeps 1 sheet at a time. Watch a short ad to upload a new sheet in place of “%@”, which will be deleted — or go Premium for unlimited sheets and no ads." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無料プランで保存できる楽譜は一度に1つです。短い広告を見ると、「%@」の代わりに新しい楽譜をアップロードできます（元の楽譜は削除されます）。プレミアムなら楽譜は無制限で広告もありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "무료 요금제는 한 번에 악보 1개만 보관합니다. 짧은 광고를 보면 '%@' 대신 새 악보를 업로드할 수 있으며, 기존 악보는 삭제됩니다. 프리미엄은 악보 무제한에 광고도 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免费版一次只能保留 1 份乐谱。观看一段简短广告，即可上传新乐谱替换“%@”（原乐谱将被删除）；或升级高级版，乐谱无限且无广告。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費方案一次只能保留 1 份樂譜。觀看一段簡短廣告，即可上傳新樂譜替換「%@」（原樂譜將被刪除）；或升級進階版，樂譜無限且無廣告。"
+          }
+        }
+      }
+    },
+    "The free plan keeps 1 sheet at a time. Watch a short ad to upload a new sheet in place of your %lld sheets, which will be deleted — or go Premium for unlimited sheets and no ads." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無料プランで保存できる楽譜は一度に1つです。短い広告を見ると、今ある%lld件の楽譜の代わりに新しい楽譜をアップロードできます（今の楽譜は削除されます）。プレミアムなら楽譜は無制限で広告もありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "무료 요금제는 한 번에 악보 1개만 보관합니다. 짧은 광고를 보면 지금 있는 악보 %lld개 대신 새 악보를 업로드할 수 있으며, 기존 악보는 삭제됩니다. 프리미엄은 악보 무제한에 광고도 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免费版一次只能保留 1 份乐谱。观看一段简短广告，即可上传新乐谱替换您现有的 %lld 份乐谱（原乐谱将被删除）；或升级高级版，乐谱无限且无广告。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費方案一次只能保留 1 份樂譜。觀看一段簡短廣告，即可上傳新樂譜替換您現有的 %lld 份樂譜（原樂譜將被刪除）；或升級進階版，樂譜無限且無廣告。"
+          }
+        }
+      }
+    },
+    "The free plan keeps one sheet at a time. Each upload takes a short ad, and a new sheet replaces the one you have. It adds up to 15 sheets a day and shows ads. Premium keeps as many sheets as you like, adds more each day, and has no ads. One subscription covers this app and the website." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無料プランでは一度に1つの楽譜を保存できます。アップロードごとに短い広告を見る必要があり、新しい楽譜は今の楽譜と置き換わります。1日15件まで追加でき、広告が表示されます。プレミアムでは楽譜をいくつでも保存でき、1日に追加できる数も増え、広告は表示されません。1つのサブスクリプションでこのアプリとウェブサイトの両方を使えます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "무료 요금제는 한 번에 악보 1개를 보관합니다. 업로드할 때마다 짧은 광고를 봐야 하며, 새 악보가 지금 악보를 대신합니다. 하루 최대 15개까지 추가할 수 있으며 광고가 표시됩니다. 프리미엄은 악보를 원하는 만큼 보관하고, 하루에 더 많이 추가할 수 있으며, 광고가 없습니다. 구독 하나로 이 앱과 웹사이트를 모두 이용할 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免费版一次保留一份乐谱。每次上传需观看一段简短广告，新乐谱会替换现有的那份。每天最多添加 15 份，并会显示广告。高级版可以保留任意数量的乐谱，每天可添加更多，且没有广告。一份订阅同时适用于本 App 和网站。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費方案一次保留一份樂譜。每次上傳需觀看一段簡短廣告，新樂譜會替換現有的那份。每天最多新增 15 份，並會顯示廣告。進階版可以保留任意數量的樂譜，每天可新增更多，且沒有廣告。一份訂閱同時適用於本 App 和網站。"
+          }
+        }
+      }
+    },
+    "The free plan opens your first sheet without ads. Watch a short ad to read and practise “%@” for an hour — or go Premium to open every sheet." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無料プランでは最初の楽譜を広告なしで開けます。短い広告を見ると「%@」を1時間閲覧・練習できます。プレミアムならすべての楽譜を開けます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "무료 요금제에서는 첫 악보를 광고 없이 열 수 있습니다. 짧은 광고를 보면 '%@'을(를) 1시간 동안 보고 연습할 수 있습니다. 프리미엄은 모든 악보를 열 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免费版可无广告打开您的第一份乐谱。观看一段简短广告，即可阅读和练习“%@” 1 小时；或升级高级版，打开所有乐谱。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費方案可無廣告開啟您的第一份樂譜。觀看一段簡短廣告，即可閱讀和練習「%@」1 小時；或升級進階版，開啟所有樂譜。"
+          }
+        }
+      }
+    },
     "The free preview is the first %lld measures. Watch a short ad to practise this whole sheet for an hour, or go Premium to practise every sheet with no ads." : {
       "localizations" : {
         "ja" : {
@@ -11056,6 +11283,34 @@
         }
       }
     },
+    "Trying the built-in sample needs no account. Adding your own sheet music needs one, so your sheets are there wherever you sign in — on iPhone, iPad or the website. The free plan keeps one sheet at a time, each upload takes a short ad, and it shows ads; Premium keeps as many sheets as you like, with no ads. One Premium subscription covers the app and the website." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内蔵のサンプルを試すのにアカウントは不要です。自分の楽譜を追加するにはアカウントが必要で、iPhone、iPad、ウェブサイトのどこでログインしても同じ楽譜を開けます。無料プランでは一度に1つの楽譜を保存でき、アップロードごとに短い広告を見る必要があり、広告が表示されます。プレミアムでは楽譜をいくつでも保存でき、広告は表示されません。1つのプレミアムのサブスクリプションでアプリとウェブサイトの両方を使えます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "내장 샘플을 써 보는 데는 계정이 필요 없습니다. 내 악보를 추가하려면 계정이 필요하며, iPhone, iPad, 웹사이트 어디서 로그인해도 같은 악보를 볼 수 있습니다. 무료 요금제는 한 번에 악보 1개를 보관하고, 업로드할 때마다 짧은 광고를 봐야 하며, 광고가 표시됩니다. 프리미엄은 악보를 원하는 만큼 보관하며 광고가 없습니다. 프리미엄 구독 하나로 앱과 웹사이트를 모두 이용할 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "试用内置示例无需账号。添加您自己的乐谱需要一个账号，这样无论在 iPhone、iPad 还是网站上登录，都能找到您的乐谱。免费版一次保留一份乐谱，每次上传需观看一段简短广告，并会显示广告；高级版可以保留任意数量的乐谱，且没有广告。一份高级版订阅同时适用于 App 和网站。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "試用內建範例不需要帳號。加入您自己的樂譜需要一個帳號，這樣無論在 iPhone、iPad 還是網站上登入，都能找到您的樂譜。免費方案一次保留一份樂譜，每次上傳需觀看一段簡短廣告，並會顯示廣告；進階版可以保留任意數量的樂譜，且沒有廣告。一份進階版訂閱同時適用於 App 和網站。"
+          }
+        }
+      }
+    },
     "Type \"%@\" to confirm" : {
       "localizations" : {
         "ja" : {
@@ -11252,6 +11507,34 @@
         }
       }
     },
+    "Unlimited sheet storage" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "楽譜を無制限に保存"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "악보 무제한 보관"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "乐谱存储无限制"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "樂譜儲存無限制"
+          }
+        }
+      }
+    },
     "Unlock this sheet" : {
       "localizations" : {
         "ja" : {
@@ -11336,6 +11619,62 @@
         }
       }
     },
+    "Upload" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アップロード"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "업로드"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上传"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上傳"
+          }
+        }
+      }
+    },
+    "Upload a sheet?" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "楽譜をアップロードしますか？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "악보를 업로드할까요?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要上传乐谱吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要上傳樂譜嗎？"
+          }
+        }
+      }
+    },
     "Upload up to %lld sheets daily" : {
       "localizations" : {
         "ja" : {
@@ -11389,34 +11728,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "每天最多上傳 5 份樂譜"
-          }
-        }
-      }
-    },
-    "Upload without ads" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "広告なしでアップロード"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "광고 없이 업로드"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无广告上传"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無廣告上傳"
           }
         }
       }
@@ -11617,7 +11928,65 @@
         }
       }
     },
-    "Watch Ad" : {},
+    "Watch a short ad to upload a sheet — or go Premium for unlimited sheets and no ads." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "短い広告を見ると楽譜をアップロードできます。プレミアムなら楽譜は無制限で広告もありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "짧은 광고를 보면 악보를 업로드할 수 있습니다. 프리미엄은 악보 무제한에 광고도 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "观看一段简短广告即可上传乐谱；或升级高级版，乐谱无限且无广告。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "觀看一段簡短廣告即可上傳樂譜；或升級進階版，樂譜無限且無廣告。"
+          }
+        }
+      }
+    },
+    "Watch Ad" : {
+
+    },
+    "Watch an ad for each upload" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アップロードごとに広告を視聴"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "업로드마다 광고 시청"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每次上传需观看广告"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每次上傳需觀看廣告"
+          }
+        }
+      }
+    },
     "Watch an ad to unlock practice mode" : {
       "localizations" : {
         "ja" : {
@@ -11982,30 +12351,30 @@
         }
       }
     },
-    "You're on the Free plan, with ads." : {
+    "You're on the Free plan: 1 sheet at a time, with ads." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無料プランをご利用中です（広告あり）。"
+            "value" : "無料プランをご利用中です（楽譜は一度に1つ、広告あり）。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "무료 요금제를 이용 중입니다(광고 포함)."
+            "value" : "무료 요금제를 이용 중입니다(한 번에 악보 1개, 광고 포함)."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "您正在使用免费版（含广告）。"
+            "value" : "您正在使用免费版：一次 1 份乐谱，含广告。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "您正在使用免費方案（含廣告）。"
+            "value" : "您正在使用免費方案：一次 1 份樂譜，含廣告。"
           }
         }
       }
@@ -12202,118 +12571,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "訂閱屬於您的帳號，在網頁上同樣可用。"
-          }
-        }
-      }
-    },
-    "Your first sheet is free. Watch a short ad to add each one after it, and keep as many as you like — or go Premium for no ads." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最初の楽譜は無料です。2つ目以降は短い広告を1本見ると1つずつ追加でき、いくつでも保存できます。プレミアムなら広告はありません。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "첫 악보는 무료입니다. 그다음부터는 짧은 광고 하나를 보면 하나씩 추가할 수 있고, 원하는 만큼 보관할 수 있습니다. 프리미엄은 광고가 없습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第一份乐谱免费。之后每添加一份，观看一段简短广告即可，乐谱数量不限；或升级高级版，无广告。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第一份樂譜免費。之後每新增一份，觀看一段簡短廣告即可，樂譜數量不限；或升級進階版，無廣告。"
-          }
-        }
-      }
-    },
-    "Watch an ad to upload a new sheet" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "広告を見ると新しい楽譜をアップロード"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "광고를 보면 새 악보 업로드"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "观看广告即可上传新乐谱"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "觀看廣告即可上傳新樂譜"
-          }
-        }
-      }
-    },
-    "The free plan keeps as many sheets as you like: your first is free, and each one after it takes a short ad. It adds up to 15 sheets a day and shows ads. Premium adds more each day and has no ads. One subscription covers this app and the website." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無料プランでは楽譜をいくつでも保存できます。最初の楽譜は無料で、2つ目以降は1つにつき短い広告を1本見ると追加できます。1日15件まで追加でき、広告が表示されます。プレミアムでは1日に追加できる数が増え、広告は表示されません。1つのサブスクリプションでこのアプリとウェブサイトの両方を使えます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "무료 요금제는 악보를 원하는 만큼 보관할 수 있습니다. 첫 악보는 무료이고, 그다음부터는 악보마다 짧은 광고 하나를 보면 추가할 수 있습니다. 하루 최대 15개까지 추가할 수 있으며 광고가 표시됩니다. 프리미엄은 하루에 더 많이 추가할 수 있고 광고가 없습니다. 구독 하나로 이 앱과 웹사이트를 모두 이용할 수 있습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免费版可以保留任意数量的乐谱：第一份免费，之后每添加一份需观看一段简短广告。每天最多添加 15 份，并会显示广告。高级版每天可添加更多，且没有广告。一份订阅同时适用于本 App 和网站。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免費方案可以保留任意數量的樂譜：第一份免費，之後每新增一份需觀看一段簡短廣告。每天最多新增 15 份，並會顯示廣告。進階版每天可新增更多，且沒有廣告。一份訂閱同時適用於本 App 和網站。"
-          }
-        }
-      }
-    },
-    "Trying the built-in sample needs no account. Adding your own sheet music needs one, so your sheets are there wherever you sign in — on iPhone, iPad or the website. On the free plan your first sheet is free and each one after it takes a short ad, and you keep as many as you like; Premium has no ads. One Premium subscription covers the app and the website." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "内蔵のサンプルを試すのにアカウントは不要です。自分の楽譜を追加するにはアカウントが必要で、iPhone、iPad、ウェブサイトのどこでログインしても同じ楽譜を開けます。無料プランでは最初の楽譜は無料で、2つ目以降は1つにつき短い広告を1本見ると追加でき、楽譜はいくつでも保存できます。プレミアムでは広告は表示されません。1つのプレミアムのサブスクリプションでアプリとウェブサイトの両方を使えます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "내장 샘플을 써 보는 데는 계정이 필요 없습니다. 내 악보를 추가하려면 계정이 필요하며, iPhone, iPad, 웹사이트 어디서 로그인해도 같은 악보를 볼 수 있습니다. 무료 요금제에서는 첫 악보가 무료이고, 그다음부터는 악보마다 짧은 광고 하나를 보면 추가할 수 있으며, 원하는 만큼 보관할 수 있습니다. 프리미엄은 광고가 없습니다. 프리미엄 구독 하나로 앱과 웹사이트를 모두 이용할 수 있습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "试用内置示例无需账号。添加您自己的乐谱需要一个账号，这样无论在 iPhone、iPad 还是网站上登录，都能找到您的乐谱。免费版的第一份乐谱免费，之后每添加一份需观看一段简短广告，乐谱数量不限；高级版没有广告。一份高级版订阅同时适用于 App 和网站。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "試用內建範例不需要帳號。加入您自己的樂譜需要一個帳號，這樣無論在 iPhone、iPad 還是網站上登入，都能找到您的樂譜。免費方案的第一份樂譜免費，之後每新增一份需觀看一段簡短廣告，樂譜數量不限；進階版沒有廣告。一份進階版訂閱同時適用於 App 和網站。"
           }
         }
       }

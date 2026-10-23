@@ -32,7 +32,11 @@ final class LibraryModel {
     /// Whether a free account has had its free sheet, so the next one takes
     /// ads. A failed upload doesn't count, matching the backend's count
     /// (server.py FREE_SHEET_LIMIT).
-    var hasKeptSheet: Bool { jobs.contains { $0.status != .failed } }
+    var hasKeptSheet: Bool { !keptSheets.isEmpty }
+
+    /// What a free upload paid for with an ad replaces. Usually one, but an
+    /// account that went past the limit in an older app version has more.
+    var keptSheets: [AnnotationJob] { jobs.filter { $0.status != .failed } }
 
     // MARK: - Pagination
 

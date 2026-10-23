@@ -21,7 +21,7 @@ struct SubscriptionSection: View {
                 subscribed(status)
             } else {
                 VStack(spacing: 10) {
-                    Text("You're on the Free plan, with ads.")
+                    Text("You're on the Free plan: 1 sheet at a time, with ads.")
                         .font(.system(size: 12.5))
                         .foregroundStyle(Brand.inkSoft)
                         .multilineTextAlignment(.center)
