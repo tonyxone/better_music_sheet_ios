@@ -24,7 +24,7 @@ struct WelcomeView: View {
             Image("Welcome")
                 .resizable()
                 .frame(width: width, height: height)
-                .accessibilityLabel("Better Music Sheet. Upload, annotate, and practice your sheet music.")
+                .accessibilityLabel("Better Sheet Music. Upload, annotate, and practice your sheet music.")
                 .overlay(alignment: .topLeading) {
                     Button(action: getStarted) {
                         HStack(spacing: buttonHeight * 0.18) {

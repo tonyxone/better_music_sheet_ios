@@ -8,14 +8,14 @@ struct AboutView: View {
             InfoText.note("What this does, and what it cannot do")
 
             InfoText.paragraph("Reading sheet music means turning a dot on a line into a note name, and then into a key under your finger. Experienced players stop noticing that step. Everyone else is doing arithmetic in the middle of a piece.")
-            InfoText.paragraph("BetterMusicSheet does that step for you. Add a PDF or a photo of piano music and you get the same score back with every note labelled, plus a practice mode that lights the notes up on a keyboard as they sound.")
+            InfoText.paragraph("Better Sheet Music does that step for you. Add a PDF or a photo of piano music and you get the same score back with every note labelled, plus a practice mode that lights the notes up on a keyboard as they sound.")
 
             InfoText.heading("What the labels mean")
             InfoText.paragraph("Each notehead is labelled with its letter name — C, F♯, B♭ — printed close enough to be read at playing distance without burying the notation underneath. Notes that sound together are grouped, so a chord reads as one label rather than a stack of them.")
             InfoText.paragraph("You can switch between sharp and flat spellings, add octave numbers if you are learning where middle C sits, and set the label size to suit how far away the music sits. Instead of letters, the names can also show as jianpu numbers (1 2 3) or solfège (do re mi), switched at any time while reading or practising.")
 
             InfoText.heading("How it works")
-            InfoText.paragraph("Recognition uses [Audiveris](https://github.com/Audiveris/audiveris), an open-source optical music recognition engine. It finds staves, clefs, key signatures and noteheads, and works out each note's pitch. BetterMusicSheet then draws the labels onto a copy of your sheet and builds a timeline for playback. Your file is processed on BetterMusicSheet's own servers; it is not sent to a third-party service.")
+            InfoText.paragraph("Recognition uses [Audiveris](https://github.com/Audiveris/audiveris), an open-source optical music recognition engine. It finds staves, clefs, key signatures and noteheads, and works out each note's pitch. Better Sheet Music then draws the labels onto a copy of your sheet and builds a timeline for playback. Your file is processed on Better Sheet Music's own servers; it is not sent to a third-party service.")
             InfoText.paragraph("Pages that come back badly recognised are automatically retried at a higher resolution, which helps with dense engraving and with photos.")
 
             InfoText.heading("What it struggles with")
