@@ -19,6 +19,12 @@ struct AddSheetView: View {
     @State private var openHelp: Option?
     /// Hidden by default: the remembered choices are usually right.
     @State private var showingOptions = false
+    /// Pages the camera just scanned, kept until its cover has closed.
+    @State private var scannedPages: [CGImage] = []
+    /// Photos waiting on a name before they're uploaded: a photo's filename
+    /// says nothing about the music, so the reader names the sheet first.
+    @State private var unnamedPhotos: UnnamedPhotos?
+    @State private var sheetName = ""
 
     /// Opened after a free account watched ads to upload past its free sheet.
     var adUnlock = false
@@ -62,13 +68,36 @@ struct AddSheetView: View {
             }
         }
         .photosPicker(isPresented: $showingPhotos, selection: $photo, matching: .images)
-        .fullScreenCover(isPresented: $showingCamera) {
+        // Named once the camera has closed: an alert can't be presented
+        // over a cover that is still going away.
+        .fullScreenCover(isPresented: $showingCamera, onDismiss: {
+            let pages = scannedPages
+            scannedPages = []
+            if !pages.isEmpty { askForName(.scan(pages)) }
+        }) {
             DocumentScanner { pages in
+                scannedPages = pages
                 showingCamera = false
-                guard !pages.isEmpty else { return }
-                start { await model.upload(scan: pages) }
             }
             .ignoresSafeArea()
+        }
+        .alert("Name this sheet", isPresented: Binding(
+            get: { unnamedPhotos != nil },
+            set: { if !$0 { unnamedPhotos = nil } }
+        ), presenting: unnamedPhotos) { photos in
+            TextField("Sheet name", text: $sheetName)
+            Button("Upload") {
+                // Emptied, it goes by the name it was offered.
+                let cleaned = SheetTitle.cleaned(sheetName)
+                let title = String((cleaned.isEmpty ? SheetTitle.scan() : cleaned).prefix(SheetTitle.maxLength))
+                switch photos {
+                case .scan(let pages): start { await model.upload(scan: pages, title: title) }
+                case .photo(let data): start { await model.upload(photo: data, title: title) }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("Shown in your library. You can rename it later.")
         }
         .alert("Photos are less accurate", isPresented: Binding(
             get: { pendingPhotoSource != nil },
@@ -93,12 +122,18 @@ struct AddSheetView: View {
                 // Straightening also makes a HEIC photo, which the backend
                 // can't read, a JPEG.
                 guard let data else { return }
-                start { await model.upload(photo: data) }
+                askForName(.photo(data))
             }
         }
         .onChange(of: model.options) { _, options in
             options.save()
         }
+    }
+
+    /// Offers "Scan" and the date and time, to keep or change.
+    private func askForName(_ photos: UnnamedPhotos) {
+        sheetName = SheetTitle.scan()
+        unnamedPhotos = photos
     }
 
     private func start(_ upload: @escaping () async -> String?) {
@@ -453,6 +488,13 @@ private struct LabelPreview: View {
 
 private enum PhotoSource: Hashable {
     case camera, library
+}
+
+/// Pages waiting on their sheet's name: the camera's scan, or one photo
+/// from the library.
+private enum UnnamedPhotos {
+    case scan([CGImage])
+    case photo(Data)
 }
 
 /// The system document camera, for photographing pages: it finds each page's

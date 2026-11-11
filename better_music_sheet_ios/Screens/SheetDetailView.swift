@@ -33,6 +33,8 @@ struct SheetDetailView: View {
     @State private var fullScreen = false
     @State private var notationPreference = NotationPreference.shared
     @State private var entitlements = EntitlementStore.shared
+    /// The sheet being renamed, from the menu under its title.
+    @State private var renaming: AnnotationJob?
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
 
@@ -62,6 +64,13 @@ struct SheetDetailView: View {
         }
         .navigationTitle(model.title)
         .navigationBarTitleDisplayMode(.inline)
+        // Tapping the title offers to rename the sheet, as Files and Notes do.
+        .toolbarTitleMenu {
+            if model.canRename, let job = model.job {
+                Button("Rename", systemImage: "pencil") { renaming = job }
+            }
+        }
+        .renameSheet($renaming) { model.renamed($0) }
         // Without the system's back button there is no swipe to go back
         // either, which one page at a time would take for a page turn.
         .navigationBarBackButtonHidden(isEditing || isSwiping)

@@ -102,6 +102,12 @@ final class LibraryModel {
         }
     }
 
+    /// A sheet as the backend now has it — renamed, say — in place of its row.
+    func update(_ job: AnnotationJob) {
+        guard let index = jobs.firstIndex(where: { $0.jobID == job.jobID }) else { return }
+        jobs[index] = job
+    }
+
     func delete(_ job: AnnotationJob) async {
         let previous = jobs
         jobs.removeAll { $0.jobID == job.jobID }

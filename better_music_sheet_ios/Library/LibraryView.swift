@@ -33,6 +33,8 @@ struct LibraryView: View {
     @State private var noAdAvailable = false
     /// The sheet a swipe asked to delete, waiting on the confirmation alert.
     @State private var pendingDeletion: AnnotationJob?
+    /// The sheet being renamed, from its row's menu.
+    @State private var renaming: AnnotationJob?
     @Binding var path: [SheetRoute]
     @Environment(\.scenePhase) private var scenePhase
 
@@ -115,6 +117,11 @@ struct LibraryView: View {
             Button("Delete", role: .destructive) { Task { await model.delete(job) } }
         } message: { job in
             Text("“\(job.displayName)” and its annotations will be removed from your library. This can't be undone.")
+        }
+        .renameSheet($renaming) { model.update($0) }
+        // Back from a sheet, which may have been renamed there.
+        .onChange(of: path.count) { before, after in
+            if after < before { Task { await model.load() } }
         }
     }
 
@@ -367,6 +374,14 @@ struct LibraryView: View {
                                             page: .practice))
                         } delete: {
                             pendingDeletion = job
+                        }
+                        // Held down, a row offers what its buttons don't show.
+                        .contextMenu {
+                            // Renaming changes the account's own sheet.
+                            if model.currentUser != nil {
+                                Button("Rename", systemImage: "pencil") { renaming = job }
+                            }
+                            Button("Delete", systemImage: "trash", role: .destructive) { pendingDeletion = job }
                         }
                         .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
                         .listRowSeparator(.hidden)

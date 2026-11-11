@@ -52,19 +52,21 @@ final class UploadModel {
         return await upload(filename: url.lastPathComponent, data: data)
     }
 
-    /// A photo of a page, straightened first (PagePhoto) off the main thread.
-    func upload(photo: Data) async -> String? {
+    /// A photo of a page, straightened first (PagePhoto) off the main thread,
+    /// under the name the reader gave it.
+    func upload(photo: Data, title: String? = nil) async -> String? {
         state = .straightening
         let page = await Task.detached(priority: .userInitiated) { PagePhoto.straightened(photo) }.value
         guard let page else {
             state = .failed(String(localized: "Couldn't read the photo.", bundle: .app))
             return nil
         }
-        return await upload(filename: "Photo.jpg", data: page)
+        return await upload(filename: "Photo.jpg", data: page, title: title)
     }
 
-    /// The camera's scanned pages, already straightened, as one sheet.
-    func upload(scan pages: [CGImage]) async -> String? {
+    /// The camera's scanned pages, already straightened, as one sheet under
+    /// the name the reader gave it.
+    func upload(scan pages: [CGImage], title: String? = nil) async -> String? {
         state = .reading
         let file = await Task.detached(priority: .userInitiated) {
             PagePhoto.scanned(pages, maxBytes: AppConfig.maxUploadBytes)
@@ -73,14 +75,14 @@ final class UploadModel {
             state = .failed(String(localized: "Couldn't read the photo.", bundle: .app))
             return nil
         }
-        return await upload(filename: file.filename, data: file.data)
+        return await upload(filename: file.filename, data: file.data, title: title)
     }
 
-    func upload(filename: String, data: Data) async -> String? {
+    func upload(filename: String, data: Data, title: String? = nil) async -> String? {
         state = .uploading
         do {
             let jobID = try await uploader.upload(filename: filename, data: data, options: options,
-                                                  adUnlock: adUnlock)
+                                                  adUnlock: adUnlock, title: title)
             if adUnlock {
                 UploadCredits.shared.spend()
                 adUnlock = false
