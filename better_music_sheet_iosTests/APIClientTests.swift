@@ -264,8 +264,25 @@ struct AnnotationJobTests {
         #expect(job.status == .done)
         #expect(job.labeledGroups == 214)
         #expect(job.dpi == nil)
-        #expect(job.displayName == "Menuet in G.pdf")
+        // Without a title (a backend older than titles), as the backend
+        // would call it: the filename without its extension.
+        #expect(job.title == nil)
+        #expect(job.displayName == "Menuet in G")
         #expect(!job.status.isInProgress)
+    }
+
+    @Test func goesByItsTitleWhenItHasOne() throws {
+        let job = try decode("""
+        {"job_id": "abc", "music_sheet_id": "sheet-1", "status": "done",
+         "sheet_name": "Photo.jpg", "title": "Scan Nov 11, 2026 at 3:42 PM", "error": null,
+         "stage": "Complete", "labeled_groups": 3, "style": "unicode", "octave": false,
+         "font_size": 6.5, "dpi": null, "created_at": 1757600000, "updated_at": 1757600100}
+        """)
+
+        #expect(job.title == "Scan Nov 11, 2026 at 3:42 PM")
+        #expect(job.sheetName == "Photo.jpg")
+        // A title is never cut at a "." the way a filename's extension is.
+        #expect(job.displayName == "Scan Nov 11, 2026 at 3:42 PM")
     }
 
     @Test func treatsAnUnfamiliarStatusAsUnknownRatherThanFailing() throws {

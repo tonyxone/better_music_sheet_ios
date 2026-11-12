@@ -205,6 +205,40 @@ struct SheetUploaderTests {
         #expect(try await reservation(adUnlock: false)["ad_unlock"] == nil)
     }
 
+    @Test func sendsTheSheetsNameWhenItHasOne() async throws {
+        func reservation(title: String?) async throws -> [String: Any] {
+            let channel = StubProtocol.Channel([
+                .init(status: 201, body: Data(#"{"job_id": "j", "upload": {"url": "https://s3.example.com/b", "fields": {}}}"#.utf8)),
+                .init(status: 204),
+                .init(status: 202, body: Data("{}".utf8)),
+            ])
+            _ = try await SheetUploader(client: client(channel))
+                .upload(filename: "Photo.jpg", data: Data("x".utf8), options: .standard, title: title)
+            let body = try #require(channel.recorded.first?.httpBodyData)
+            return try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        }
+        let named = try await reservation(title: "  Clair de\nLune ")
+        #expect(named["title"] as? String == "Clair de Lune")
+        #expect(named["filename"] as? String == "Photo.jpg")
+        // No name, or only spaces: left out, and the backend goes by the file.
+        #expect(try await reservation(title: nil)["title"] == nil)
+        #expect(try await reservation(title: "   ")["title"] == nil)
+    }
+
+    @Test func theLegacyEndpointGetsTheNameToo() async throws {
+        let channel = StubProtocol.Channel([
+            .init(status: 404, body: Data(#"{"detail": "Direct uploads are not enabled"}"#.utf8)),
+            .init(status: 202, body: Data(#"{"job_id": "legacy1", "status": "queued"}"#.utf8)),
+        ])
+
+        _ = try await SheetUploader(client: client(channel))
+            .upload(filename: "Photo.jpg", data: Data("x".utf8), options: .standard, title: "Gymnopédie No. 1")
+
+        let form = String(decoding: channel.recorded[1].httpBodyData ?? Data(), as: UTF8.self)
+        #expect(form.contains(#"name="title""#))
+        #expect(form.contains("Gymnopédie No. 1"))
+    }
+
     @Test func theLegacyEndpointGetsTheLabelColorToo() async throws {
         let channel = StubProtocol.Channel([
             .init(status: 404, body: Data(#"{"detail": "Direct uploads are not enabled"}"#.utf8)),

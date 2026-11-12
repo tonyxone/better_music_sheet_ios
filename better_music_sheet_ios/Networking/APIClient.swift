@@ -44,6 +44,14 @@ actor APIClient {
         return try decode(data)
     }
 
+    func put<Body: Encodable, T: Decodable>(_ path: String,
+                                            body: Body,
+                                            as type: T.Type = T.self) async throws -> T {
+        let encoded = try JSONEncoder().encode(body)
+        let (data, _) = try await call(path, method: "PUT", body: encoded, contentType: "application/json")
+        return try decode(data)
+    }
+
     /// For endpoints whose success carries no body worth reading — a 204, or
     /// the fire-and-forget upload completion.
     func send(_ path: String, method: String) async throws {

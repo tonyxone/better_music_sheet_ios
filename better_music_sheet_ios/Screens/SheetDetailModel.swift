@@ -53,6 +53,15 @@ final class SheetDetailModel {
 
     var title: String { job?.displayName ?? route.provisionalName }
 
+    /// A reader's own sheet can be renamed; the sample is no one's.
+    var canRename: Bool { job != nil && !DemoSheet.isDemo(route.jobID) }
+
+    /// The sheet as the backend has it since it was renamed.
+    func renamed(_ job: AnnotationJob) {
+        guard job.jobID == route.jobID else { return }
+        self.job = job
+    }
+
     /// Fetches the uploaded PDF only when the reader asks to see it. The
     /// annotated PDF is still ready immediately when a sheet opens.
     func loadOriginal() async throws {
@@ -202,7 +211,9 @@ final class SheetDetailModel {
     }
 
     private func write(_ data: Data, suffix: String, fileExtension: String = "pdf") -> URL? {
-        let stem = (title as NSString).deletingPathExtension
+        // The title, which has no extension of its own (AnnotationJob.
+        // displayName) - and which may hold a "/" a file name can't.
+        let stem = title.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(stem)\(suffix).\(fileExtension)")
         return (try? data.write(to: url, options: .atomic)) == nil ? nil : url
     }

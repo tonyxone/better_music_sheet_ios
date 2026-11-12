@@ -25,7 +25,12 @@ nonisolated struct AnnotationJob: Codable, Sendable, Identifiable, Hashable {
     let jobID: String
     let musicSheetID: String
     let status: Status
+    /// The file as uploaded ("Scan.jpg"): where its type comes from.
     let sheetName: String?
+    /// What the reader calls the sheet — named when uploading photos, or
+    /// renamed since (SheetTitle) — else the filename without its extension.
+    /// Absent from a backend older than titles.
+    let title: String?
     let error: String?
     let stage: String?
     let labeledGroups: Int?
@@ -41,12 +46,20 @@ nonisolated struct AnnotationJob: Codable, Sendable, Identifiable, Hashable {
     private enum CodingKeys: String, CodingKey {
         case jobID = "jobId"
         case musicSheetID = "musicSheetId"
-        case status, error, stage, style, octave, dpi
+        case status, error, stage, style, octave, dpi, title
         case sheetName, labeledGroups, fontSize, createdAt, updatedAt
     }
 
     var createdDate: Date { Date(timeIntervalSince1970: createdAt) }
-    var displayName: String { sheetName ?? musicSheetID }
+
+    /// What to call the sheet: its title, or — from a backend that sends
+    /// none — its filename without the extension, as the backend would.
+    var displayName: String {
+        if let title, !title.isEmpty { return title }
+        guard let sheetName else { return musicSheetID }
+        let stem = (sheetName as NSString).deletingPathExtension
+        return stem.isEmpty ? sheetName : stem
+    }
 
     /// The slice of a progress bar the job's current stage covers. The backend
     /// reports only a stage name (processor.py STAGES), so the bar's position

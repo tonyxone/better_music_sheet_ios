@@ -697,6 +697,35 @@
         }
       }
     },
+    "Sign in to rename a sheet." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "楽譜の名前を変更するにはログインしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "악보 이름을 바꾸려면 로그인하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登录后才能重命名乐谱。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登入後才能重新命名樂譜。"
+          }
+        }
+      }
+    },
     "Sign in to upload a sheet." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -780,6 +809,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "範例樂譜無法刪除。"
+          }
+        }
+      }
+    },
+    "The demo sheet can't be renamed." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルの楽譜は名前を変更できません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "샘플 악보는 이름을 바꿀 수 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示例乐谱无法重命名。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "範例樂譜無法重新命名。"
           }
         }
       }
