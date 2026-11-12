@@ -11,6 +11,32 @@ struct SheetTitleTests {
         #expect(SheetTitle.cleaned(" \n\t\u{3000} ").isEmpty)
     }
 
+    @Test func offersAFilesOwnNameWithoutItsExtension() {
+        #expect(SheetTitle.fromFilename("Menuet in G.pdf") == "Menuet in G")
+        #expect(SheetTitle.fromFilename("IMG_2041.png") == "IMG_2041")
+        #expect(SheetTitle.fromFilename("IMG_2041.HEIC") == "IMG_2041")
+        #expect(SheetTitle.fromFilename("Op. 2 No. 1.pdf") == "Op. 2 No. 1")
+        #expect(SheetTitle.fromFilename("  Clair\tde  Lune .jpeg") == "Clair de Lune")
+        #expect(SheetTitle.fromFilename(String(repeating: "x", count: 300) + ".pdf")?.count == SheetTitle.maxLength)
+    }
+
+    @Test func aNameThatSaysNothingIsNotOffered() {
+        for name in ["image.jpg", "image (2).jpg", "IMAGE.JPEG", "Photo.jpg", "1731340000000.jpg", ".jpg", "",
+                     "3F2504E0-4F89-11D3-9A0C-0305E82C3301.jpeg", "version=1&uuid=3F25.jpeg"] {
+            #expect(SheetTitle.fromFilename(name) == nil, "\(name)")
+        }
+        #expect(SheetTitle.fromFilename(nil) == nil)
+    }
+
+    @Test func fallsBackToScanAndTheDate() {
+        let locale = Locale(identifier: "en_US")
+        let date = Date(timeIntervalSince1970: 1_794_400_000)
+        #expect(SheetTitle.suggested(for: "Menuet in G.pdf", at: date, locale: locale) == "Menuet in G")
+        #expect(SheetTitle.suggested(for: "image.jpg", at: date, locale: locale)
+                == SheetTitle.scan(at: date, locale: locale))
+        #expect(SheetTitle.suggested(for: nil, at: date, locale: locale) == SheetTitle.scan(at: date, locale: locale))
+    }
+
     @Test func offersScanAndTheDateAndTime() {
         let locale = Locale(identifier: "en_US")
         let date = Date(timeIntervalSince1970: 1_794_400_000)
